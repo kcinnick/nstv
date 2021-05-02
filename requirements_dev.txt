@@ -10,3 +10,8 @@ twine==1.14.0
 
 pytest==4.6.5
 pytest-runner==5.1
+psycopg2
+requests~=2.25.1
+SQLAlchemy~=1.4.12
+setuptools~=56.0.0
+nstv~=0.0.1
