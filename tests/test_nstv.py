@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """Tests for `nstv` package."""
+import pytest
 
 """Main module."""
 import os
@@ -23,6 +24,7 @@ def test_search_channels():
     assert expected_channel_list == actual_channel_list
 
 
+@pytest.mark.skipif(os.getenv("POSTGRES_PASSWORD"))
 def test_parse_search_channels_response():
     database_url = (
         f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}'
