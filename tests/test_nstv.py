@@ -24,7 +24,7 @@ def test_search_channels():
     assert expected_channel_list == actual_channel_list
 
 
-@pytest.mark.skipif(os.getenv("POSTGRES_PASSWORD"), reason="not on local, can't hit database.")
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
 def test_parse_search_channels_response():
     database_url = (
         f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}'
