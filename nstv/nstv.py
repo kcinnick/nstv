@@ -5,8 +5,6 @@ from pprint import pprint
 import requests
 from sqlalchemy.orm import sessionmaker
 
-from nstv.models import Base, Episode, Show
-
 
 def search_channels(start_channel, end_channel):
     """
@@ -27,20 +25,62 @@ def search_channels(start_channel, end_channel):
     return r.json()
 
 
-def parse_search_channel_response(response):
+def parse_search_channel_response(db_session, response):
+    listings = response[0]['listings']
+    for listing in listings:
+        if listing['showName'] == 'Paid Program':
+            continue
+        show = Show(
+            title=listing['showName'],
+            slug=listing['showName'].replace(
+                ' ', '').replace('-', '').replace(',', '').replace(
+                '\'', '').lower(),
+        )
+        #  check if show exists in DB
+        query = db_session.query(Show).filter(Show.title == show.title)
+        if query.first():
+            show = query.first()
+            pass
+        else:
+            db_session.add(show)
+            db_session.commit()
+
+        episode = Episode(
+            air_date=listing['listDateTime'],
+            title=listing['episodeTitle'],
+            slug=show.slug + listing['episodeTitle'].replace(
+                ' ', '').replace('-', '').replace(',', '').lower(),
+            show_id=show.id
+        )
+        episode_query = db_session.query(Episode).filter(Episode.slug == episode.slug)
+        if episode_query.first():
+            print(f"{episode.title} already in DB.")
+            pass
+        else:
+            db_session.add(episode)
+            print(episode.title)
+            db_session.commit()
     return
 
 
 def main():
-    engine = create_engine(
-        f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}"'
-        f'@127.0.0.1:5432/postgres', echo=True)
+    database_url = (
+        f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}'
+        f'@127.0.0.1:5432/postgres'
+    )
+    engine = create_engine(database_url, echo=False)
+
     #  create tables in models.py if they don't already exist
     Base.metadata.create_all(engine)
+
+    #  create db session
     Session = sessionmaker(bind=engine)
     session = Session()
-    response = search_channels(start_channel=2, end_channel=29)
+    response = search_channels(start_channel=45, end_channel=46)
 
 
 if __name__ == '__main__':
+    from models import Base, Episode, Show
     main()
+else:
+    from nstv.models import Base, Episode, Show
