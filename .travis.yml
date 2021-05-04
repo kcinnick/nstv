@@ -5,7 +5,6 @@ python:
   - 3.8
   - 3.7
   - 3.6
-  - 3.5
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: pip install -U tox-travis
@@ -22,7 +21,7 @@ deploy:
   distributions: sdist bdist_wheel
   user: nicktucker4
   password:
-    secure: PLEASE_REPLACE_ME
+    secure: zfd8901lsk_
   on:
     tags: true
     repo: kcinnick/nstv
