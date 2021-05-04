@@ -25,42 +25,57 @@ def search_channels(start_channel, end_channel):
     return r.json()
 
 
-def parse_search_channel_response(db_session, response):
+def build_show_object(listing, db_session):
+    show = Show(
+        title=listing['showName'],
+        slug=listing['showName'].replace(
+            ' ', '').replace('-', '').replace(',', '').replace(
+            '\'', '').lower(),
+    )
+    #  check if show exists in DB
+    query = db_session.query(Show).filter(Show.title == show.title)
+    if query.first():
+        print(f"{show.title} already in DB.")
+        show = query.first()
+    else:
+        db_session.add(show)
+        db_session.commit()
+
+    return show
+
+
+def build_episode_object(listing, show, db_session):
+    episode = Episode(
+        air_date=listing['listDateTime'],
+        title=listing['episodeTitle'],
+        slug=show.slug + listing['episodeTitle'].replace(
+            ' ', '').replace('-', '').replace(',', '').lower(),
+        show_id=show.id
+    )
+    #  check if episode for show exists in DB
+    episode_query = db_session.query(Episode).filter(Episode.slug == episode.slug)
+    if episode_query.first():
+        print(f"{episode.title} already in DB.")
+        episode = episode_query.first()
+    else:
+        db_session.add(episode)
+        db_session.commit()
+
+    return episode
+
+
+def parse_channel_search_response(db_session, response):
     listings = response[0]['listings']
+    shows = episodes = []
     for listing in listings:
         if listing['showName'] == 'Paid Program':
             continue
-        show = Show(
-            title=listing['showName'],
-            slug=listing['showName'].replace(
-                ' ', '').replace('-', '').replace(',', '').replace(
-                '\'', '').lower(),
-        )
-        #  check if show exists in DB
-        query = db_session.query(Show).filter(Show.title == show.title)
-        if query.first():
-            show = query.first()
-            pass
-        else:
-            db_session.add(show)
-            db_session.commit()
+        show = build_show_object(listing, db_session)
+        shows.append(show)
+        episode = build_episode_object(listing, show, db_session)
+        episodes.append(episode)
 
-        episode = Episode(
-            air_date=listing['listDateTime'],
-            title=listing['episodeTitle'],
-            slug=show.slug + listing['episodeTitle'].replace(
-                ' ', '').replace('-', '').replace(',', '').lower(),
-            show_id=show.id
-        )
-        episode_query = db_session.query(Episode).filter(Episode.slug == episode.slug)
-        if episode_query.first():
-            print(f"{episode.title} already in DB.")
-            pass
-        else:
-            db_session.add(episode)
-            print(episode.title)
-            db_session.commit()
-    return
+    return shows, episodes
 
 
 def main():
