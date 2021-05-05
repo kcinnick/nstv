@@ -1,7 +1,6 @@
 """Main module."""
 import os
 from sqlalchemy import create_engine
-from pprint import pprint
 import requests
 from sqlalchemy.orm import sessionmaker
 
@@ -10,6 +9,9 @@ def search_channels(start_channel, end_channel):
     """
     start_channel: int
     end_channel: int
+
+    Executes a search for the supplied range of channels from start_channel
+    to end_channel and returns the accompanying JSON response object.
     """
     print('\nSearching channels for TV showing details..\n')
     url = f'https://tvtv.us/tvm/t/tv/v4/lineups/95197D/listings/grid?detail='
@@ -25,55 +27,86 @@ def search_channels(start_channel, end_channel):
     return r.json()
 
 
-def build_show_object(listing, db_session):
+def get_or_create_show(listing, db_session):
+    """
+    listing:  JSON object representing an episode listing returned by nstv.search_channels
+    db_session:  sqlalchemy.orm.Session object
+
+    Creates and returns new Show object for show indicated in an
+    episode listing and commits the object against the database.
+    If an object matching the show's title already exists,
+    this function only returns the existing show's object.
+    """
+    #  check if show exists in DB
+    query = db_session.query(Show).filter(Show.title == listing['showName'])
+    if query.first():
+        print(f"{listing['showName']} already in DB.")
+        show = query.first()
+        return show
+
     show = Show(
         title=listing['showName'],
         slug=listing['showName'].replace(
             ' ', '').replace('-', '').replace(',', '').replace(
             '\'', '').lower(),
     )
-    #  check if show exists in DB
-    query = db_session.query(Show).filter(Show.title == show.title)
-    if query.first():
-        print(f"{show.title} already in DB.")
-        show = query.first()
-    else:
-        db_session.add(show)
-        db_session.commit()
+    db_session.add(show)
+    db_session.commit()
 
     return show
 
 
-def build_episode_object(listing, show, db_session):
+def get_or_create_episode(listing, show, db_session):
+    """
+    listing:  JSON object representing an episode listing returned by nstv.search_channels
+    db_session:  sqlalchemy.orm.Session object
+
+    Creates and returns new Episode object for episode indicated in a
+    listing and commits the object against the database.
+    If an object matching the episode's title already exists,
+    this function only returns the existing episode's object.
+    """
+    episode_slug = show.slug + listing['episodeTitle'].replace(
+            ' ', '').replace('-', '').replace(',', '').lower()
+    #  check if episode for show exists in DB
+    episode_query = db_session.query(Episode).filter(Episode.slug == episode_slug)
+    if episode_query.first():
+        episode = episode_query.first()
+        print(f"{episode.title} already in DB.")
+        return episode
+
     episode = Episode(
         air_date=listing['listDateTime'],
         title=listing['episodeTitle'],
-        slug=show.slug + listing['episodeTitle'].replace(
-            ' ', '').replace('-', '').replace(',', '').lower(),
+        slug=episode_slug,
         show_id=show.id
     )
-    #  check if episode for show exists in DB
-    episode_query = db_session.query(Episode).filter(Episode.slug == episode.slug)
-    if episode_query.first():
-        print(f"{episode.title} already in DB.")
-        episode = episode_query.first()
-    else:
-        db_session.add(episode)
-        db_session.commit()
+    db_session.add(episode)
+    db_session.commit()
 
     return episode
 
 
 def parse_channel_search_response(db_session, response):
+    """
+    db_session:  sqlalchemy.orm.Session object
+    response:  JSON object containing a list of episodes returned by a call to search_channels
+
+    Parses the JSON response returned from a search
+    into the appropriate episode or show models.
+    """
     listings = response[0]['listings']
-    shows = episodes = []
+    shows = []
+    episodes = []
     for listing in listings:
         if listing['showName'] == 'Paid Program':
             continue
-        show = build_show_object(listing, db_session)
-        shows.append(show)
-        episode = build_episode_object(listing, show, db_session)
-        episodes.append(episode)
+        show = get_or_create_show(listing, db_session)
+        if show not in shows:
+            shows.append(show)
+        episode = get_or_create_episode(listing, show, db_session)
+        if episode not in episodes:
+            episodes.append(episode)
 
     return shows, episodes
 
