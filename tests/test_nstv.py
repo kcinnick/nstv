@@ -9,11 +9,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from nstv import nstv
+from nstv.download import NZBGeek
 from nstv.models import Base, Episode, Show
 
 
 def test_search_channels():
-    json_response = nstv.search_channels(start_channel=2, end_channel=29)
+    json_response = nstv.search_channels(
+        start_channel=2, end_channel=29, start_date='2021-05-04', end_date='2021-05-05')
+    from pprint import pprint
+    pprint(json_response)
     expected_channel_list = [2, 3, 4, 5, 6, 7, 8, 9, 11, 15, 16,
                              17, 20, 22, 23, 24, 25, 27, 28, 29]
     actual_channel_list = []
@@ -25,59 +29,54 @@ def test_search_channels():
 
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
 def test_parse_search_channels_response():
-    database_url = (
-        f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}'
-        f'@127.0.0.1:5432/postgres'
-    )
-    engine = create_engine(database_url, echo=False)
+    session = nstv.get_db_session()
 
-    #  create tables in models.py if they don't already exist
-    Base.metadata.create_all(engine)
-
-    #  create db session
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    from datetime import datetime, timedelta
+    start_date = (datetime.now() - timedelta(1)).strftime('%Y-%m-%d')
+    end_date = datetime.now().strftime('%Y-%m-%d')
 
     json_response = nstv.search_channels(
-        start_channel=45, end_channel=46,
-        start_date='2021-05-01',
-        end_date='2021-05-02'
+        start_channel=45,
+        end_channel=46,
+        start_date=start_date,
+        end_date=end_date
     )
     shows, episodes = nstv.parse_channel_search_response(
-        db_session=session, response=json_response)
-    actual_shows = [i.title for i in shows]
-    actual_episodes = [i.title for i in episodes]
-    expected_shows = ['Food Paradise', 'Diners, Drive-Ins and Dives']
-    expected_episodes = [
-        'Local Lowdown', 'Brew-Haha', 'Surf \'n Turf',
-        'Wings, Dogs and Claws', 'Fresh, Filled and Fried', 'Funky Finds',
-        'Cruisin\' the Italian Countryside', 'Family Matters', 'Chicken Chowfest',
-        'Pizza, Pork and Peru', 'Triple D Nation: Fried and Smoked',
-        'A World of Barbecue', 'Handy Helpings', 'Takeout: Bold Bites Brought Home',
-        'South of the Border', 'You Called It'
-    ]
+        db_session=session,
+        response=json_response
+    )
 
-    assert actual_shows == expected_shows
-    assert actual_episodes == expected_episodes
+    assert len(shows) > 5
+    assert len(episodes) > 10
 
 
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
 def test_episode_query():
-    database_url = (
-        f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}'
-        f'@127.0.0.1:5432/postgres'
-    )
-    engine = create_engine(database_url, echo=False)
+    db_session = nstv.get_db_session()
 
-    #  create tables in models.py if they don't already exist
-    Base.metadata.create_all(engine)
-
-    #  create db session
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    show = session.query(Show).where(Show.title == 'The Kitchen').first()
+    show = db_session.query(Show).where(Show.title == 'The Kitchen').first()
     for episode in show.episodes[:2]:
         assert episode.title in ['Kitchen Cantina', 'Spice It Up!']
 
 
+def test_login_nzbgeek():
+    nzbgeek = NZBGeek()
+    nzbgeek.login()
+    return
+
+
+def test_search_nzbgeek():
+    db_session = nstv.get_db_session()
+    episode = db_session.query(Episode).where(Episode.title == 'Twins for the Win').first()
+    nzbgeek = NZBGeek()
+    nzbgeek.login()
+    nzbgeek.search_nzbgeek(episode)
+    return
+
+
+def test_get_nzb():
+    nzbgeek = NZBGeek()
+    nzbgeek.login()
+    db_session = nstv.get_db_session()
+    show = db_session.query(Show).where(Show.title == 'Chopped').first()
+    nzbgeek.get_nzb(show, season_number=1, episode_number=4)
