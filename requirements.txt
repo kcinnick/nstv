@@ -14,5 +14,4 @@ nstv~=0.0.1
 requests~=2.25.1
 SQLAlchemy~=1.4.12
 setuptools~=56.0.0
-
 beautifulsoup4~=4.9.3
