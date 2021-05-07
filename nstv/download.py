@@ -1,5 +1,6 @@
 import os
 import re
+from glob import glob
 
 from bs4 import BeautifulSoup
 import requests
@@ -40,7 +41,17 @@ class NZBGeek:
         return show
 
     def get_nzb(self, show, season_number, episode_number):
-        db_session = get_db_session()
+        """
+        Searches and downloads the first result on NZBGeek for the given
+        show and episode number. After the file is downloaded, it is moved
+        to the directory specified in nzbget's Settings -> Path -> NzbDir
+        for downloading and post-processing.
+        @param show:  object representing the show the episode belongs to.
+        @param season_number:  int
+        @param episode_number:  int
+        @return:
+        """
+        print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
         url = f'https://nzbgeek.info/geekseek.php?tvid={show.gid}'
         url += f'&season=S{str(season_number).zfill(2)}'
         url += f'&episode=E{str(episode_number).zfill(2)}'
@@ -49,6 +60,19 @@ class NZBGeek:
 
         soup = BeautifulSoup(r.content, 'html.parser')
         first_download_link = soup.find('a', attrs={'title': 'Download NZB'}).get('href')
-        print(first_download_link)
-        r = self.session.get(first_download_link)
+
+        import webbrowser
+        webbrowser.open(first_download_link)
+        from time import sleep
+        #  wait until file is downloaded
+        nzb_files = glob('/home/nick/Downloads/*.nzb')
+        while len(nzb_files) == 0:
+            sleep(1)
+            nzb_files = glob('/home/nick/Downloads/*.nzb')
         print('\nNZB file downloaded.')
+
+        for file in nzb_files:
+            file_name = file.split("/")[-1]
+            dest_path = f'/home/nick/PycharmProjects/nstv/nzbs/{file_name}'
+            os.rename(file, f'/home/nick/PycharmProjects/nstv/nzbs/{file_name}')
+            print(f"{file_name} moved to {dest_path}.")
