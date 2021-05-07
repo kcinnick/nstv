@@ -16,7 +16,7 @@ nstv
 
 
 
- 
+
 
 
 * Free software: MIT license
@@ -26,7 +26,7 @@ nstv
 Features
 --------
 
-* TODO
+* Search & download episodes of supported shows
 
 Credits
 -------
