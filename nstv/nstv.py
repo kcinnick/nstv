@@ -1,11 +1,13 @@
 """Main module."""
+from datetime import datetime, timedelta
+
 import os
 from sqlalchemy import create_engine
 import requests
 from sqlalchemy.orm import sessionmaker
 
 
-def search_channels(start_channel, end_channel):
+def search_channels(start_channel, end_channel, start_date, end_date):
     """
     start_channel: int
     end_channel: int
@@ -16,9 +18,9 @@ def search_channels(start_channel, end_channel):
     print('\nSearching channels for TV showing details..\n')
     url = f'https://tvtv.us/tvm/t/tv/v4/lineups/95197D/listings/grid?detail='
     url += '%27brief%27&'
-    url += 'start=2021-05-01T04:00:00.000'
+    url += f'start={start_date}T04:00:00.000'
     url += 'Z&'
-    url += 'end=2021-05-02T03:59:00.000'
+    url += f'end={end_date}T03:59:00.000'
     url += f'Z&startchan={start_channel}&endchan={end_channel}'
     r = requests.get(
         url
@@ -67,7 +69,7 @@ def get_or_create_episode(listing, show, db_session):
     this function only returns the existing episode's object.
     """
     episode_slug = show.slug + listing['episodeTitle'].replace(
-            ' ', '').replace('-', '').replace(',', '').lower()
+        ' ', '').replace('-', '').replace(',', '').lower()
     #  check if episode for show exists in DB
     episode_query = db_session.query(Episode).filter(Episode.slug == episode_slug)
     if episode_query.first():
@@ -111,7 +113,7 @@ def parse_channel_search_response(db_session, response):
     return shows, episodes
 
 
-def main():
+def get_db_session():
     database_url = (
         f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}'
         f'@127.0.0.1:5432/postgres'
@@ -124,11 +126,29 @@ def main():
     #  create db session
     Session = sessionmaker(bind=engine)
     session = Session()
-    response = search_channels(start_channel=45, end_channel=46)
+    return session
+
+
+def main():
+    session = get_db_session()
+
+    start_date = (datetime.now() - timedelta(1)).strftime('%Y-%m-%d')
+    end_date = datetime.now().strftime('%Y-%m-%d')
+
+    response = search_channels(
+        start_channel=45,
+        end_channel=46,
+        start_date=start_date,
+        end_date=end_date
+    )
+    print(response)
+
+    return session  # for use in IDE
 
 
 if __name__ == '__main__':
     from models import Base, Episode, Show
+
     main()
 else:
     from nstv.models import Base, Episode, Show
