@@ -57,7 +57,7 @@ def test_episode_query():
     for episode in show.episodes[:2]:
         assert episode.title in ['Kitchen Cantina', 'Spice It Up!']
 
-
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
 def test_login_nzbgeek():
     nzbgeek = NZBGeek()
     nzbgeek.login()
