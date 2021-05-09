@@ -28,7 +28,7 @@ class NZBGeek:
             "logon": "logon",
             "random_thing": random_thing,
             "username": os.getenv('NZBGEEK_USERNAME'),
-            "password": os.getenv('GEEK_KEY')
+            "password": os.getenv('NZBGEEK_PASSWORD')
         }
         self.session.post(nzbgeek_login_url, login_payload)
         r = self.session.get('https://nzbgeek.info/dashboard.php')
@@ -59,7 +59,11 @@ class NZBGeek:
         print(url)
 
         soup = BeautifulSoup(r.content, 'html.parser')
-        first_download_link = soup.find('a', attrs={'title': 'Download NZB'}).get('href')
+        first_download_link = soup.find('a', attrs={'title': 'Download NZB'})
+        if first_download_link:
+            first_download_link = first_download_link.get('href')
+        else:
+            raise AttributeError
 
         import webbrowser
         webbrowser.open(first_download_link)
