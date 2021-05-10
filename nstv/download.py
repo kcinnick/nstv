@@ -9,11 +9,23 @@ from nstv.models import Show, Episode
 from nstv.nstv import get_db_session
 
 
+class SearchResult:
+    def __init__(self, result_table):
+        self.title = result_table.find('a', class_='releases_title').text.strip()
+        self.category = result_table.find('a', class_='releases_category_text').text.strip()
+        self.file_size = result_table.find('td', class_='releases_size').text.strip()
+        self.download_url = result_table.find('a', attrs={'title': 'Download NZB'}).get('href')
+
+    def __str__(self):
+        return f"{self.title}, {self.category}"
+
+
 class NZBGeek:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update(
             {'User-Agent': 'https://github.com/kcinnick/nstv'})
+        self.db_session = None
 
     def login(self):
         # get nzbgeek csrf token
@@ -34,13 +46,21 @@ class NZBGeek:
         r = self.session.get('https://nzbgeek.info/dashboard.php')
         assert os.getenv('NZBGEEK_USERNAME') in str(r.content)
 
-    @staticmethod
-    def search_nzbgeek_for_episode(episode):
-        db_session = get_db_session()
-        show = db_session.query(Show).where(episode.show_id == Show.id).first()
+    def search_nzbgeek_for_episode(self, episode):
+        if not self.db_session:
+            self.db_session = get_db_session()
+
+        show = self.db_session.query(Show).where(episode.show_id == Show.id).first()
         return show
 
-    def get_nzb(self, show, season_number, episode_number):
+    def get_gid(self, show_title):
+        if not self.db_session:
+            self.db_session = get_db_session()
+
+        show = self.db_session.query(Show).where(Show.title == show_title).first()
+        return
+
+    def get_nzb(self, show, season_number, episode_number, hd=True):
         """
         Searches and downloads the first result on NZBGeek for the given
         show and episode number. After the file is downloaded, it is moved
@@ -49,6 +69,7 @@ class NZBGeek:
         @param show:  object representing the show the episode belongs to.
         @param season_number:  int
         @param episode_number:  int
+        @param hd:  bool, grabs only HD-categorized files if set to True
         @return:
         """
         print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
@@ -59,14 +80,13 @@ class NZBGeek:
         print(url)
 
         soup = BeautifulSoup(r.content, 'html.parser')
-        first_download_link = soup.find('a', attrs={'title': 'Download NZB'})
-        if first_download_link:
-            first_download_link = first_download_link.get('href')
-        else:
-            raise AttributeError
+        results = soup.find_all('table', class_='releases')
+        results = [SearchResult(i) for i in results]
+        if hd:
+            hd_results = [i for i in results if i.category == 'TV > HD']
 
         import webbrowser
-        webbrowser.open(first_download_link)
+        webbrowser.open(results[0].download_url)
         from time import sleep
         #  wait until file is downloaded
         nzb_files = glob('/home/nick/Downloads/*.nzb')
