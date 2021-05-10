@@ -22,7 +22,7 @@ def test_search_channels():
 
     assert expected_channel_list == actual_channel_list
 
-
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
 def test_nzbg_login():
     nzbg = NZBGeek()
     nzbg.login()
@@ -141,5 +141,4 @@ def test_get_or_create_episode():
 def test_get_gid():
     nzbgeek = NZBGeek()
     nzbgeek.login()
-    db_session = nstv.get_db_session()
     nzbgeek.get_gid('Chopped')
