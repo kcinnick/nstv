@@ -22,6 +22,7 @@ def test_search_channels():
 
     assert expected_channel_list == actual_channel_list
 
+
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
 def test_nzbg_login():
     nzbg = NZBGeek()
@@ -91,6 +92,7 @@ def test_get_nzb():
     nzbgeek.get_nzb(show, season_number=48, episode_number=3)
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
 def test_get_missing_nzb():
     nzbgeek = NZBGeek()
     nzbgeek.login()
