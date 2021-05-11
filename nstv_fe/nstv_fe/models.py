@@ -14,6 +14,9 @@ class Show(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        db_table = 'show'
+
 
 class Episode(models.Model):
     id = models.IntegerField(primary_key=True, unique=True)
@@ -27,3 +30,7 @@ class Episode(models.Model):
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        db_table = 'episode'
+

@@ -1,11 +1,12 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Table, MetaData
-from sqlalchemy.orm import declarative_base, relationship, mapper
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 meta = MetaData()
 
 shows = Table(
     'show', meta,
+    Column('gid', Integer),
     Column('id', Integer, primary_key=True),
     Column('title', String, unique=True),
     Column('start_date', Date),
@@ -25,12 +26,13 @@ episodes = Table(
 
 class Show(Base):
     __tablename__ = "show"
-
+    gid = Column(Integer)
     id = Column(Integer, primary_key=True, unique=True)
     title = Column(String, unique=True)
     start_date = Column(Date, default=None)
     end_date = Column(Date, default=None)
     slug = Column(String, unique=True)
+
     # show.slug is the show's title with all punctuation & non-alphanumeric chars removed
 
     episodes = relationship("Episode")
