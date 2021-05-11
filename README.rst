@@ -9,10 +9,6 @@ nstv
 .. image:: https://img.shields.io/travis/kcinnick/nstv.svg
         :target: https://travis-ci.com/kcinnick/nstv
 
-.. image:: https://readthedocs.org/projects/nstv/badge/?version=latest
-        :target: https://nstv.readthedocs.io/en/latest/?version=latest
-        :alt: Documentation Status
-
 
 
 
@@ -26,7 +22,9 @@ nstv
 Features
 --------
 
-* Search & download episodes of supported shows
+* Search & download NZB files of episodes of supported shows
+* Search tvtv.us for past & future listings of showings.
+* Save search results for shows to PostgreSQL database.
 
 Credits
 -------
