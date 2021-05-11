@@ -60,7 +60,7 @@ class NZBGeek:
         show = self.db_session.query(Show).where(Show.title == show_title).first()
         return
 
-    def get_nzb(self, show, season_number, episode_number, hd=True):
+    def get_nzb(self, show, season_number=None, episode_number=None, episode_title=None, hd=True):
         """
         Searches and downloads the first result on NZBGeek for the given
         show and episode number. After the file is downloaded, it is moved
@@ -69,21 +69,35 @@ class NZBGeek:
         @param show:  object representing the show the episode belongs to.
         @param season_number:  int
         @param episode_number:  int
+        @param episode_title:  str, optional. If given, searches via show and episode title.
         @param hd:  bool, grabs only HD-categorized files if set to True
         @return:
         """
-        print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
-        url = f'https://nzbgeek.info/geekseek.php?tvid={show.gid}'
-        url += f'&season=S{str(season_number).zfill(2)}'
-        url += f'&episode=E{str(episode_number).zfill(2)}'
-        r = self.session.get(url)
-        print(url)
+        if season_number:
+            print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
+            url = f'https://nzbgeek.info/geekseek.php?tvid={show.gid}'
+            url += f'&season=S{str(season_number).zfill(2)}'
+            url += f'&episode=E{str(episode_number).zfill(2)}'
+            r = self.session.get(url)
+            print(url)
+        else:
+            if not episode_title:
+                raise AttributeError(
+                    'get_nzb needs either season_number & episode_number'
+                    ' or an episode title.'
+                )
+            url = f'https://nzbgeek.info/geekseek.php?moviesgeekseek=1'
+            url += f'&c=5000&browseincludewords='
+            url += f'{show.title.replace(" ", "+")}+'
+            url += f'{episode_title.replace(" ", "+")}'
+            r = self.session.get(url)
+            print(url)
 
         soup = BeautifulSoup(r.content, 'html.parser')
         results = soup.find_all('table', class_='releases')
         results = [SearchResult(i) for i in results]
         if hd:
-            hd_results = [i for i in results if i.category == 'TV > HD']
+            results = [i for i in results if i.category == 'TV > HD']
 
         import webbrowser
         webbrowser.open(results[0].download_url)
