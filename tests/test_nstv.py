@@ -67,13 +67,6 @@ def test_episode_query():
 
 
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
-def test_login_nzbgeek():
-    nzbgeek = NZBGeek()
-    nzbgeek.login()
-    return
-
-
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
 def test_search_nzbgeek_for_episode():
     db_session = nstv.get_db_session()
     episode = db_session.query(Episode).where(Episode.title == 'Twins for the Win').first()
@@ -84,12 +77,21 @@ def test_search_nzbgeek_for_episode():
 
 
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
-def test_get_nzb():
+def test_get_nzb_by_season_episode_numbers():
     nzbgeek = NZBGeek()
     nzbgeek.login()
     db_session = nstv.get_db_session()
     show = db_session.query(Show).where(Show.title == 'Chopped').first()
     nzbgeek.get_nzb(show, season_number=48, episode_number=3)
+
+
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
+def test_get_nzb_by_episode_title():
+    nzbgeek = NZBGeek()
+    nzbgeek.login()
+    db_session = nstv.get_db_session()
+    show = db_session.query(Show).where(Show.title == 'Chopped').first()
+    nzbgeek.get_nzb(show, episode_title='Mix and Mache')
 
 
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason="not on local, can't hit database.")
