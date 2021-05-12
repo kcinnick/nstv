@@ -58,7 +58,27 @@ class NZBGeek:
             self.db_session = get_db_session()
 
         show = self.db_session.query(Show).where(Show.title == show_title).first()
-        return
+        assert show
+
+        r = self.session.get(
+            'https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=5000&browseincludewords={}'.format(
+                show_title)
+        )
+        soup = BeautifulSoup(r.content, 'html.parser')
+        releases = soup.find_all(
+            'a',
+            class_='geekseek_results',
+            attrs={'title': 'View Show'}
+        )
+        gids = {i.text: i.get('href').split('=')[-1] for i in releases}
+        show_gid = gids[show_title]
+        show.gid = show_gid
+        self.db_session.add(show)
+        self.db_session.commit()
+
+        print(f'Set GID for {show_title} to {show_gid}.')
+
+        return show_gid
 
     def get_nzb(self, show, season_number=None, episode_number=None, episode_title=None, hd=True):
         """
