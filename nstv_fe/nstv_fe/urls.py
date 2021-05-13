@@ -20,6 +20,8 @@ from nstv_fe import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('test/', views.index),
-    path('', views.index)
+    path('', views.index),
+    path('shows_index/', views.shows_index),
+    path('shows/<int:sid>', views.show),
+    path('shows/<int:sid>/episode/<int:eid>/download', views.download_episode)
 ]
