@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+    <title>NSTV~ Shows Index</title>
+</head>
+<body>
+{% block content %}
+
+<div style="text-align: center;"><h3>{{ show.title }}</h3></div>
+
+
+
+{% for episode in episodes %}
+    - <a href="/shows/{{ show.id }}/episode/{{ episode.id }}/download">{{ episode.title }}</a>
+{% endfor %}
+
+{% endblock %}
