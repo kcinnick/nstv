@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .forms import DownloadForm
 from .models import Show, Episode
 from .tables import ShowTable
@@ -13,9 +13,7 @@ def index(request):
         if form.is_valid():
             season_number = form.cleaned_data.get('season_number')
             episode_number = form.cleaned_data.get('episode_number')
-            #  TODO:  clean up 22-25. seems very convoluted for what
-            #  TODO:  is simply taking the title of the show from the
-            #  TODO:  form and passing it to the ORM query..
+            #  TODO:  clean up 22-25
             show_title_int = int(form.cleaned_data.get('show_title'))
             show_title = dict(form.fields['show_title'].choices)
             show_title = show_title[show_title_int]
@@ -70,11 +68,11 @@ def download_episode(request, sid, eid):
     nzb_geek = NZBGeek()
     nzb_geek.login()
     episode = Episode.objects.get(id=eid)
-    show_ = Show.objects.get(id=sid)
+    parent_show = Show.objects.get(id=sid)
     print('episode title: {} ~'.format(episode.title))
     if episode.title:
         nzb_geek.get_nzb(
-            show=show_, episode_title=episode.title
+            show=parent_show, episode_title=episode.title
         )
     else:
         print(
@@ -82,10 +80,4 @@ def download_episode(request, sid, eid):
             'isn\'t currently supported.\n')
         raise NotImplementedError
 
-    index_context = {
-        "title": "Show",
-        "show": show,
-        "episodes": []
-    }
-
-    return render(request, '/home/nick/PycharmProjects/nstv/nstv_fe/templates/show.html', index_context)
+    return redirect(parent_show)
