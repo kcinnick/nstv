@@ -149,6 +149,9 @@ class NZBGeek:
             results = [i for i in results if i.category == 'TV > HD']
 
         import webbrowser
+        if not len(results):
+            print('No results found.')
+            return
         webbrowser.open(results[0].download_url)
         #  TODO: above fails if no download links found
         from time import sleep
