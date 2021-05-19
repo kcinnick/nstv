@@ -8,6 +8,9 @@ class Show(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
 
+    def get_absolute_url(self):
+        return "/shows/{}".format(str(self.id))
+
     def __unicode__(self):
         return self.title
 
@@ -24,6 +27,8 @@ class Episode(models.Model):
     air_date = models.DateField()
     title = models.TextField()
     slug = models.TextField()
+    season_number = models.IntegerField()
+    number = models.IntegerField()
 
     def __unicode__(self):
         return self.title
