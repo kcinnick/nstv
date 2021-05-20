@@ -24,6 +24,21 @@ episodes = Table(
 )
 
 
+class Episode(Base):
+    __tablename__ = "episode"
+
+    id = Column(Integer, primary_key=True, unique=True)
+    show_id = Column(Integer, ForeignKey("show.id"))
+    air_date = Column(Date)
+    title = Column(String)
+    slug = Column(String)
+
+    # episode.slug is the episode's title with all punctuation & non-alphanumeric chars removed
+
+    def __repr__(self):
+        return f"{self.title}"
+
+
 class Show(Base):
     __tablename__ = "show"
     gid = Column(Integer)
@@ -40,16 +55,5 @@ class Show(Base):
     def __repr__(self):
         return f"{self.title}"
 
-
-class Episode(Base):
-    __tablename__ = "episode"
-
-    id = Column(Integer, primary_key=True, unique=True)
-    show_id = Column(Integer, ForeignKey("show.id"))
-    air_date = Column(Date)
-    title = Column(String)
-    slug = Column(String)
-    # episode.slug is the episode's title with all punctuation & non-alphanumeric chars removed
-
-    def __repr__(self):
-        return f"{self.title}"
+    def get_episodes(self, db_session):
+        self.episodes = db_session.query(Episode).where(Episode.show_id == self.id)
