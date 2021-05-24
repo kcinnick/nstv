@@ -1,16 +1,18 @@
 <!DOCTYPE html>
+<!-- Google Fonts -->
+{% extends "base.html" %}
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Title</title>
+    <title>{% block title %}NSTV~{% endblock %}</title>
 </head>
 <body>
-
+{% block content %}
 <form action="/" method="post">
     {% csrf_token %}
     {{ download_form }}
     <input type="submit" value="Submit">
 </form>
-
+{% endblock %}
 </body>
 </html>
