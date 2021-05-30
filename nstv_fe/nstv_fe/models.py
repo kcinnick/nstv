@@ -1,4 +1,7 @@
 from django.db import models
+from django.conf import settings
+
+settings.configure()
 
 
 class Show(models.Model):
@@ -18,12 +21,18 @@ class Show(models.Model):
         return self.title
 
     class Meta:
-        db_table = 'show'
+        db_table = "show"
 
 
 class Episode(models.Model):
     id = models.IntegerField(primary_key=True, unique=True)
-    show = models.ForeignKey(Show, related_name='episode_show', blank=True, null=True, on_delete=models.CASCADE)
+    show = models.ForeignKey(
+        Show,
+        related_name="episode_show",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
     air_date = models.DateField()
     title = models.TextField()
     slug = models.TextField()
@@ -37,5 +46,4 @@ class Episode(models.Model):
         return self.title
 
     class Meta:
-        db_table = 'episode'
-
+        db_table = "episode"
