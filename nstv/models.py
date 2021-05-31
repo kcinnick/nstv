@@ -1,26 +1,31 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Table, MetaData
+from sqlalchemy import (Column, Date, ForeignKey, Integer, MetaData, String,
+                        Table)
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 meta = MetaData()
 
 shows = Table(
-    'show', meta,
-    Column('gid', Integer),
-    Column('id', Integer, primary_key=True),
-    Column('title', String, unique=True),
-    Column('start_date', Date),
-    Column('end_date', Date),
-    Column('slug', String, unique=True)
+    "show",
+    meta,
+    Column("gid", Integer),
+    Column("id", Integer, primary_key=True),
+    Column("title", String, unique=True),
+    Column("start_date", Date),
+    Column("end_date", Date),
+    Column("slug", String, unique=True),
 )
 
 episodes = Table(
-    'episode', meta,
-    Column('id', Integer, primary_key=True, unique=True),
-    Column('show', String),
-    Column('start_date', Date),
-    Column('end_date', Date),
-    Column('slug', String, unique=True)
+    "episode",
+    meta,
+    Column("id", Integer, primary_key=True, unique=True),
+    Column("show", String),
+    Column("start_date", Date),
+    Column("end_date", Date),
+    Column("slug", String, unique=True),
+    Column("season_number", String, unique=True),
+    Column("number", String, unique=True),
 )
 
 
@@ -31,9 +36,9 @@ class Episode(Base):
     show_id = Column(Integer, ForeignKey("show.id"))
     air_date = Column(Date)
     title = Column(String)
-    slug = Column(String)
-
-    # episode.slug is the episode's title with all punctuation & non-alphanumeric chars removed
+    slug = Column(String)  #  episode's title with all punctuation & non-alphanumeric chars removed
+    season_number = Column(Integer),
+    number = Column(Integer),
 
     def __repr__(self):
         return f"{self.title}"

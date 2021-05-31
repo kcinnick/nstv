@@ -29,7 +29,7 @@ def search_channels(start_channel, end_channel, start_date, end_date):
     return r.json()
 
 
-def get_or_create_show(listing, db_session):
+def get_or_create_show(listing, db_session, title=None):
     """
     listing:  JSON object representing an episode listing returned by nstv.search_channels
     db_session:  sqlalchemy.orm.Session object
@@ -40,6 +40,9 @@ def get_or_create_show(listing, db_session):
     this function only returns the existing show's object.
     """
     #  check if show exists in DB
+    if title:
+        listing['showName'] = title
+
     query = db_session.query(Show).filter(Show.title == listing['showName'])
     if query.first():
         print(f"{listing['showName']} already in DB.")
@@ -52,6 +55,7 @@ def get_or_create_show(listing, db_session):
             ' ', '').replace('-', '').replace(',', '').replace(
             '\'', '').lower(),
     )
+    #show.get_episodes(db_session)
     db_session.add(show)
     db_session.commit()
 
@@ -132,16 +136,16 @@ def get_db_session():
 def main():
     session = get_db_session()
 
-    start_date = (datetime.now() - timedelta(1)).strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(10)).strftime('%Y-%m-%d')
     end_date = datetime.now().strftime('%Y-%m-%d')
 
     response = search_channels(
-        start_channel=45,
-        end_channel=46,
+        start_channel=44,
+        end_channel=47,
         start_date=start_date,
         end_date=end_date
     )
-    print(response)
+    parse_channel_search_response(db_session=session, response=response)
 
     return session  # for use in IDE
 
