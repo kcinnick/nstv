@@ -36,7 +36,7 @@ class Episode(Base):
     show_id = Column(Integer, ForeignKey("show.id"))
     air_date = Column(Date)
     title = Column(String)
-    slug = Column(String)  #  episode's title with all punctuation & non-alphanumeric chars removed
+    slug = Column(String)  # episode's title with all punctuation & non-alphanumeric chars removed
     season_number = Column(Integer),
     number = Column(Integer),
 
