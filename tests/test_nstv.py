@@ -165,6 +165,9 @@ def test_get_gid():
 
 
 def test_login_bounces_if_already_logged_in():
+    print(
+        os.environ['NZBGEEK_USERNAME']
+    )
     nzbgeek = NZBGeek()
     nzbgeek.login()
     nzbgeek.login()
