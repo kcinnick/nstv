@@ -30,14 +30,27 @@ class NZBGeek:
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": "https://github.com/kcinnick/nstv"})
         self.db_session = None
+        self.logged_in = False
 
     def login(self):
         # get nzbgeek csrf token
         r = self.session.get("https://nzbgeek.info/logon.php")
-        random_thing = re.search(
-            r'<input type="hidden" name="random_thing" id="random_thing" value="(\w+)">',
-            str(r.content),
-        ).group(1)
+        try:
+            random_thing = re.search(
+                r'<input type="hidden" name="random_thing" id="random_thing" value="(\w+)">',
+                str(r.content),
+            ).group(1)
+        except AttributeError as e:
+            #  occurs if user is already logged in
+            if os.getenv('NZBGEEK_USERNAME') in str(r.content):
+                return
+            else:  # pragma: no cover
+                print('Random thing for login was missing but user is not already logged in.')
+                print('This should never happen. Something is wrong.  Look at the stacktrace:')
+                print('\nHTML Content:', r.content)
+                raise e
+                #  until, (or if ever) the above occurs, we'll remove the noqa's above and test it accordingly.
+                #  until then, unsure how to test it.
         # login to nzbgeek
         nzbgeek_login_url = "https://nzbgeek.info/logon.php"
         login_payload = {
@@ -62,7 +75,7 @@ class NZBGeek:
             self.db_session = get_db_session()
 
         show = self.db_session.query(Show).where(Show.title == show_title).first()
-        assert show
+        assert show  # raise failure if show doesn't appear to be in DB
 
         url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=5000&browseincludewords={}".format(
             show_title
@@ -78,9 +91,12 @@ class NZBGeek:
             #  if a search returns a list of episodes as a result
             #  instead of a link to a show, this releases search
             #  replaces the search for geekseek_results <a> tags.
-            releases_href = soup.find(
-                "a", attrs={"title": "View all releases for this Show"}
-            ).get("href")
+            try:
+                releases_href = soup.find(
+                    "a", attrs={"title": "View all releases for this Show"}
+                ).get("href")
+            except AttributeError as e:
+                raise e
             gids = {show_title: releases_href.split("=")[-1]}
         else:
             gids = {i.text: i.get("href").split("=")[-1] for i in releases}
@@ -143,8 +159,8 @@ class NZBGeek:
                     "get_nzb needs either season_number & episode_number"
                     " or an episode title."
                 )
-            url = f"https://nzbgeek.info/geekseek.php?moviesgeekseek=1"
-            url += f"&c=5000&browseincludewords="
+            url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1"
+            url += "&c=5000&browseincludewords="
             url += f'{show.title.replace(" ", "+")}+'
             url += f'{episode_title.replace(" ", "+")}'
 

@@ -28,10 +28,11 @@ def test_search_channels():
 
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_nzbg_login():
-    nzbg = NZBGeek()
-    nzbg.login()
+    nzb_geek = NZBGeek()
+    assert 'User-Agent' in nzb_geek.session.headers.keys()
+    nzb_geek.login()
     #  go to dashboard and assert expected info is found
-    r = nzbg.session.get(
+    r = nzb_geek.session.get(
         'https://nzbgeek.info/dashboard.php?myaccount'
     )
     assert 'my account' in str(r.content)
@@ -161,3 +162,9 @@ def test_get_gid():
     nzbgeek.get_gid('Worst Cooks in America')
     show = worst_cooks_query.first()
     assert show.gid == 134441
+
+
+def test_login_bounces_if_already_logged_in():
+    nzbgeek = NZBGeek()
+    nzbgeek.login()
+    nzbgeek.login()
