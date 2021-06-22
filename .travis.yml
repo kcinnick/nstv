@@ -16,4 +16,6 @@ deploy:
     repo: kcinnick/nstv
     python: 3.8
 env:
-    - NZBGEEK_USERNAME=ntucker111
+  global:
+    - NZBGEEK_USERNAME=ntucker1111
+    - TIMEOUT=1000
