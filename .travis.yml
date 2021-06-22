@@ -1,0 +1,19 @@
+language: python
+python:
+- 3.8
+- 3.7
+- 3.6
+install: pip install -U tox-travis
+script: tox
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  user: nicktucker4
+  password:
+    secure: zfd8901lsk_
+  on:
+    tags: true
+    repo: kcinnick/nstv
+    python: 3.8
+env:
+    NZBGEEK_USERNAME=ntucker111
