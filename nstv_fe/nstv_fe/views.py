@@ -51,10 +51,10 @@ def shows_index(request):
     )
 
 
-def show(request, show_id):
-    show_ = Show.objects.filter(id=show_id).first()
-    episodes = Episode.objects.filter(show=show_)
-    index_context = {"title": "Show", "show": show_, "episodes": episodes}
+def show_index(request, show_id):
+    show = Show.objects.filter(id=show_id).first()
+    episodes = Episode.objects.filter(show=show)
+    index_context = {"title": "Show", "show": show, "episodes": episodes}
 
     return render(
         request,

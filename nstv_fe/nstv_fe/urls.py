@@ -22,6 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index),
     path('shows_index/', views.shows_index),
-    path('shows/<int:sid>', views.show),
-    path('shows/<int:sid>/episode/<int:eid>/download', views.download_episode)
+    path('shows/<int:show_id>', views.show_index),
+    path('shows/<int:show_id>/episode/<int:eid>/download', views.download_episode)
 ]

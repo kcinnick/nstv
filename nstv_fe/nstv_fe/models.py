@@ -1,7 +1,10 @@
 from django.db import models
 from django.conf import settings
 
-settings.configure()
+try:
+    settings.configure()
+except RuntimeError:  # settings already configured
+    pass
 
 
 class Show(models.Model):

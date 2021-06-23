@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """Tests for `nstv` package."""
-import os
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -26,7 +26,6 @@ def test_search_channels():
     assert expected_channel_list == actual_channel_list
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_nzbg_login():
     nzb_geek = NZBGeek()
     assert 'User-Agent' in nzb_geek.session.headers.keys()
@@ -38,11 +37,9 @@ def test_nzbg_login():
     assert 'my account' in str(r.content)
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_parse_search_channels_response():
     session = nstv.get_db_session()
 
-    from datetime import datetime, timedelta
     start_date = (datetime.now() - timedelta(1)).strftime('%Y-%m-%d')
     end_date = datetime.now().strftime('%Y-%m-%d')
 
@@ -61,7 +58,6 @@ def test_parse_search_channels_response():
     assert len(episodes) > 10
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_episode_query():
     db_session = nstv.get_db_session()
 
@@ -70,7 +66,6 @@ def test_episode_query():
         assert episode.title in ['Kitchen Cantina', 'Spice It Up!']
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_search_nzbgeek_for_episode():
     db_session = nstv.get_db_session()
     episode = db_session.query(Episode).where(
@@ -81,7 +76,6 @@ def test_search_nzbgeek_for_episode():
     return
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_nzb_by_season_episode_numbers():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -90,7 +84,6 @@ def test_get_nzb_by_season_episode_numbers():
     nzbgeek.get_nzb(show, season_number=48, episode_number=3)
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_nzb_by_episode_title():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -99,7 +92,6 @@ def test_get_nzb_by_episode_title():
     nzbgeek.get_nzb(show, episode_title='Mix and Mache')
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_missing_nzb():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -108,7 +100,6 @@ def test_get_missing_nzb():
         nzbgeek.get_nzb(show, season_number=-99, episode_number=-99)
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_or_create_show():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -125,7 +116,6 @@ def test_get_or_create_show():
     db_session.commit()
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_or_create_episode():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -146,7 +136,6 @@ def test_get_or_create_episode():
     db_session.commit()
 
 
-@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_gid():
     # test setup
     nzbgeek = NZBGeek()
@@ -163,8 +152,45 @@ def test_get_gid():
     show = worst_cooks_query.first()
     assert show.gid == 134441
 
-
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_login_bounces_if_already_logged_in():
     nzbgeek = NZBGeek()
     nzbgeek.login()
     nzbgeek.login()
+
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
+def test_get_or_create_show_with_title_arg():
+    nzbgeek = NZBGeek()
+    nzbgeek.login()
+    db_session = nstv.get_db_session()
+    start_date = (datetime.now() - timedelta(1)).strftime('%Y-%m-%d')
+    end_date = datetime.now().strftime('%Y-%m-%d')
+
+    search_response = nstv.search_channels(
+        start_channel=44,
+        end_channel=46,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    listings = search_response[0]['listings']
+    nstv.get_or_create_show(
+        listing=listings[0],
+        db_session=db_session,
+        title='Seinfeld',
+    )
+
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
+def test_assert_error_is_raised_on_bad_search():
+    nzbgeek = NZBGeek()
+    nzbgeek.login()
+    start_date = (datetime.now() - timedelta(1)).strftime('%Y-%m-%d')
+    end_date = datetime.now().strftime('%Y-%m-%d')
+
+    with pytest.raises(ValueError):
+        nstv.search_channels(
+            start_channel=44,
+            end_channel=12,
+            start_date=start_date,
+            end_date=end_date,
+        )
