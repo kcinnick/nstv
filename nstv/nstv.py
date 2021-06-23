@@ -15,6 +15,13 @@ def search_channels(start_channel, end_channel, start_date, end_date):
     Executes a search for the supplied range of channels from start_channel
     to end_channel and returns the accompanying JSON response object.
     """
+    if start_channel > end_channel:
+        print('The search has a start channel that\'s higher than the end_channel.')
+        print('This doesn\'t make sense.  Check your inputs.')
+        print(f'Start channel: {start_channel}')
+        print(f'End channel: {end_channel}')
+        raise ValueError()
+
     print('\nSearching channels for TV showing details..\n')
     url = f'https://tvtv.us/tvm/t/tv/v4/lineups/95197D/listings/grid?detail='
     url += '%27brief%27&'
@@ -136,12 +143,12 @@ def get_db_session():
 def main():
     session = get_db_session()
 
-    start_date = (datetime.now() - timedelta(10)).strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(20)).strftime('%Y-%m-%d')
     end_date = datetime.now().strftime('%Y-%m-%d')
 
     response = search_channels(
-        start_channel=44,
-        end_channel=47,
+        start_channel=45,
+        end_channel=48,
         start_date=start_date,
         end_date=end_date
     )
