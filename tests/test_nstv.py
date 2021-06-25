@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """Tests for `nstv` package."""
+import os
 from datetime import datetime, timedelta
 import os
 
@@ -27,6 +28,7 @@ def test_search_channels():
     assert expected_channel_list == actual_channel_list
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_nzbg_login():
     nzb_geek = NZBGeek()
     assert 'User-Agent' in nzb_geek.session.headers.keys()
@@ -38,6 +40,7 @@ def test_nzbg_login():
     assert 'my account' in str(r.content)
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_parse_search_channels_response():
     session = nstv.get_db_session()
 
@@ -59,6 +62,7 @@ def test_parse_search_channels_response():
     assert len(episodes) > 10
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_episode_query():
     db_session = nstv.get_db_session()
 
@@ -67,6 +71,7 @@ def test_episode_query():
         assert episode.title in ['Kitchen Cantina', 'Spice It Up!']
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_search_nzbgeek_for_episode():
     db_session = nstv.get_db_session()
     episode = db_session.query(Episode).where(
@@ -77,6 +82,7 @@ def test_search_nzbgeek_for_episode():
     return
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_nzb_by_season_episode_numbers():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -85,6 +91,7 @@ def test_get_nzb_by_season_episode_numbers():
     nzbgeek.get_nzb(show, season_number=48, episode_number=3)
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_nzb_by_episode_title():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -93,6 +100,7 @@ def test_get_nzb_by_episode_title():
     nzbgeek.get_nzb(show, episode_title='Mix and Mache')
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_missing_nzb():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -101,6 +109,7 @@ def test_get_missing_nzb():
         nzbgeek.get_nzb(show, season_number=-99, episode_number=-99)
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_or_create_show():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -117,6 +126,7 @@ def test_get_or_create_show():
     db_session.commit()
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_or_create_episode():
     nzbgeek = NZBGeek()
     nzbgeek.login()
@@ -137,6 +147,7 @@ def test_get_or_create_episode():
     db_session.commit()
 
 
+@pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_gid():
     # test setup
     nzbgeek = NZBGeek()
