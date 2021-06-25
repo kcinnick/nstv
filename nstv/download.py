@@ -89,7 +89,7 @@ class NZBGeek:
 
         if len(releases) == 0:
             #  if a search returns a list of episodes as a result
-            #  instead of a link to a show, this releases search
+            #  instead of a link to a show, this search for releases
             #  replaces the search for geekseek_results <a> tags.
             try:
                 releases_href = soup.find(

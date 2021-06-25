@@ -3,6 +3,7 @@
 """Tests for `nstv` package."""
 import os
 from datetime import datetime, timedelta
+import os
 
 import pytest
 
