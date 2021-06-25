@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """Tests for `nstv` package."""
+import os
 from datetime import datetime, timedelta
 
 import pytest
@@ -152,11 +153,13 @@ def test_get_gid():
     show = worst_cooks_query.first()
     assert show.gid == 134441
 
+
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_login_bounces_if_already_logged_in():
     nzbgeek = NZBGeek()
     nzbgeek.login()
     nzbgeek.login()
+
 
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_get_or_create_show_with_title_arg():
@@ -179,6 +182,7 @@ def test_get_or_create_show_with_title_arg():
         db_session=db_session,
         title='Seinfeld',
     )
+
 
 @pytest.mark.skipif(type(os.getenv("POSTGRES_PASSWORD")) != str, reason=SKIP_REASON)
 def test_assert_error_is_raised_on_bad_search():
