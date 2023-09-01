@@ -1,7 +1,11 @@
+import os
+
 from django.shortcuts import render, redirect
-from .forms import DownloadForm
+from .forms import DownloadForm, AddShowForm
 from .models import Show, Episode
 from .tables import ShowTable
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def index(request):
@@ -18,8 +22,10 @@ def index(request):
             show_title_int = int(form.cleaned_data.get("show_title"))
             show_title = dict(form.fields["show_title"].choices)
             show_title = show_title[show_title_int]
-            show = Show.objects.get(title=show_title)
-
+            try:
+                show = Show.objects.get(title=show_title)
+            except Show.DoesNotExist:
+                return redirect("/add_show")
             print(f"Downloading {show.title} S{season_number} E{episode_number}..")
             try:
                 nzb_geek.get_nzb(
@@ -33,7 +39,7 @@ def index(request):
 
     return render(
         request,
-        "/home/nick/PycharmProjects/nstv/nstv_fe/templates/index.html",
+        f"{BASE_DIR}\\templates\index.html",
         index_context,
     )
 
@@ -46,7 +52,7 @@ def shows_index(request):
 
     return render(
         request,
-        "/home/nick/PycharmProjects/nstv/nstv_fe/templates/shows_index.html",
+        f"{BASE_DIR}\\templates\shows_index.html",
         index_context,
     )
 
@@ -58,7 +64,7 @@ def show_index(request, show_id):
 
     return render(
         request,
-        "/home/nick/PycharmProjects/nstv/nstv_fe/templates/show.html",
+        f"{BASE_DIR}\\templates\\templates\show.html",
         index_context,
     )
 
@@ -83,3 +89,28 @@ def download_episode(request, sid, eid):
         raise NotImplementedError
 
     return redirect(parent_show)
+
+
+def add_show_page(request):
+    index_context = {"title": "Add Show", "add_show_form": AddShowForm()}
+
+    if request.method == "POST":
+        show = Show(
+            title=request.POST.get("title"),
+            start_date=request.POST.get("start_date"),
+            end_date=request.POST.get("end_date"),
+        )
+        show.save()
+        return redirect("/shows")
+    else:
+        return render(
+            request,
+            f"{BASE_DIR}\\templates\\add_show.html",
+            index_context
+        )
+    # show = Show.objects.create(
+    #     title=request.POST.get("title"),
+    #     start_date=request.POST.get("start_date"),
+    #     end_date=request.POST.get("end_date"),
+    # )
+    # show.save()
