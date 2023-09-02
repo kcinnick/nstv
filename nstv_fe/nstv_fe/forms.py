@@ -14,3 +14,8 @@ class DownloadForm(forms.Form):
     )
     season_number = forms.IntegerField(label='season_number')
     episode_number = forms.IntegerField(label='episode_number')
+
+
+class AddShowForm(forms.Form):
+    title = forms.CharField(label='Show Title')
+
