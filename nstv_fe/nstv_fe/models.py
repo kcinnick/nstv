@@ -9,16 +9,12 @@ except RuntimeError:  # settings already configured
 
 class Show(models.Model):
     gid = models.IntegerField(null=True)
-    id = models.IntegerField(primary_key=True)
-    title = models.TextField(null=True, blank=True)
-    start_date = models.DateField()
-    end_date = models.DateField()
+    title = models.TextField()
+    start_date = models.DateField(null=True)
+    end_date = models.DateField(null=True)
 
     def get_absolute_url(self):
         return "/shows/{}".format(str(self.id))
-
-    def __unicode__(self):
-        return self.title
 
     def __str__(self):
         return self.title
@@ -41,9 +37,6 @@ class Episode(models.Model):
     slug = models.TextField()
     season_number = models.IntegerField()
     number = models.IntegerField()
-
-    def __unicode__(self):
-        return self.title
 
     def __str__(self):
         return self.title

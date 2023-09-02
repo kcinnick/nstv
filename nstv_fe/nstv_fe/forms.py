@@ -17,4 +17,5 @@ class DownloadForm(forms.Form):
 
 
 class AddShowForm(forms.Form):
-    show_title = forms.CharField(label='Show Title')
+    title = forms.CharField(label='Show Title')
+

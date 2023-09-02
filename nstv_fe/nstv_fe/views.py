@@ -9,6 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def index(request):
+    print('index')
     from nstv.download import NZBGeek
 
     nzb_geek = NZBGeek()
@@ -45,6 +46,8 @@ def index(request):
 
 
 def shows_index(request):
+    print('shows_index')
+    print(Show.objects.all())
     show_table = ShowTable(Show.objects.all().order_by("id"))
     show_table.paginate(page=request.GET.get("page", 1), per_page=10)
 
@@ -58,6 +61,7 @@ def shows_index(request):
 
 
 def show_index(request, show_id):
+    print('show_index')
     show = Show.objects.filter(id=show_id).first()
     episodes = Episode.objects.filter(show=show)
     index_context = {"title": "Show", "show": show, "episodes": episodes}
@@ -70,6 +74,7 @@ def show_index(request, show_id):
 
 
 def download_episode(request, sid, eid):
+    print('download_episode')
     print(eid, sid)
 
     from nstv.download import NZBGeek
@@ -92,25 +97,20 @@ def download_episode(request, sid, eid):
 
 
 def add_show_page(request):
-    index_context = {"title": "Add Show", "add_show_form": AddShowForm()}
+    form = AddShowForm(request.POST or None)
+    index_context = {"title": "Add Show", "add_show_form": form}
 
     if request.method == "POST":
-        show = Show(
-            title=request.POST.get("title"),
-            start_date=request.POST.get("start_date"),
-            end_date=request.POST.get("end_date"),
-        )
-        show.save()
-        return redirect("/shows")
+        if form.is_valid():
+            show = Show(**form.cleaned_data)
+            show.save()
+            return redirect('shows_index')
+        else:
+            print("Form is not valid")
+            print(form.errors)
     else:
         return render(
             request,
-            f"{BASE_DIR}\\templates\\add_show.html",
-            index_context
+            'add_show.html',
+            index_context,
         )
-    # show = Show.objects.create(
-    #     title=request.POST.get("title"),
-    #     start_date=request.POST.get("start_date"),
-    #     end_date=request.POST.get("end_date"),
-    # )
-    # show.save()
