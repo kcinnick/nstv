@@ -13,7 +13,6 @@ shows = Table(
     Column("title", String, unique=True),
     Column("start_date", Date),
     Column("end_date", Date),
-    Column("slug", String, unique=True),
 )
 
 episodes = Table(
@@ -51,9 +50,6 @@ class Show(Base):
     title = Column(String, unique=True)
     start_date = Column(Date, default=None)
     end_date = Column(Date, default=None)
-    slug = Column(String, unique=True)
-
-    # show.slug is the show's title with all punctuation & non-alphanumeric chars removed
 
     episodes = relationship("Episode")
 

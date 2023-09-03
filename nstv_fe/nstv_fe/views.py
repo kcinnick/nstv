@@ -26,6 +26,7 @@ def index(request):
             try:
                 show = Show.objects.get(title=show_title)
             except Show.DoesNotExist:
+                print(f"Show {show_title} not found.  Adding to database.")
                 return redirect("/add_show")
             print(f"Downloading {show.title} S{season_number} E{episode_number}..")
             try:
