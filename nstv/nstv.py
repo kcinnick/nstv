@@ -123,7 +123,7 @@ def parse_channel_search_response(db_session, response):
 
 def get_db_session():
     database_url = (
-        f'postgresql://postgres:penguin'
+        f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}'
         f'@127.0.0.1:5432/postgres'
     )
     engine = create_engine(database_url, echo=False)
