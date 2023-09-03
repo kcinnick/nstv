@@ -3,7 +3,7 @@ from django import forms
 title_choices = (
     (1, 'Beat Bobby Flay'), (2, 'Chopped'), (3, 'House Hunters'),
     (4, 'House Hunters International'), (5, 'Escape to the Chateau'),
-    (6, 'Chopped Junior'), (7, 'Big Time Bake')
+    (6, 'Chopped Junior'), (7, 'Big Time Bake'), (8, 'Kotaro Lives Alone'),
 )
 
 
