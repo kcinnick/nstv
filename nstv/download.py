@@ -9,7 +9,6 @@ django.setup()
 import requests
 from bs4 import BeautifulSoup
 
-from nstv_fe.nstv_fe.models import Show
 from nstv.nstv import get_db_session
 
 
@@ -70,26 +69,29 @@ class NZBGeek:
         if not self.db_session:
             self.db_session = get_db_session()
 
+        from nstv_fe.nstv_fe.models import Show
         show = self.db_session.query(Show).where(episode.show_id == Show.id).first()
+        print(show)
         return show
 
     def get_gid(self, show_title):
         if not self.db_session:
             self.db_session = get_db_session()
 
+        from nstv_fe.nstv_fe.models import Show
         show = Show.objects.all().filter(title=show_title).first()
         assert show  # raise failure if show doesn't appear to be in DB
 
         url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=5000&browseincludewords={}".format(
             show_title
         ).replace(" ", "%20")
-        print(url)
+        print("download.py: " + url)
         r = self.session.get(url)
 
         soup = BeautifulSoup(r.content, "html.parser")
         geekseek_results = soup.find('div', class_='geekseek_results')
         if 'returned 0' in geekseek_results.text:
-            print('No results found for {}'.format(show_title))
+            print("download.py: " + 'No results found for {}'.format(show_title))
             return
 
         releases_table = soup.find("table", class_="releases")
@@ -99,7 +101,7 @@ class NZBGeek:
         if result.find('span', class_='overlay_title').text.strip() == show_title:
             show.gid = result.get('href').split('tvid=')[1]
             show.save()
-            print('Successfully updated GID for {}'.format(show_title))
+            print("download.py: " + 'Successfully updated GID for {}'.format(show_title))
 
         return
 
