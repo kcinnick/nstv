@@ -2,11 +2,14 @@ import os
 import re
 import webbrowser
 from glob import glob
+import django
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'nstv_fe.nstv_fe.settings')
+django.setup()
 import requests
 from bs4 import BeautifulSoup
 
-from nstv.models import Show
+from nstv_fe.nstv_fe.models import Show
 from nstv.nstv import get_db_session
 
 
@@ -74,67 +77,34 @@ class NZBGeek:
         if not self.db_session:
             self.db_session = get_db_session()
 
-        show = self.db_session.query(Show).where(Show.title == show_title).first()
+        show = Show.objects.all().filter(title=show_title).first()
         assert show  # raise failure if show doesn't appear to be in DB
 
         url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=5000&browseincludewords={}".format(
             show_title
-        )
+        ).replace(" ", "%20")
+        print(url)
         r = self.session.get(url)
 
         soup = BeautifulSoup(r.content, "html.parser")
-        releases = soup.find_all(
-            "a", class_="geekseek_results", attrs={"title": "View Show"}
-        )
+        geekseek_results = soup.find('div', class_='geekseek_results')
+        if 'returned 0' in geekseek_results.text:
+            print('No results found for {}'.format(show_title))
+            return
 
-        if len(releases) == 0:
-            #  if a search returns a list of episodes as a result
-            #  instead of a link to a show, this search for releases
-            #  replaces the search for geekseek_results <a> tags.
-            try:
-                releases_href = soup.find(
-                    "a", attrs={"title": "View all releases for this Show"}
-                ).get("href")
-            except AttributeError as e:
-                raise e
-            gids = {show_title: releases_href.split("=")[-1]}
-        else:
-            gids = {i.text: i.get("href").split("=")[-1] for i in releases}
+        releases_table = soup.find("table", class_="releases")
+        release_table = releases_table.find('table')
+        result = release_table.find('a', title='View Show Page')
+        print(result)
+        if result.find('span', class_='overlay_title').text.strip() == show_title:
+            show.gid = result.get('href').split('tvid=')[1]
+            show.save()
+            print('Successfully updated GID for {}'.format(show_title))
 
-        if "" in gids.keys():
-            gids.pop("")  # remove items without valid keys
-
-        try:
-            show_gid = gids[show_title]
-        except KeyError:
-            #  for some shows (DDD, for instance) the response is a slug'd
-            #  name of the show instead of it's actual, punctuated name.
-            parsed_show_title = show_title.replace(",", "").replace("-", "")
-            parsed_show_title = " ".join([i.title() for i in parsed_show_title.split()])
-            replace_words = {
-                "And": "and",
-                "Symon'S": "Symon's",
-                "Chopped: ": "Chopped ",
-                "Brothers:": "Brothers",
-            }
-            for word in replace_words:
-                if word in parsed_show_title:
-                    parsed_show_title = parsed_show_title.replace(
-                        word, replace_words[word]
-                    )
-
-            show_gid = gids[parsed_show_title]
-
-        show.gid = show_gid
-        self.db_session.add(show)
-        self.db_session.commit()
-
-        print(f"Set GID for {show.title} to {show.gid}.")
-
-        return show_gid
+        return
 
     def get_nzb(
-        self, show, season_number=None, episode_number=None, episode_title=None, hd=True
+            self, show, season_number=None, episode_number=None, episode_title=None, hd=True
     ):
         """
         Searches and downloads the first result on NZBGeek for the given
