@@ -58,9 +58,6 @@ def get_or_create_show(listing, db_session, title=None):
 
     show = Show(
         title=listing['showName'],
-        slug=listing['showName'].replace(
-            ' ', '').replace('-', '').replace(',', '').replace(
-            '\'', '').lower(),
     )
     #show.get_episodes(db_session)
     db_session.add(show)
@@ -126,7 +123,7 @@ def parse_channel_search_response(db_session, response):
 
 def get_db_session():
     database_url = (
-        f'postgresql://postgres:{os.getenv("POSTGRES_PASSWORD")}'
+        f'postgresql://postgres:penguin'
         f'@127.0.0.1:5432/postgres'
     )
     engine = create_engine(database_url, echo=False)
@@ -159,7 +156,6 @@ def main():
 
 if __name__ == '__main__':
     from models import Base, Episode, Show
-
     main()
 else:
     from nstv.models import Base, Episode, Show

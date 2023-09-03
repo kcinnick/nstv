@@ -1,7 +1,12 @@
+import os
+
+import django
 import django_tables2 as tables
 from django.utils.html import format_html
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'nstv_fe.nstv_fe.settings')
+django.setup()
 
-from nstv_fe.models import Show
+from .models import Show
 
 
 class ShowIdColumn(tables.Column):
