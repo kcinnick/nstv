@@ -5,7 +5,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
 from django.shortcuts import render, redirect
 from nstv.models import Show, Episode
-from nstv.forms import DownloadForm, AddShowForm
 
 account = MyPlexAccount('nicktucker4@gmail.com', os.getenv('PLEX_API_KEY'))
 plex = account.resource(os.getenv('PLEX_SERVER')).connect()  # returns a PlexServer instance

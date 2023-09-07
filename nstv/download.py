@@ -7,6 +7,7 @@ import django
 django.setup()
 import requests
 from bs4 import BeautifulSoup
+from .models import Show, Episode
 
 
 class SearchResult:
@@ -66,13 +67,11 @@ class NZBGeek:
         assert os.getenv("NZBGEEK_USERNAME") in str(r.content)
 
     def search_nzbgeek_for_episode(self, episode):
-        from nstv_fe.nstv_fe.models import Show
         show = Show.where(episode.show_id == Show.id).first()
         print(show)
         return show
 
     def get_gid(self, show_title):
-        from nstv_fe.nstv_fe.models import Show
         show = Show.objects.all().filter(title=show_title).first()
         assert show  # raise failure if show doesn't appear to be in DB
 
@@ -116,6 +115,10 @@ class NZBGeek:
         """
         if season_number:
             print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
+            if show.gid:
+                pass
+            else:
+                self.get_gid(show.title)
             url = f"https://nzbgeek.info/geekseek.php?tvid={show.gid}"
             url += f"&season=S{str(season_number).zfill(2)}"
             url += f"&episode=E{str(episode_number).zfill(2)}"
