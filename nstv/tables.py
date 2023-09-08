@@ -6,12 +6,17 @@ from django.utils.html import format_html
 
 django.setup()
 
-from .models import Show
+from .models import Show, Episode
 
 
 class ShowIdColumn(tables.Column):
     def render(self, value):
         return format_html('<a href="/shows/{}" show>{}</a>'.format(value, value))
+
+
+class EpisodeIdColumn(tables.Column):
+    def render(self, value):
+        return format_html('<a href="/episodes/{}" episode>{}</a>'.format(value, value, value))
 
 
 class ShowTable(tables.Table):
@@ -23,6 +28,20 @@ class ShowTable(tables.Table):
 
     class Meta:
         model = Show
+        template_name = "django_tables2/bootstrap.html"
+        row_attrs = {
+            "data-id": lambda record: record.pk,
+        }
+
+
+class EpisodeTable(tables.Table):
+    id = EpisodeIdColumn()
+    title = tables.Column(attrs={"th": {"id": "fooTexT"}})
+    season_number = tables.Column(attrs={"th": {"id": "foo2"}})
+    episode_number = tables.Column(attrs={"th": {"id": "foo2"}})
+
+    class Meta:
+        model = Episode
         template_name = "django_tables2/bootstrap.html"
         row_attrs = {
             "data-id": lambda record: record.pk,

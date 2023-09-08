@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 {% extends "base.html" %}
+{% load render_table from django_tables2 %}
+
 <html lang="en">
 <head>
+
   <meta charset="UTF-8">
     <title>NSTV~ Shows Index</title>
 </head>
 <body>
 {% block content %}
 
-<div style="text-align: center;"><h3>{{ show.title }}</h3></div>
+<div style="text-align: center;"><h1>{{ show.title }}</h1></div>
 
 
 
-{% for episode in episodes %}
-    - <a href="/shows/{{ show.id }}/episode/{{ episode.id }}/download">{{ episode.title }}</a>
-{% endfor %}
+<center>
+    <h3>Episodes on Disk</h3>
+    {% render_table episodes %}
+</center>
 
 {% endblock %}

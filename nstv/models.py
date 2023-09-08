@@ -24,7 +24,6 @@ class Show(models.Model):
 
 
 class Episode(models.Model):
-    id = models.IntegerField(primary_key=True, unique=True)
     show = models.ForeignKey(
         Show,
         related_name="episode_show",
@@ -32,11 +31,10 @@ class Episode(models.Model):
         null=True,
         on_delete=models.CASCADE,
     )
-    air_date = models.DateField()
+    air_date = models.DateField(null=True)
     title = models.TextField()
-    slug = models.TextField()
-    season_number = models.IntegerField()
-    number = models.IntegerField()
+    season_number = models.IntegerField(null=True)
+    number = models.IntegerField(null=True)
 
     def __str__(self):
         return self.title
