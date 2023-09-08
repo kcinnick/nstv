@@ -3,7 +3,7 @@ import os
 from django.shortcuts import render, redirect
 from .forms import DownloadForm, AddShowForm
 from .models import Show, Episode
-from .tables import ShowTable
+from .tables import ShowTable, EpisodeTable
 
 
 def index(request):
@@ -62,8 +62,13 @@ def shows_index(request):
 def show_index(request, show_id):
     print('show_index')
     show = Show.objects.filter(id=show_id).first()
+    print(vars(show))
     episodes = Episode.objects.filter(show=show)
-    index_context = {"title": "Show", "show": show, "episodes": episodes}
+    print(vars(episodes))
+    episodes_table = EpisodeTable(episodes)
+    episodes_table.paginate(page=request.GET.get("page", 1), per_page=10)
+
+    index_context = {"title": "Show", "show": show, "episodes": episodes_table}
 
     return render(
         request,
