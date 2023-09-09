@@ -3,6 +3,7 @@ import re
 import webbrowser
 from glob import glob
 import django
+from pathlib import Path
 
 django.setup()
 import requests
@@ -66,13 +67,13 @@ class NZBGeek:
         assert os.getenv("NZBGEEK_USERNAME") in str(r.content)
 
     def search_nzbgeek_for_episode(self, episode):
-        from nstv_fe.nstv_fe.models import Show
+        from .models import Show
         show = Show.where(episode.show_id == Show.id).first()
         print(show)
         return show
 
     def get_gid(self, show_title):
-        from nstv_fe.nstv_fe.models import Show
+        from .models import Show
         show = Show.objects.all().filter(title=show_title).first()
         assert show  # raise failure if show doesn't appear to be in DB
 
@@ -97,7 +98,7 @@ class NZBGeek:
             show.save()
             print("download.py: " + 'Successfully updated GID for {}'.format(show_title))
 
-        return
+        return show.gid
 
     def get_nzb(
             self, show, season_number=None, episode_number=None, episode_title=None, hd=True
@@ -114,6 +115,8 @@ class NZBGeek:
         @param hd:  bool, grabs only HD-categorized files if set to True
         @return:
         """
+        if not show.gid:
+            show.gid = self.get_gid(show.title)
         if season_number:
             print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
             url = f"https://nzbgeek.info/geekseek.php?tvid={show.gid}"
@@ -149,14 +152,15 @@ class NZBGeek:
         from time import sleep
 
         #  wait until file is downloaded
-        nzb_files = glob("/home/nick/Downloads/*.nzb")
+        nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
         while len(nzb_files) == 0:
             sleep(1)
-            nzb_files = glob("/home/nick/Downloads/*.nzb")
+            nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
         print("\nNZB file downloaded.")
 
         for file in nzb_files:
-            file_name = file.split("/")[-1]
-            dest_path = f"/home/nick/PycharmProjects/nstv/nzbs/{file_name}"
-            os.rename(file, f"/home/nick/PycharmProjects/nstv/nzbs/{file_name}")
+            file_name = file.split("\\")[-1]
+            dest_path = f"{Path.home()}\\PycharmProjects\\djangoProject\\nstv\\nzbs\\{file_name}"
+            if not os.path.exists(dest_path):
+                os.rename(file, dest_path)
             print(f"{file_name} moved to {dest_path}.")
