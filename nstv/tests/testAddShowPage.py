@@ -31,3 +31,12 @@ class AddShowPageTest(TestCase):
 
         self.assertIn('show title 1', response.content.decode())
         self.assertIn('show title 2', response.content.decode())
+
+    def test_can_save_a_POST_request_to_an_existing_list(self):
+        Show.objects.create(title='show title 1', gid=1)
+        Show.objects.create(title='show title 2', gid=2)
+
+        response = self.client.post('/add_show', data={'title': 'A new show title'})
+
+        response = self.client.get('/shows_index')
+        print(response.content.decode())
