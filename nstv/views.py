@@ -46,7 +46,7 @@ def index(request):
 
 def shows_index(request):
     print('shows_index')
-    print(Show.objects.all())
+    print('shows: ', Show.objects.all())
     show_table = ShowTable(Show.objects.all().order_by("id"))
     show_table.paginate(page=request.GET.get("page", 1), per_page=10)
 
@@ -101,6 +101,7 @@ def download_episode(request, sid, eid):
 
 
 def add_show_page(request):
+    print('add_show_page')
     form = AddShowForm(request.POST or None)
     index_context = {"title": "Add Show", "add_show_form": form}
 
@@ -108,10 +109,21 @@ def add_show_page(request):
         if form.is_valid():
             show = Show(**form.cleaned_data)
             show.save()
-            return redirect('shows_index')
+            print('shows: ', Show.objects.all())
+            show_table = ShowTable(Show.objects.all().order_by("id"))
+            show_table.paginate(page=request.GET.get("page", 1), per_page=10)
+
+            index_context = {"title": "Show Index", "shows": show_table}
+
+            return render(
+                request,
+                f"shows_index.html",
+                index_context,
+            )
         else:
             print("Form is not valid")
             print(form.errors)
+            raise Exception
     else:
         return render(
             request,
