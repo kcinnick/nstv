@@ -9,6 +9,14 @@ django.setup()
 import requests
 from bs4 import BeautifulSoup
 
+SHOW_TITLE_REPLACEMENTS = {
+    # sometimes the show title differs from what's on plex and
+    # what is on nzbgeek. When this happens, we can use the below dict
+    # to map the title on plex to the title on nzbgeek.
+    # "title on plex": "title on nzbgeek"
+    "6ixtynin9": "6ixtyNin9 The Series"
+}
+
 
 class SearchResult:
     def __init__(self, result_table):
@@ -73,8 +81,18 @@ class NZBGeek:
         return show
 
     def get_gid(self, show_title):
+        if show_title in SHOW_TITLE_REPLACEMENTS.keys():
+            replacement = True
+        else:
+            replacement = False
+        print(show_title)
+        print("download.py: " + 'Getting GID for {}'.format(show_title))
         from .models import Show
-        show = Show.objects.all().filter(title=show_title).first()
+        if replacement:
+            show = Show.objects.all().filter(title=show_title).first()
+        else:
+            show = Show.objects.all().filter(title=show_title).first()
+
         assert show  # raise failure if show doesn't appear to be in DB
 
         url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=5000&browseincludewords={}".format(
@@ -97,6 +115,13 @@ class NZBGeek:
             show.gid = result.get('href').split('tvid=')[1]
             show.save()
             print("download.py: " + 'Successfully updated GID for {}'.format(show_title))
+        elif show_title in SHOW_TITLE_REPLACEMENTS.keys():
+            show.gid = result.get('href').split('tvid=')[1]
+            show.save()
+            print("download.py: " + 'Successfully updated GID for {}'.format(show_title))
+        else:
+            print(f"download.py: {result.find('span', class_='overlay_title').text.strip()} != {show_title}")
+            print("download.py: " + 'Failed to update GID for {}'.format(show_title))
 
         return show.gid
 
@@ -148,7 +173,6 @@ class NZBGeek:
             print("No results found.")
             return
         webbrowser.open(results[0].download_url)
-        #  TODO: above fails if no download links found
         from time import sleep
 
         #  wait until file is downloaded
