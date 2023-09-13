@@ -2,13 +2,10 @@
 nstv
 ====
 
-a repo for capturing data on what shows were on last night and logic for downloading them if the user chooses.
+a Django-based application for capturing data on what shows were on last night and logic for downloading them if the user chooses.
 
 .. image:: https://img.shields.io/pypi/v/nstv.svg
         :target: https://pypi.python.org/pypi/nstv
-
-.. image:: https://img.shields.io/travis/kcinnick/nstv.svg
-        :target: https://travis-ci.com/kcinnick/nstv
 
 
 * Free software: MIT license

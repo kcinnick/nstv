@@ -57,9 +57,9 @@ def shows_index(request):
 def show_index(request, show_id):
     print('show_index')
     show = Show.objects.filter(id=show_id).first()
-    print(vars(show))
+    # print(vars(show))
     episodes = Episode.objects.filter(show=show)
-    print(vars(episodes))
+    # print(vars(episodes))
     episodes_table = EpisodeTable(episodes)
     episodes_table.paginate(page=request.GET.get("page", 1), per_page=10)
 
@@ -74,7 +74,7 @@ def show_index(request, show_id):
 
 def download_episode(request, sid, eid):
     print('download_episode')
-    print(eid, sid)
+    # print(eid, sid)
 
     from nstv.download import NZBGeek
     nzb_geek = NZBGeek()
@@ -96,18 +96,24 @@ def download_episode(request, sid, eid):
 
 
 def add_show_page(request):
-    print('add_show_page')
     form = AddShowForm(request.POST or None)
     index_context = {"title": "Add Show", "add_show_form": form}
 
-    if request.method == "POST":
-        if form.is_valid():
-            show = Show(**form.cleaned_data)
-            show.save()
-            index_context["form_errors"] = form.errors
-            return HttpResponseRedirect(reverse('shows_index'))
+    if request.method == "POST" and form.is_valid():
+        show = Show(**form.cleaned_data)
+        if Show.objects.filter(title=show.title).exists():
+            print(f"Show {show.title} already exists.")  # TODO: find a way to flash these as messages on the page
+            return HttpResponseRedirect(reverse('shows_index'))  # TODO: in the future, should redirect to show's page
         else:
-            index_context["form_errors"] = form.errors
-            return HttpResponseRedirect(reverse('shows_index'))
-    else:
-        return render(request, "add_show.html", index_context)
+            print(
+                f"Show {show.title} did not previously exist. Show was created."
+            )  # TODO: find a way to flash these as messages on the page
+            show.save()
+
+    index_context["form_errors"] = form.errors
+
+    if form.errors:
+        raise Exception(form.errors)
+        return HttpResponseRedirect(reverse('shows_index'))
+
+    return render(request, "add_show.html", index_context)
