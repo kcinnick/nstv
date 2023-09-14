@@ -117,3 +117,17 @@ def add_show_page(request):
         return HttpResponseRedirect(reverse('shows_index'))
 
     return render(request, "add_show.html", index_context)
+
+
+def delete_show(request, show_id):
+    print('delete_show')
+    if request.method == "POST":
+        print(show_id)
+        show = Show.objects.get(id=show_id)
+        show.delete()
+        print(f"Show {show.title} was deleted.")
+    else:
+        print('delete_show: request.method != "POST"')
+        raise Exception('delete_show: request.method != "POST"')
+
+    return HttpResponseRedirect(reverse('shows_index'))

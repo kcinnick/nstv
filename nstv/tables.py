@@ -19,12 +19,23 @@ class EpisodeIdColumn(tables.Column):
         return format_html('<a href="/episodes/{}" episode>{}</a>'.format(value, value, value))
 
 
+class DeleteColumn(tables.TemplateColumn):
+    def __init__(self, *args, **kwargs):
+        delete_html_str = '''
+        <form action="/delete/{{ record.id }}" method="post">
+            {% csrf_token %}
+            <input type="submit" value="Delete" />
+        </form>'''
+        super().__init__(template_code=delete_html_str, *args, **kwargs)
+
+
 class ShowTable(tables.Table):
-    gid = tables.Column(attrs={"th": {"id": "foo"}})
+    gid = tables.Column(attrs={"th": {"id": "gid"}})
     id = ShowIdColumn()
-    title = tables.Column(attrs={"th": {"id": "fooTexT"}})
-    start_date = tables.Column(attrs={"th": {"id": "foo2"}})
-    end_date = tables.Column(attrs={"th": {"id": "foo2"}})
+    title = tables.Column(attrs={"th": {"id": "title"}})
+    start_date = tables.Column(attrs={"th": {"id": "start_date"}})
+    end_date = tables.Column(attrs={"th": {"id": "end_date"}})
+    delete = DeleteColumn()
 
     class Meta:
         model = Show
@@ -36,9 +47,9 @@ class ShowTable(tables.Table):
 
 class EpisodeTable(tables.Table):
     id = EpisodeIdColumn()
-    title = tables.Column(attrs={"th": {"id": "fooTexT"}})
-    season_number = tables.Column(attrs={"th": {"id": "foo2"}})
-    episode_number = tables.Column(attrs={"th": {"id": "foo2"}})
+    title = tables.Column(attrs={"th": {"id": "title"}})
+    season_number = tables.Column(attrs={"th": {"id": "season_number"}})
+    episode_number = tables.Column(attrs={"th": {"id": "episode_number"}})
 
     class Meta:
         model = Episode

@@ -25,4 +25,5 @@ urlpatterns = [
     path('shows/<int:show_id>', views.show_index),
     path('shows/<int:show_id>/episode/<int:eid>/download', views.download_episode),
     path('add_show', views.add_show_page),
+    path('delete/<int:show_id>', views.delete_show),
 ]
