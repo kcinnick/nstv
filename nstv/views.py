@@ -57,10 +57,7 @@ def shows_index(request):
 def show_index(request, show_id):
     print('show_index')
     show = Show.objects.filter(id=show_id).first()
-    # print(vars(show))
-    episodes = Episode.objects.filter(show=show)
-    # print(vars(episodes))
-    episodes_table = EpisodeTable(episodes)
+    episodes_table = EpisodeTable(show.episodes, order_by="id")
     episodes_table.paginate(page=request.GET.get("page", 1), per_page=10)
 
     index_context = {"title": "Show", "show": show, "episodes": episodes_table}

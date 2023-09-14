@@ -26,7 +26,7 @@ class Show(models.Model):
 class Episode(models.Model):
     show = models.ForeignKey(
         Show,
-        related_name="episode_show",
+        related_name="episodes",
         blank=True,
         null=True,
         on_delete=models.CASCADE,
