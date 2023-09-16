@@ -12,6 +12,7 @@ TVDB_ALIAS = {
     '6ixtynin9': '6ixtynin9 The Series'
 }
 
+
 def find_tvdb_record_for_series(tvdb_api, series_name):
     if series_name in TVDB_ALIAS:
         series_name = TVDB_ALIAS[series_name]
@@ -30,7 +31,7 @@ def find_tvdb_record_for_series(tvdb_api, series_name):
 
 def main():
     tvdb = tvdb_v4_official.TVDB(os.getenv('TVDB_API_KEY'))
-    shows = Show.objects.get(title='6ixtynin9')
+    shows = Show.objects.get(title='Death Note')
     shows = [shows]
     for show in shows:
         nstv_episodes = Episode.objects.filter(show=show)

@@ -94,7 +94,7 @@ def download_episode(request, show_id, episode_id):
             'isn\'t currently supported.\n')
         raise NotImplementedError
 
-    return redirect(parent_show)
+    return redirect(request.META.get('HTTP_REFERER'))
 
 
 def add_show_page(request):
