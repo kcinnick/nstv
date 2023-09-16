@@ -8,6 +8,10 @@ from .forms import DownloadForm, AddShowForm
 from .models import Show, Episode
 from .tables import ShowTable, EpisodeTable
 
+SHOW_ALIASES = {
+    # plex title: django title
+    '6ixtynin9 the Series': '6ixtynin9'
+}
 
 def index(request):
     from nstv.download import NZBGeek
@@ -69,19 +73,20 @@ def show_index(request, show_id):
     )
 
 
-def download_episode(request, sid, eid):
+def download_episode(request, show_id, episode_id):
     print('download_episode')
     # print(eid, sid)
 
     from nstv.download import NZBGeek
     nzb_geek = NZBGeek()
     nzb_geek.login()
-    episode = Episode.objects.get(id=eid)
-    parent_show = Show.objects.get(id=sid)
+    episode = Episode.objects.get(id=episode_id)
+    parent_show = Show.objects.get(id=show_id)
     print('episode title: {} ~'.format(episode.title))
     if episode.title:
         nzb_geek.get_nzb(
-            show=parent_show, episode_title=episode.title
+            show=parent_show, episode_title=episode.title,
+            season_number=episode.season_number, episode_number=episode.episode_number
         )
     else:
         print(
@@ -89,7 +94,7 @@ def download_episode(request, sid, eid):
             'isn\'t currently supported.\n')
         raise NotImplementedError
 
-    return redirect(parent_show)
+    return redirect(request.META.get('HTTP_REFERER'))
 
 
 def add_show_page(request):

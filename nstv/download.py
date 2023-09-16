@@ -86,7 +86,7 @@ class NZBGeek:
         else:
             replacement = False
         print(show_title)
-        print("download.py: " + 'Getting GID for {}'.format(show_title))
+        print("get_gid: " + 'Getting GID for {}'.format(show_title))
         from .models import Show
         if replacement:
             show = Show.objects.all().filter(title=show_title).first()
@@ -98,13 +98,13 @@ class NZBGeek:
         url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=5000&browseincludewords={}".format(
             show_title
         ).replace(" ", "%20")
-        print("download.py: " + url)
+        print("get_gid: " + url)
         r = self.session.get(url)
 
         soup = BeautifulSoup(r.content, "html.parser")
         geekseek_results = soup.find('div', class_='geekseek_results')
         if 'returned 0' in geekseek_results.text:
-            print("download.py: " + 'No results found for {}'.format(show_title))
+            print("get_gid: " + 'No results found for {}'.format(show_title))
             return
 
         releases_table = soup.find("table", class_="releases")
@@ -114,14 +114,14 @@ class NZBGeek:
         if result.find('span', class_='overlay_title').text.strip() == show_title:
             show.gid = result.get('href').split('tvid=')[1]
             show.save()
-            print("download.py: " + 'Successfully updated GID for {}'.format(show_title))
+            print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
         elif show_title in SHOW_TITLE_REPLACEMENTS.keys():
             show.gid = result.get('href').split('tvid=')[1]
             show.save()
-            print("download.py: " + 'Successfully updated GID for {}'.format(show_title))
+            print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
         else:
             print(f"download.py: {result.find('span', class_='overlay_title').text.strip()} != {show_title}")
-            print("download.py: " + 'Failed to update GID for {}'.format(show_title))
+            print("get_gid: " + 'Failed to update GID for {}'.format(show_title))
 
         return show.gid
 
@@ -140,8 +140,11 @@ class NZBGeek:
         @param hd:  bool, grabs only HD-categorized files if set to True
         @return:
         """
+        print("Season number: ", season_number)
+        print("Episode number: ", episode_number)
         if not show.gid:
             show.gid = self.get_gid(show.title)
+        print(f"show.gid == {show.gid} for {show.title}")
         if season_number:
             print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
             url = f"https://nzbgeek.info/geekseek.php?tvid={show.gid}"
@@ -153,10 +156,10 @@ class NZBGeek:
                     "get_nzb needs either season_number & episode_number"
                     " or an episode title."
                 )
-            url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1"
-            url += "&c=5000&browseincludewords="
-            url += f'{show.title.replace(" ", "+")}+'
-            url += f'{episode_title.replace(" ", "+")}'
+            url = f"https://nzbgeek.info/geekseek.php?tvid={show.gid}"
+            raise NotImplementedError
+            # &season=S01&episode=E05
+
 
         r = self.session.get(url)
         print(f"\nRequesting {url}")
@@ -188,3 +191,4 @@ class NZBGeek:
             if not os.path.exists(dest_path):
                 os.rename(file, dest_path)
             print(f"{file_name} moved to {dest_path}.")
+        return
