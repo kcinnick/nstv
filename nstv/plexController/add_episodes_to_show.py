@@ -17,6 +17,7 @@ SHOW_ALIASES = {
     '6ixtynin9 the Series': '6ixtynin9'
 }
 
+
 def add_existing_episodes_for_plex_show(plex_show):
     print("plex_show: ", plex_show)
     if plex_show.title in SHOW_ALIASES:

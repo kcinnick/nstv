@@ -8,6 +8,7 @@ django.setup()
 
 from nstv.models import Show, Episode
 
+
 def find_tvdb_record_for_series(tvdb_api, series_name):
     items = tvdb_api.search(query=series_name, type='series', language='eng')
     print(items)
@@ -42,14 +43,15 @@ def main():
                     break
             if not match:
                 print('No match found for {}'.format(tvdb_episode_listing['name']))
-                # print('Creating episode for {}'.format(tvdb_episode_listing['name']))
-                # Episode.objects.create(
-                #     show=show,
-                #     air_date=tvdb_episode_listing['aired'],
-                #     title=tvdb_episode_listing['name'],
-                #     season_number=tvdb_episode_listing['seasonNumber'],
-                #     number=tvdb_episode_listing['number'],
-                # )
+                print('Creating episode for {}'.format(tvdb_episode_listing['name']))
+                Episode.objects.create(
+                    show=show,
+                    air_date=tvdb_episode_listing['aired'],
+                    title=tvdb_episode_listing['name'],
+                    season_number=tvdb_episode_listing['seasonNumber'],
+                    episode_number=tvdb_episode_listing['number'],
+                    on_disk=False
+                )
     return
 
 
