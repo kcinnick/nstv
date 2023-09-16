@@ -49,7 +49,6 @@ class EpisodeTable(tables.Table):
     id = EpisodeIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
     season_number = tables.Column(attrs={"th": {"id": "season_number"}})
-    episode_number = tables.Column(attrs={"th": {"id": "episode_number"}})
 
     class Meta:
         model = Episode
