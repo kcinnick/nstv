@@ -8,8 +8,13 @@ django.setup()
 
 from nstv.models import Show, Episode
 
+TVDB_ALIAS = {
+    '6ixtynin9': '6ixtynin9 The Series'
+}
 
 def find_tvdb_record_for_series(tvdb_api, series_name):
+    if series_name in TVDB_ALIAS:
+        series_name = TVDB_ALIAS[series_name]
     items = tvdb_api.search(query=series_name, type='series', language='eng')
     print(items)
     for i in items:
@@ -17,17 +22,22 @@ def find_tvdb_record_for_series(tvdb_api, series_name):
         englishTranslation = translations['eng']
         if englishTranslation == series_name:
             return i
+        else:
+            print(f"{englishTranslation} != {series_name}")
+    print('No match found.')
+    raise Exception
 
 
 def main():
     tvdb = tvdb_v4_official.TVDB(os.getenv('TVDB_API_KEY'))
-    shows = Show.objects.get(title='The Secret Life of the Zoo')
+    shows = Show.objects.get(title='6ixtynin9')
     shows = [shows]
     for show in shows:
         nstv_episodes = Episode.objects.filter(show=show)
         print(show.episodes)
         print(show)
         tvdb_record = find_tvdb_record_for_series(tvdb, show.title)
+        print(tvdb_record)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
         tvdb_series_episodes = tvdb.get_series_episodes(tvdb_series['id'], lang='eng')
         tvdb_episode_listings = tvdb_series_episodes['episodes']

@@ -19,6 +19,16 @@ class EpisodeIdColumn(tables.Column):
         return format_html('<a href="/episodes/{}" episode>{}</a>'.format(value, value, value))
 
 
+class DownloadColumn(tables.TemplateColumn):
+    def __init__(self, *args, **kwargs):
+        download_html_str = '''
+        <form action="/shows/{{ record.show_id }}/episode/{{ record.id }}/download" method="post">
+            {% csrf_token %}
+            <input type="submit" value="Download" />
+        </form>'''
+        super().__init__(template_code=download_html_str, *args, **kwargs)
+
+
 class DeleteColumn(tables.TemplateColumn):
     def __init__(self, *args, **kwargs):
         delete_html_str = '''
@@ -49,6 +59,7 @@ class EpisodeTable(tables.Table):
     id = EpisodeIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
     season_number = tables.Column(attrs={"th": {"id": "season_number"}})
+    download = DownloadColumn()
 
     class Meta:
         model = Episode
