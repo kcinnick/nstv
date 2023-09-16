@@ -34,7 +34,8 @@ class Episode(models.Model):
     air_date = models.DateField(null=True)
     title = models.TextField()
     season_number = models.IntegerField(null=True)
-    number = models.IntegerField(null=True)
+    episode_number = models.IntegerField(null=True)
+    on_disk = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
