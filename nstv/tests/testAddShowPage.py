@@ -17,7 +17,7 @@ class AddShowPageTest(TestCase):
 
     def test_can_save_a_POST_request(self):
         response = self.client.post('/add_show', data=self.form_data)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         self.assertEqual(Show.objects.count(), 1)
         show = Show.objects.first()
         for key, value in self.form_data.items():
@@ -29,7 +29,7 @@ class AddShowPageTest(TestCase):
 
     def test_renders_after_POST(self):
         response = self.client.post('/add_show', data={'title': 'A new show title'})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     def test_displays_all_list_items(self):
         Show.objects.create(title='show title 1', gid=1)
@@ -48,6 +48,11 @@ class AddShowPageTest(TestCase):
 
         response = self.client.get('/shows_index')
         self.assertIn("A new show title", response.content.decode())
+
+    def test_redirects_after_POST(self):
+        response = self.client.post('/add_show', data=self.form_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['location'], '/shows_index')
 
     def test_redirects_after_duplicate_POST(self):
         Show.objects.create(title='show title 1', gid=1)

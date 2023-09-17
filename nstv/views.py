@@ -111,12 +111,12 @@ def add_show_page(request):
                 f"Show {show.title} did not previously exist. Show was created."
             )  # TODO: find a way to flash these as messages on the page
             show.save()
+            return HttpResponseRedirect(reverse('shows_index'))
 
     index_context["form_errors"] = form.errors
 
     if form.errors:
         raise Exception(form.errors)
-        return HttpResponseRedirect(reverse('shows_index'))
 
     return render(request, "add_show.html", index_context)
 
