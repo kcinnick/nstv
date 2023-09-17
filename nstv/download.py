@@ -160,7 +160,6 @@ class NZBGeek:
             raise NotImplementedError
             # &season=S01&episode=E05
 
-
         r = self.session.get(url)
         print(f"\nRequesting {url}")
 
@@ -168,7 +167,7 @@ class NZBGeek:
         results = soup.find_all("table", class_="releases")
         results = [SearchResult(i) for i in results]
         if hd:
-            results = [i for i in results if i.category == "TV > HD"]
+            results = [i for i in results if i.category in ["TV > HD", 'TV > Anime']]
 
         # sort results by grabs
 
