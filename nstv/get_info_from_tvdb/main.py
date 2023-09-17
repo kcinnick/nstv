@@ -50,6 +50,10 @@ def main():
                 print('Checking if {} == {}'.format(nstv_episode.title, tvdb_episode_listing['name']))
                 if nstv_episode.title == tvdb_episode_listing['name']:
                     print('Matched {} with {}'.format(nstv_episode.title, tvdb_episode_listing['name']))
+                    nstv_episode.season_number = tvdb_episode_listing['seasonNumber']
+                    nstv_episode.episode_number = tvdb_episode_listing['number']
+                    nstv_episode.air_date = tvdb_episode_listing['aired']
+                    nstv_episode.save()
                     match = True
                     break
             if not match:
