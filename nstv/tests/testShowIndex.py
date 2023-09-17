@@ -10,8 +10,8 @@ class ShowIndexTest(TestCase):
 
     def test_displays_all_episodes(self):
         show = Show.objects.create(title='show title 1', gid=1)
-        Episode.objects.create(show=show, title='episode title 1', season_number=1, number=1)
-        Episode.objects.create(show=show, title='episode title 2', season_number=2, number=2)
+        Episode.objects.create(show=show, title='episode title 1', season_number=1, episode_number=1)
+        Episode.objects.create(show=show, title='episode title 2', season_number=2, episode_number=2)
 
         response = self.client.get(f'/shows/{show.id}')
 
