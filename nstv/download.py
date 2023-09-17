@@ -5,7 +5,9 @@ from glob import glob
 import django
 from pathlib import Path
 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -73,12 +75,7 @@ class NZBGeek:
         self.session.post(nzbgeek_login_url, login_payload)
         r = self.session.get("https://nzbgeek.info/dashboard.php")
         assert os.getenv("NZBGEEK_USERNAME") in str(r.content)
-
-    def search_nzbgeek_for_episode(self, episode):
-        from .models import Show
-        show = Show.where(episode.show_id == Show.id).first()
-        print(show)
-        return show
+        self.logged_in = True
 
     def get_gid(self, show_title):
         if show_title in SHOW_TITLE_REPLACEMENTS.keys():
@@ -107,21 +104,24 @@ class NZBGeek:
             print("get_gid: " + 'No results found for {}'.format(show_title))
             return
 
-        releases_table = soup.find("table", class_="releases")
-        release_table = releases_table.find('table')
-        result = release_table.find('a', title='View Show Page')
-        print(result)
-        if result.find('span', class_='overlay_title').text.strip() == show_title:
-            show.gid = result.get('href').split('tvid=')[1]
-            show.save()
-            print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
-        elif show_title in SHOW_TITLE_REPLACEMENTS.keys():
-            show.gid = result.get('href').split('tvid=')[1]
-            show.save()
-            print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
-        else:
-            print(f"download.py: {result.find('span', class_='overlay_title').text.strip()} != {show_title}")
-            print("get_gid: " + 'Failed to update GID for {}'.format(show_title))
+        releases_tables = soup.find_all("table", class_="releases")
+        for releases_table in releases_tables:
+            release_table = releases_table.find('table')
+            result = release_table.find('a', title='View Show Page')
+            print(result)
+            if result.find('span', class_='overlay_title').text.strip() == show_title:
+                show.gid = result.get('href').split('tvid=')[1]
+                show.save()
+                print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
+                break
+            elif show_title in SHOW_TITLE_REPLACEMENTS.keys():
+                show.gid = result.get('href').split('tvid=')[1]
+                show.save()
+                print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
+                break
+            else:
+                print(f"download.py: {result.find('span', class_='overlay_title').text.strip()} != {show_title}")
+                print("get_gid: " + 'Moving to next result if any.'.format(show_title))
 
         return show.gid
 
