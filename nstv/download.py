@@ -22,7 +22,11 @@ SHOW_TITLE_REPLACEMENTS = {
 
 class SearchResult:
     def __init__(self, result_table):
-        self.title = result_table.find("a", class_="releases_title").text.strip()
+        self.title = result_table.find("a", class_="releases_title")
+        if self.title:
+            self.title = self.title.text.strip()
+        else:
+            return
         self.category = result_table.find(
             "a", class_="releases_category_text"
         ).text.strip()
@@ -164,14 +168,14 @@ class NZBGeek:
 
         soup = BeautifulSoup(r.content, "html.parser")
         results = soup.find_all("table", class_="releases")
-        results = [SearchResult(i) for i in results]
+        results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
         if hd:
-            results = [i for i in results if i.category in ["TV > HD", 'TV > Anime']]
+            results = [i for i in results if i.category in ["TV > HD", 'TV > Anime', 'TV > Foreign']]
             if not len(results):
                 print("No HD results found. Searching for SD results.")
                 results = soup.find_all("table", class_="releases")
-                results = [SearchResult(i) for i in results]
-                results = [i for i in results if i.category in ["TV > SD", 'TV > Anime']]
+                results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
+                results = [i for i in results if i.category in ["TV > SD", 'TV > Anime', 'TV > Foreign']]
         # sort results by grabs
 
         if not len(results):

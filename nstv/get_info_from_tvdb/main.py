@@ -17,7 +17,6 @@ def find_tvdb_record_for_series(tvdb_api, series_name):
     if series_name in TVDB_ALIAS:
         series_name = TVDB_ALIAS[series_name]
     items = tvdb_api.search(query=series_name, type='series', language='eng')
-    print(items)
     for i in items:
         translations = i.get('translations')
         englishTranslation = translations['eng']
@@ -79,4 +78,4 @@ def main(show_title):
 
 
 if __name__ == '__main__':
-    main("Neon Genesis Evangelion")
+    main("The French Chef")
