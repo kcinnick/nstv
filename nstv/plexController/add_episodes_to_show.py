@@ -32,6 +32,8 @@ def add_existing_episodes_for_plex_show(plex_show):
     for plex_episode in plex_show.episodes():
         if plex_episode.title:
             django_episode = django_episodes.filter(title=plex_episode.title).first()
+            if not django_episode:
+                django_episode = django_episodes.filter(title=plex_episode.title.replace('.', '')).first()
             if django_episode:
                 #print('episode already exists')
                 # if the show is on plex, it's on disk, so we can update that if necessary
