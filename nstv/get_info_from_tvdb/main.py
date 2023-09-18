@@ -28,18 +28,19 @@ def find_tvdb_record_for_series(tvdb_api, series_name):
     print('No match found.')
     raise Exception
 
-def main():
+
+def main(show_title):
     tvdb = tvdb_v4_official.TVDB(os.getenv('TVDB_API_KEY'))
-    shows = Show.objects.get(title='Neon Genesis Evangelion')
+    shows = Show.objects.get(title=show_title)
     shows = [shows]
     for show in shows:
         nstv_episodes = Episode.objects.filter(show=show)
-        #print(show.episodes)
-        #print(show)
+        # print(show.episodes)
+        # print(show)
         tvdb_record = find_tvdb_record_for_series(tvdb, show.title)
-        #print(tvdb_record)
+        # print(tvdb_record)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
-        #print(tvdb_series)
+        # print(tvdb_series)
         # add pagination until 0 episodes are found
         page = 0
         while True:
@@ -51,10 +52,10 @@ def main():
         tvdb_episode_listings = tvdb_series_episodes['episodes']
         for tvdb_episode_listing in tvdb_episode_listings:
             match = False
-            #print('---')
-            #print(tvdb_episode_listing)
+            # print('---')
+            # print(tvdb_episode_listing)
             for nstv_episode in nstv_episodes:
-                #print('Checking if {} == {}'.format(nstv_episode.title, tvdb_episode_listing['name']))
+                # print('Checking if {} == {}'.format(nstv_episode.title, tvdb_episode_listing['name']))
                 if nstv_episode.title == tvdb_episode_listing['name']:
                     print('Matched {}.'.format(nstv_episode.title, tvdb_episode_listing['name']))
                     nstv_episode.season_number = tvdb_episode_listing['seasonNumber']
@@ -78,4 +79,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main("Neon Genesis Evangelion")
