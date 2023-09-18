@@ -167,7 +167,11 @@ class NZBGeek:
         results = [SearchResult(i) for i in results]
         if hd:
             results = [i for i in results if i.category in ["TV > HD", 'TV > Anime']]
-
+            if not len(results):
+                print("No HD results found. Searching for SD results.")
+                results = soup.find_all("table", class_="releases")
+                results = [SearchResult(i) for i in results]
+                results = [i for i in results if i.category in ["TV > SD", 'TV > Anime']]
         # sort results by grabs
 
         if not len(results):
