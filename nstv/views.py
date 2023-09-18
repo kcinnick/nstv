@@ -13,6 +13,7 @@ SHOW_ALIASES = {
     '6ixtynin9 the Series': '6ixtynin9'
 }
 
+
 def index(request):
     from nstv.download import NZBGeek
 
@@ -61,7 +62,7 @@ def shows_index(request):
 def show_index(request, show_id):
     print('show_index')
     show = Show.objects.filter(id=show_id).first()
-    episodes_table = EpisodeTable(show.episodes, order_by="id")
+    episodes_table = EpisodeTable(show.episodes)
     episodes_table.paginate(page=request.GET.get("page", 1), per_page=10)
 
     index_context = {"title": "Show", "show": show, "episodes": episodes_table}
@@ -133,3 +134,22 @@ def delete_show(request, show_id):
         raise Exception('delete_show: request.method != "POST"')
 
     return HttpResponseRedirect(reverse('shows_index'))
+
+
+def delete_episode_of_show(request, show_id, episode_id):
+    print('delete_episode_of_show')
+    if request.method == "POST":
+        print(show_id)
+        print(episode_id)
+        show = Show.objects.get(id=show_id)
+
+        for episode in show.episodes.all():
+            if episode.id == episode_id:
+                episode.delete()
+                print(f"Episode {episode.title} was deleted.")
+                break
+    else:
+        print('delete_episode_of_show: request.method != "POST"')
+        raise Exception('delete_show: request.method != "POST"')
+
+    return redirect(request.META.get('HTTP_REFERER'))

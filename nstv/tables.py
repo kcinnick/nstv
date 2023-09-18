@@ -29,14 +29,24 @@ class DownloadColumn(tables.TemplateColumn):
         super().__init__(template_code=download_html_str, *args, **kwargs)
 
 
-class DeleteColumn(tables.TemplateColumn):
+class DeleteShowColumn(tables.TemplateColumn):
     def __init__(self, *args, **kwargs):
-        delete_html_str = '''
+        delete_show_html_str = '''
         <form action="/delete/{{ record.id }}" method="post">
             {% csrf_token %}
             <input type="submit" value="Delete" />
         </form>'''
-        super().__init__(template_code=delete_html_str, *args, **kwargs)
+        super().__init__(template_code=delete_show_html_str, *args, **kwargs)
+
+
+class DeleteEpisodeColumn(tables.TemplateColumn):
+    def __init__(self, *args, **kwargs):
+        delete_episode_html_str = '''
+        <form action="/delete/{{ record.show_id }}/episode/{{ record.id }}" method="post">
+            {% csrf_token %}
+            <input type="submit" value="Delete" />
+        </form>'''
+        super().__init__(template_code=delete_episode_html_str, *args, **kwargs)
 
 
 class ShowTable(tables.Table):
@@ -45,7 +55,7 @@ class ShowTable(tables.Table):
     title = tables.Column(attrs={"th": {"id": "title"}})
     start_date = tables.Column(attrs={"th": {"id": "start_date"}})
     end_date = tables.Column(attrs={"th": {"id": "end_date"}})
-    delete = DeleteColumn()
+    delete = DeleteShowColumn()
 
     class Meta:
         model = Show
@@ -60,9 +70,11 @@ class EpisodeTable(tables.Table):
     title = tables.Column(attrs={"th": {"id": "title"}})
     season_number = tables.Column(attrs={"th": {"id": "season_number"}})
     download = DownloadColumn()
+    delete = DeleteEpisodeColumn()
 
     class Meta:
         model = Episode
+        order_by = ('season_number', 'episode_number')
         template_name = "django_tables2/bootstrap.html"
         row_attrs = {
             "data-id": lambda record: record.pk,

@@ -28,28 +28,35 @@ def find_tvdb_record_for_series(tvdb_api, series_name):
     print('No match found.')
     raise Exception
 
-
 def main():
     tvdb = tvdb_v4_official.TVDB(os.getenv('TVDB_API_KEY'))
-    shows = Show.objects.get(title='Death Note')
+    shows = Show.objects.get(title='Neon Genesis Evangelion')
     shows = [shows]
     for show in shows:
         nstv_episodes = Episode.objects.filter(show=show)
-        print(show.episodes)
-        print(show)
+        #print(show.episodes)
+        #print(show)
         tvdb_record = find_tvdb_record_for_series(tvdb, show.title)
-        print(tvdb_record)
+        #print(tvdb_record)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
-        tvdb_series_episodes = tvdb.get_series_episodes(tvdb_series['id'], lang='eng')
+        #print(tvdb_series)
+        # add pagination until 0 episodes are found
+        page = 0
+        while True:
+            tvdb_series_episodes = tvdb.get_series_episodes(tvdb_series['id'], lang='eng', page=page)
+            if len(tvdb_series_episodes) != 500:
+                break
+            else:
+                page += 1
         tvdb_episode_listings = tvdb_series_episodes['episodes']
         for tvdb_episode_listing in tvdb_episode_listings:
             match = False
-            print('---')
-            print(tvdb_episode_listing)
+            #print('---')
+            #print(tvdb_episode_listing)
             for nstv_episode in nstv_episodes:
-                print('Checking if {} == {}'.format(nstv_episode.title, tvdb_episode_listing['name']))
+                #print('Checking if {} == {}'.format(nstv_episode.title, tvdb_episode_listing['name']))
                 if nstv_episode.title == tvdb_episode_listing['name']:
-                    print('Matched {} with {}'.format(nstv_episode.title, tvdb_episode_listing['name']))
+                    print('Matched {}.'.format(nstv_episode.title, tvdb_episode_listing['name']))
                     nstv_episode.season_number = tvdb_episode_listing['seasonNumber']
                     nstv_episode.episode_number = tvdb_episode_listing['number']
                     nstv_episode.air_date = tvdb_episode_listing['aired']

@@ -82,7 +82,7 @@ class NZBGeek:
             replacement = True
         else:
             replacement = False
-        print(show_title)
+        #print(show_title)
         print("get_gid: " + 'Getting GID for {}'.format(show_title))
         from .models import Show
         if replacement:
@@ -108,7 +108,7 @@ class NZBGeek:
         for releases_table in releases_tables:
             release_table = releases_table.find('table')
             result = release_table.find('a', title='View Show Page')
-            print(result)
+            #print(result)
             if result.find('span', class_='overlay_title').text.strip() == show_title:
                 show.gid = result.get('href').split('tvid=')[1]
                 show.save()
@@ -140,8 +140,6 @@ class NZBGeek:
         @param hd:  bool, grabs only HD-categorized files if set to True
         @return:
         """
-        print("Season number: ", season_number)
-        print("Episode number: ", episode_number)
         if not show.gid:
             show.gid = self.get_gid(show.title)
         print(f"show.gid == {show.gid} for {show.title}")
@@ -156,9 +154,10 @@ class NZBGeek:
                     "get_nzb needs either season_number & episode_number"
                     " or an episode title."
                 )
-            url = f"https://nzbgeek.info/geekseek.php?tvid={show.gid}"
-            raise NotImplementedError
-            # &season=S01&episode=E05
+            # look up the season via tvdb + episode title
+
+            url = f"https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=&browseincludewords={show.title} {episode_title}"
+            print(f"\nSearching for {show.title} {episode_title} via URL: {url}")
 
         r = self.session.get(url)
         print(f"\nRequesting {url}")
@@ -189,5 +188,5 @@ class NZBGeek:
             dest_path = f"{Path.home()}\\PycharmProjects\\djangoProject\\nstv\\nzbs\\{file_name}"
             if not os.path.exists(dest_path):
                 os.rename(file, dest_path)
-            print(f"{file_name} moved to {dest_path}.")
+            #print(f"{file_name} moved to {dest_path}.")
         return

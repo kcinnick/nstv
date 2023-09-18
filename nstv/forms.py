@@ -2,7 +2,7 @@ from django import forms
 from .models import Show
 
 s = Show.objects.all()
-print(s)
+
 title_choices = (
     (show.id, show.title) for show in Show.objects.all().order_by("id")
 )
