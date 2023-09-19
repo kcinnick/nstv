@@ -153,3 +153,10 @@ def delete_episode_of_show(request, show_id, episode_id):
         raise Exception('delete_show: request.method != "POST"')
 
     return redirect(request.META.get('HTTP_REFERER'))
+
+
+def add_episodes_to_database(request, show_id):
+    print('add_episodes_to_database')
+    from nstv.get_info_from_tvdb.main import main
+    main(show_id=show_id)
+    return redirect(request.META.get('HTTP_REFERER'))

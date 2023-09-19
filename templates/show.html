@@ -40,10 +40,10 @@ let csrf_token = getCookie('csrftoken');
             "X-CSRFToken": csrf_token
         },
         success: function(data) {
-            // Do something with the response if you want
+          location.reload();  // Refresh the page here
         },
         error: function() {
-            alert('Something went wrong!');
+            alert('Something went wrong! Look at the console for details.');
         }
     });
 });
