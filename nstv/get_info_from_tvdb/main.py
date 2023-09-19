@@ -28,9 +28,9 @@ def find_tvdb_record_for_series(tvdb_api, series_name):
     raise Exception
 
 
-def main(show_title):
+def main(show_id):
     tvdb = tvdb_v4_official.TVDB(os.getenv('TVDB_API_KEY'))
-    shows = Show.objects.get(title=show_title)
+    shows = Show.objects.get(id=show_id)
     shows = [shows]
     for show in shows:
         nstv_episodes = Episode.objects.filter(show=show)
@@ -78,4 +78,6 @@ def main(show_title):
 
 
 if __name__ == '__main__':
-    main("The French Chef")
+    show_title = 'The French Chef'
+    show = Show.objects.get(title=show_title)
+    main(show.id)
