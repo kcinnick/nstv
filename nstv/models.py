@@ -12,6 +12,7 @@ class Show(models.Model):
     title = models.TextField()
     start_date = models.DateField(null=True)
     end_date = models.DateField(null=True)
+    anime = models.BooleanField(default=False)
 
     def get_absolute_url(self):
         return "/shows/{}".format(str(self.id))
