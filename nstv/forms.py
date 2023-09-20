@@ -1,14 +1,11 @@
 from django import forms
 from .models import Show
 
-s = Show.objects.all()
-
-title_choices = (
-    (show.id, show.title) for show in Show.objects.all().order_by("id")
-)
-
 
 class DownloadForm(forms.Form):
+    title_choices = (
+        (show.id, show.title) for show in Show.objects.all().order_by("id")
+    )
     show_title = forms.ChoiceField(
         label='Show Title',
         choices=title_choices
