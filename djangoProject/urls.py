@@ -29,4 +29,5 @@ urlpatterns = [
     path('delete/<int:show_id>/episode/<int:episode_id>', views.delete_episode_of_show, name='delete_episode_of_show'),
     path('shows/<int:show_id>/add_episodes_to_database', views.add_episodes_to_database,
          name='add_episodes_to_database'),
+    path('move_downloaded_files_to_plex', views.move_downloaded_files_to_plex, name='move_downloaded_files_to_plex')
 ]

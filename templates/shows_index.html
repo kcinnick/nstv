@@ -1,14 +1,50 @@
 <!DOCTYPE html>
 {% extends "base.html" %}
-{% load render_table from django_tables2 %}
-<html lang="en">
 
+{% block content %}
 <head>
   <meta charset="UTF-8">
     <title>NSTV~ Shows Index</title>
 </head>
+    <center><button id="get_info_from_tvdb">Move downloaded files to Plex folder</button></center>
+
+    <script>
+$("#get_info_from_tvdb").click(function() {
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+let csrf_token = getCookie('csrftoken');
+    $.ajax({
+        type: "POST",
+        url: "/move_downloaded_files_to_plex",
+        headers: {
+            "X-CSRFToken": csrf_token
+        },
+        success: function(data) {
+          location.reload();  // Refresh the page here
+        },
+        error: function() {
+            alert('Something went wrong! Look at the console for details.');
+        }
+    });
+});
+</script>
+{% load render_table from django_tables2 %}
+<html lang="en">
+
 <body>
-{% block content %}
 <center>
 <table>
     {% render_table shows %}

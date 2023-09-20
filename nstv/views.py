@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -13,6 +14,8 @@ SHOW_ALIASES = {
     '6ixtynin9 the Series': '6ixtynin9'
 }
 
+NZBGET_COMPLETE_DIR = os.getenv("NZBGET_COMPLETE_DIR")
+PLEX_TV_SHOW_DIR = os.getenv("PLEX_TV_SHOW_DIR")
 
 def index(request):
     from nstv.download import NZBGeek
@@ -159,4 +162,18 @@ def add_episodes_to_database(request, show_id):
     print('add_episodes_to_database')
     from nstv.get_info_from_tvdb.main import main
     main(show_id=show_id)
+    return redirect(request.META.get('HTTP_REFERER'))
+
+
+def move_downloaded_files_to_plex(request):
+    print('move_downloaded_files_to_plex')
+    # get all files in NZBGET_COMPLETE_DIR
+    # and move them to the appropriate plex library
+    for file_name in os.listdir(NZBGET_COMPLETE_DIR):
+        file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
+        # move the file to the appropriate plex library
+        print(f"Moving {file_path} to {PLEX_TV_SHOW_DIR}")
+        # move the file from file_path to PLEX_TV_SHOW_DIR
+        shutil.move(file_path, os.path.join(PLEX_TV_SHOW_DIR, file_name))
+
     return redirect(request.META.get('HTTP_REFERER'))
