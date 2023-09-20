@@ -19,6 +19,8 @@ SHOW_TITLE_REPLACEMENTS = {
     "6ixtynin9": "6ixtyNin9 The Series"
 }
 
+NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
+
 
 class SearchResult:
     def __init__(self, result_table):
@@ -193,8 +195,9 @@ class NZBGeek:
 
         for file in nzb_files:
             file_name = file.split("\\")[-1]
-            dest_path = f"{Path.home()}\\PycharmProjects\\djangoProject\\nstv\\nzbs\\{file_name}"
+            print('Moving {} to {}'.format(file_name, NZBGET_NZB_DIR))
+            dest_path = os.path.join(NZBGET_NZB_DIR, file_name)
             if not os.path.exists(dest_path):
                 os.rename(file, dest_path)
-            #print(f"{file_name} moved to {dest_path}.")
+            print(f"{file_name} moved to {dest_path}.")
         return
