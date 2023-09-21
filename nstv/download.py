@@ -4,12 +4,13 @@ import webbrowser
 from glob import glob
 import django
 from pathlib import Path
+import requests
+from bs4 import BeautifulSoup
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
 
-import requests
-from bs4 import BeautifulSoup
 
 SHOW_TITLE_REPLACEMENTS = {
     # sometimes the show title differs from what's on plex and
@@ -39,6 +40,17 @@ class SearchResult:
         grabs = result_table.find("td", class_='releases_grabs').text.strip().split()[
             0]  # list is of downloads, comments, thumbs-ups, and thumbs-downs
         self.grabs = grabs
+        self.audio_tracks = self.get_audio_tracks(result_table)
+
+    def get_audio_tracks(self, result_table):
+        audio_tracks = []
+        releases_icons = result_table.find_all('img', class_='releases_icons_flag')
+        for release_icon in releases_icons:
+            audio_language_title = release_icon.attrs.get('title')
+            if audio_language_title:
+                audio_tracks.append(audio_language_title.replace('Audio Language: ', ''))
+
+        return audio_tracks
 
     def __str__(self):
         return f"{self.title}, {self.category}"
@@ -88,7 +100,7 @@ class NZBGeek:
             replacement = True
         else:
             replacement = False
-        #print(show_title)
+        # print(show_title)
         print("get_gid: " + 'Getting GID for {}'.format(show_title))
         from .models import Show
         if replacement:
@@ -114,7 +126,7 @@ class NZBGeek:
         for releases_table in releases_tables:
             release_table = releases_table.find('table')
             result = release_table.find('a', title='View Show Page')
-            #print(result)
+            # print(result)
             if result.find('span', class_='overlay_title').text.strip() == show_title:
                 show.gid = result.get('href').split('tvid=')[1]
                 show.save()
@@ -131,8 +143,9 @@ class NZBGeek:
 
         return show.gid
 
-    def get_nzb(
-            self, show, season_number=None, episode_number=None, episode_title=None, hd=True
+    def get_nzb_search_results(
+            self, show, season_number=None, episode_number=None,
+            episode_title=None, hd=True, anime=False
     ):
         """
         Searches and downloads the first result on NZBGeek for the given
@@ -144,6 +157,7 @@ class NZBGeek:
         @param episode_number:  int
         @param episode_title:  str, optional. If given, searches via show and episode title.
         @param hd:  bool, grabs only HD-categorized files if set to True
+        @param anime:  bool, grabs original audio language if set to True
         @return:
         """
         if not show.gid:
@@ -170,16 +184,28 @@ class NZBGeek:
 
         soup = BeautifulSoup(r.content, "html.parser")
         results = soup.find_all("table", class_="releases")
-        results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
         if hd:
             results = [i for i in results if i.category in ["TV > HD", 'TV > Anime', 'TV > Foreign']]
             if not len(results):
                 print("No HD results found. Searching for SD results.")
                 results = soup.find_all("table", class_="releases")
-                results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
-                results = [i for i in results if i.category in ["TV > SD", 'TV > Anime', 'TV > Foreign']]
-        # sort results by grabs
+                parsed_results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
+                parsed_results = [i for i in parsed_results if i.category in ["TV > SD", 'TV > Anime', 'TV > Foreign']]
+        else:
+            parsed_results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
 
+        if anime:
+            # if anime is True, we want to grab the original audio language
+            # we determine if anime is True by checking if the plex show genres contain Anime/Animation.
+            for result in parsed_results:
+                if 'English' in result.audio_tracks and len(result.audio_tracks) == 1:
+                    parsed_results.remove(result)
+
+        return parsed_results
+
+    def download_from_results(self, results):
+        NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
+        print("NZBGET_NZB_DIR: ", NZBGET_NZB_DIR)
         if not len(results):
             print("No results found.")
             return
@@ -197,6 +223,7 @@ class NZBGeek:
             file_name = file.split("\\")[-1]
             print('Moving {} to {}'.format(file_name, NZBGET_NZB_DIR))
             dest_path = os.path.join(NZBGET_NZB_DIR, file_name)
+
             if not os.path.exists(dest_path):
                 os.rename(file, dest_path)
             print(f"{file_name} moved to {dest_path}.")
