@@ -15,12 +15,24 @@ def add_shows_to_nstv():
     plex_tv_shows = plex.library.section('TV Shows')
     for show in plex_tv_shows.search():
         print(show.title)
+        is_anime = False
+        for genre in show.genres:
+            if genre == 'Anime':
+                is_anime = True
+            elif genre == 'Animation':
+                is_anime = True
+            else:
+                is_anime = False
         show_object = Show.objects.all().filter(title=show.title)
         if show_object:
             print('show already exists')
+            if is_anime:
+                show_object[0].anime = True
+                show_object[0].save()
+                print('Show {} is anime'.format(show.title))
         else:
             print('show does not exist')
-            show_object = Show(title=show.title)
+            show_object = Show(title=show.title, anime=is_anime)
             show_object.save()
             print('show added to database')
 
