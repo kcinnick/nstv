@@ -1,6 +1,7 @@
 import os
 import re
 
+import pytest
 from bs4 import BeautifulSoup
 
 from nstv.download import NZBGeek, SearchResult
@@ -16,6 +17,7 @@ def test_login():
     return
 
 
+@pytest.mark.django_db
 def test_get_gid():
     nzb_geek = NZBGeek()
     nzb_geek.login()
@@ -26,6 +28,7 @@ def test_get_gid():
     return
 
 
+@pytest.mark.django_db
 def test_get_nzb_search_results_attributes():
     nzb_geek = NZBGeek()
     nzb_geek.login()
@@ -37,4 +40,3 @@ def test_get_nzb_search_results_attributes():
     for result in results:
         assert result.category == 'TV > Anime'
         assert re.search('[[eE]vangelion', result.title)
-
