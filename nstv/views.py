@@ -37,10 +37,8 @@ def index(request):
             except Show.DoesNotExist:
                 return redirect("add_show_page")
             print(f"Downloading {show.title} S{season_number} E{episode_number}..")
-            try:
-                nzb_geek.get_nzb(show, season_number=season_number, episode_number=episode_number)
-            except AttributeError:
-                print("No download link found. Returning to index.")
+            search_results = nzb_geek.get_nzb_search_results(show, season_number=season_number, episode_number=episode_number)
+            nzb_geek.download_from_results(search_results)
         else:
             index_context["form_errors"] = form.errors
             return render(request, "index.html", index_context)
@@ -88,10 +86,11 @@ def download_episode(request, show_id, episode_id):
     parent_show = Show.objects.get(id=show_id)
     print('episode title: {} ~'.format(episode.title))
     if episode.title:
-        nzb_geek.get_nzb(
+        nzb_search_results = nzb_geek.get_nzb_search_results(
             show=parent_show, episode_title=episode.title,
             season_number=episode.season_number, episode_number=episode.episode_number
         )
+        nzb_geek.download_from_results(nzb_search_results)
     else:
         print(
             'Searching shows by season or episode number '
