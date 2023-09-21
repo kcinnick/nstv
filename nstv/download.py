@@ -17,7 +17,8 @@ SHOW_TITLE_REPLACEMENTS = {
     # what is on nzbgeek. When this happens, we can use the below dict
     # to map the title on plex to the title on nzbgeek.
     # "title on plex": "title on nzbgeek"
-    "6ixtynin9": "6ixtyNin9 The Series"
+    "6ixtynin9": "6ixtyNin9 The Series",
+    "Crash Course in Romance": "Crash Course In Romance",
 }
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
