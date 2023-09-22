@@ -175,10 +175,10 @@ class NZBGeek:
                     "get_nzb needs either season_number & episode_number"
                     " or an episode title."
                 )
-            # look up the season via tvdb + episode title
-
-            url = f"https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=&browseincludewords={show.title} {episode_title}"
-            print(f"\nSearching for {show.title} {episode_title} via URL: {url}")
+            else:
+                # look up the season via tvdb + episode title
+                url = f"https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=&browseincludewords={show.title} {episode_title}"
+                print(f"\nSearching for {show.title} {episode_title} via URL: {url}")
 
         r = self.session.get(url)
         print(f"\nRequesting {url}")
@@ -192,15 +192,22 @@ class NZBGeek:
                 results = soup.find_all("table", class_="releases")
                 parsed_results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
                 parsed_results = [i for i in parsed_results if i.category in ["TV > SD", 'TV > Anime', 'TV > Foreign']]
+            else:
+                parsed_results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
         else:
             parsed_results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
 
         if anime:
             # if anime is True, we want to grab the original audio language
             # we determine if anime is True by checking if the plex show genres contain Anime/Animation.
-            for result in parsed_results:
+            for result in parsed_results.copy():
                 if 'English' in result.audio_tracks and len(result.audio_tracks) == 1:
                     parsed_results.remove(result)
+                else:
+                    if len(result.audio_tracks) == 0:
+                        parsed_results.remove(result)
+                    else:
+                        pass
 
         return parsed_results
 
