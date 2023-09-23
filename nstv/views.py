@@ -6,8 +6,8 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 
 from .forms import DownloadForm, AddShowForm
-from .models import Show, Episode
-from .tables import ShowTable, EpisodeTable
+from .models import Show, Episode, Movie
+from .tables import ShowTable, EpisodeTable, MovieTable
 
 SHOW_ALIASES = {
     # plex title: django title
@@ -178,3 +178,11 @@ def move_downloaded_files_to_plex(request):
         shutil.move(file_path, os.path.join(PLEX_TV_SHOW_DIR, file_name))
 
     return redirect(request.META.get('HTTP_REFERER'))
+
+
+def movie_index(request):
+    print('movie_index')
+    movies = Movie.objects.all()
+    movies_table = MovieTable(movies)
+    index_context = {"title": "Movie Index", "movies": movies_table}
+    return render(request, "movie_index.html", index_context)

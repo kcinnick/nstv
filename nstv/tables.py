@@ -6,7 +6,7 @@ from django.utils.html import format_html
 
 django.setup()
 
-from .models import Show, Episode
+from .models import Show, Episode, Movie
 
 
 class ShowIdColumn(tables.Column):
@@ -49,6 +49,11 @@ class DeleteEpisodeColumn(tables.TemplateColumn):
         super().__init__(template_code=delete_episode_html_str, *args, **kwargs)
 
 
+class MovieIdColumn:
+    def render(self, value):
+        return format_html('<a href="/movies/{}" movie>{}</a>'.format(value, value))
+
+
 class ShowTable(tables.Table):
     gid = tables.Column(attrs={"th": {"id": "gid"}})
     id = ShowIdColumn()
@@ -75,6 +80,32 @@ class EpisodeTable(tables.Table):
     class Meta:
         model = Episode
         order_by = ('season_number', 'episode_number')
+        template_name = "django_tables2/bootstrap.html"
+        row_attrs = {
+            "data-id": lambda record: record.pk,
+        }
+
+
+class DeleteMovieColumn(tables.TemplateColumn):
+    def __init__(self, *args, **kwargs):
+        delete_episode_html_str = '''
+        <form action="/delete/{{ record.show_id }}/episode/{{ record.id }}" method="post">
+            {% csrf_token %}
+            <input type="submit" value="Delete" />
+        </form>'''
+        super().__init__(template_code=delete_episode_html_str, *args, **kwargs)
+
+
+class MovieTable(tables.Table):
+    id = MovieIdColumn()
+    title = tables.Column(attrs={"th": {"id": "title"}})
+    release_date = tables.Column(attrs={"th": {"id": "release_date"}})
+    genre = tables.Column(attrs={"th": {"id": "genre"}})
+    director = tables.Column(attrs={"th": {"id": "director"}})
+    delete = DeleteMovieColumn()
+
+    class Meta:
+        model = Movie
         template_name = "django_tables2/bootstrap.html"
         row_attrs = {
             "data-id": lambda record: record.pk,
