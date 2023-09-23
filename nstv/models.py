@@ -8,10 +8,8 @@ except RuntimeError:  # settings already configured
 
 
 class Show(models.Model):
-    gid = models.IntegerField(default=None)
+    gid = models.IntegerField(default=None, null=True)
     title = models.TextField()
-    start_date = models.DateField(default=None)
-    end_date = models.DateField(default=None)
     anime = models.BooleanField(default=False)
 
     def __str__(self):
@@ -40,3 +38,17 @@ class Episode(models.Model):
 
     class Meta:
         db_table = "episode"
+
+
+class Movie(models.Model):
+    title = models.TextField()
+    release_date = models.DateField(default=None)
+    genre = models.TextField()
+    director = models.TextField()
+    on_disk = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        db_table = "movie"
