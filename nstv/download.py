@@ -17,7 +17,7 @@ SHOW_TITLE_REPLACEMENTS = {
     # what is on nzbgeek. When this happens, we can use the below dict
     # to map the title on plex to the title on nzbgeek.
     # "title on plex": "title on nzbgeek"
-    "6ixtynin9": "6ixtyNin9 The Series",
+    "6ixtynin9": "6ixtynin9 The Series",
     "Crash Course in Romance": "Crash Course In Romance",
 }
 
@@ -26,6 +26,9 @@ NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
 
 class SearchResult:
     def __init__(self, result_table):
+        # TODO: re-write this such that you don't need to return if not result_table
+        if not result_table:
+            return
         self.title = result_table.find("a", class_="releases_title")
         if self.title:
             self.title = self.title.text.strip()
@@ -75,6 +78,7 @@ class NZBGeek:
         except AttributeError as e:
             #  occurs if user is already logged in
             if os.getenv('NZBGEEK_USERNAME') in str(r.content):
+                print('User is already logged in.')
                 return
             else:  # pragma: no cover
                 print('Random thing for login was missing but user is not already logged in.')
@@ -97,19 +101,10 @@ class NZBGeek:
         self.logged_in = True
 
     def get_gid(self, show_title):
-        if show_title in SHOW_TITLE_REPLACEMENTS.keys():
-            replacement = True
-        else:
-            replacement = False
         # print(show_title)
         print("get_gid: " + 'Getting GID for {}'.format(show_title))
         from .models import Show
-        if replacement:
-            show = Show.objects.all().filter(title=show_title).first()
-        else:
-            show = Show.objects.all().filter(title=show_title).first()
-
-        assert show  # raise failure if show doesn't appear to be in DB
+        show = Show.objects.all().filter(title=show_title).first()
 
         url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=5000&browseincludewords={}".format(
             show_title
@@ -161,6 +156,7 @@ class NZBGeek:
         @param anime:  bool, grabs original audio language if set to True
         @return:
         """
+        print(f"download.py: show.gid == {show.gid} for {show.title}")
         if not show.gid:
             show.gid = self.get_gid(show.title)
         print(f"show.gid == {show.gid} for {show.title}")
@@ -180,22 +176,28 @@ class NZBGeek:
                 url = f"https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=&browseincludewords={show.title} {episode_title}"
                 print(f"\nSearching for {show.title} {episode_title} via URL: {url}")
 
-        r = self.session.get(url)
+        r = self.session.get(url.replace(' ', '%20'))
         print(f"\nRequesting {url}")
 
         soup = BeautifulSoup(r.content, "html.parser")
         results = soup.find_all("table", class_="releases")
+        parsed_results = []
+        for result in results:
+            if result.find("a", class_="releases_title"):
+                parsed_results.append(SearchResult(result))
+
         if hd:
-            results = [i for i in results if i.category in ["TV > HD", 'TV > Anime', 'TV > Foreign']]
-            if not len(results):
-                print("No HD results found. Searching for SD results.")
-                results = soup.find_all("table", class_="releases")
-                parsed_results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
-                parsed_results = [i for i in parsed_results if i.category in ["TV > SD", 'TV > Anime', 'TV > Foreign']]
-            else:
-                parsed_results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
-        else:
-            parsed_results = [SearchResult(i) for i in results if i.find("a", class_="releases_title")]
+            # if hd is True, we want to remove the non-HD-categorized files
+            for result in parsed_results.copy():
+                if 'HD' not in result.category:
+                    if not anime:
+                        parsed_results.remove(result)
+                    else:
+                        # sometimes anime isn't categorized as HD, but as TV > Anime
+                        # we don't want to filter out in these cases, so we can pass
+                        pass
+                else:
+                    pass
 
         if anime:
             # if anime is True, we want to grab the original audio language
