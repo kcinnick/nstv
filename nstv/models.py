@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 
 try:
     settings.configure()
@@ -42,8 +43,11 @@ class Episode(models.Model):
 
 class Movie(models.Model):
     title = models.TextField()
-    release_date = models.DateField(default=None)
-    genre = models.TextField()
+    release_date = models.DateField(default=None, null=True)
+    genre = ArrayField(
+        models.CharField(max_length=200, blank=True),
+        default=list,
+    )
     director = models.TextField()
     on_disk = models.BooleanField(default=False)
 
