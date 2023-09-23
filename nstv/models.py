@@ -8,14 +8,11 @@ except RuntimeError:  # settings already configured
 
 
 class Show(models.Model):
-    gid = models.IntegerField(null=True)
+    gid = models.IntegerField(default=None)
     title = models.TextField()
-    start_date = models.DateField(null=True)
-    end_date = models.DateField(null=True)
+    start_date = models.DateField(default=None)
+    end_date = models.DateField(default=None)
     anime = models.BooleanField(default=False)
-
-    def get_absolute_url(self):
-        return "/shows/{}".format(str(self.id))
 
     def __str__(self):
         return self.title
