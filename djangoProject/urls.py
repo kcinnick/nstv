@@ -24,6 +24,7 @@ urlpatterns = [
     path('shows_index', views.shows_index, name='shows_index'),
     path('shows/<int:show_id>', views.show_index, name='show_index'),
     path('shows/<int:show_id>/episode/<int:episode_id>/download', views.download_episode, name='download_episode'),
+    path('movie_index', views.movie_index, name='movie_index'),
     path('add_show', views.add_show_page, name='add_show'),
     path('delete/<int:show_id>', views.delete_show, name='delete_show'),
     path('delete/<int:show_id>/episode/<int:episode_id>', views.delete_episode_of_show, name='delete_episode_of_show'),
