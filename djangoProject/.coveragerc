@@ -1,0 +1,3 @@
+[run]
+omit =
+    C:\Users\Nick\PycharmProjects\djangoProject\nstv\tests\testDownload.py

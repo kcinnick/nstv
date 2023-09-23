@@ -17,6 +17,7 @@ SHOW_ALIASES = {
 NZBGET_COMPLETE_DIR = os.getenv("NZBGET_COMPLETE_DIR")
 PLEX_TV_SHOW_DIR = os.getenv("PLEX_TV_SHOW_DIR")
 
+
 def index(request):
     from nstv.download import NZBGeek
 
@@ -37,7 +38,8 @@ def index(request):
             except Show.DoesNotExist:
                 return redirect("add_show_page")
             print(f"Downloading {show.title} S{season_number} E{episode_number}..")
-            search_results = nzb_geek.get_nzb_search_results(show, season_number=season_number, episode_number=episode_number)
+            search_results = nzb_geek.get_nzb_search_results(show, season_number=season_number,
+                                                             episode_number=episode_number)
             nzb_geek.download_from_results(search_results)
         else:
             index_context["form_errors"] = form.errors
