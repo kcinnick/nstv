@@ -88,18 +88,17 @@ class EpisodeTable(tables.Table):
 
 class DeleteMovieColumn(tables.TemplateColumn):
     def __init__(self, *args, **kwargs):
-        delete_episode_html_str = '''
-        <form action="/delete/{{ record.show_id }}/episode/{{ record.id }}" method="post">
+        delete_movie_html_str = '''
+        <form action="/delete/movies/{{ record.id }}" method="post">
             {% csrf_token %}
             <input type="submit" value="Delete" />
         </form>'''
-        super().__init__(template_code=delete_episode_html_str, *args, **kwargs)
+        super().__init__(template_code=delete_movie_html_str, *args, **kwargs)
 
 
 class MovieTable(tables.Table):
     id = MovieIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
-    release_date = tables.Column(attrs={"th": {"id": "release_date"}})
     genre = tables.Column(attrs={"th": {"id": "genre"}})
     director = tables.Column(attrs={"th": {"id": "director"}})
     delete = DeleteMovieColumn()

@@ -26,6 +26,8 @@ urlpatterns = [
     path('shows/<int:show_id>/episode/<int:episode_id>/download', views.download_episode, name='download_episode'),
     path('movie_index', views.movie_index, name='movie_index'),
     path('add_show', views.add_show_page, name='add_show'),
+    path('add_movie', views.add_movie_page, name='add_movie'),
+    path('delete/movies/<int:movie_id>', views.delete_movie, name='delete_movie'),
     path('delete/<int:show_id>', views.delete_show, name='delete_show'),
     path('delete/<int:show_id>/episode/<int:episode_id>', views.delete_episode_of_show, name='delete_episode_of_show'),
     path('shows/<int:show_id>/add_episodes_to_database', views.add_episodes_to_database,
