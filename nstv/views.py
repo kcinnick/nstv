@@ -11,7 +11,8 @@ from .tables import ShowTable, EpisodeTable, MovieTable
 
 SHOW_ALIASES = {
     # plex title: django title
-    '6ixtynin9 the Series': '6ixtynin9'
+    '6ixtynin9 the Series': '6ixtynin9',
+    'Jeopardy!': 'Jeopardy',
 }
 
 NZBGET_COMPLETE_DIR = os.getenv("NZBGET_COMPLETE_DIR")

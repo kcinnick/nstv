@@ -16,7 +16,7 @@ class ShowIdColumn(tables.Column):
 
 class EpisodeIdColumn(tables.Column):
     def render(self, value):
-        return format_html('<a href="/episodes/{}" episode>{}</a>'.format(value, value, value))
+        return format_html('{}'.format(value, value, value))
 
 
 class DownloadColumn(tables.TemplateColumn):
@@ -58,8 +58,8 @@ class ShowTable(tables.Table):
     gid = tables.Column(attrs={"th": {"id": "gid"}})
     id = ShowIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
-    start_date = tables.Column(attrs={"th": {"id": "start_date"}})
-    end_date = tables.Column(attrs={"th": {"id": "end_date"}})
+    #start_date = tables.Column(attrs={"th": {"id": "start_date"}})
+    #end_date = tables.Column(attrs={"th": {"id": "end_date"}})
     delete = DeleteShowColumn()
 
     class Meta:
