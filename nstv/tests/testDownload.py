@@ -1,12 +1,15 @@
 import os
 import re
+from unittest.mock import Mock
+from time import sleep
 
 import pytest
 from bs4 import BeautifulSoup
 from django.test import TestCase
 
 from nstv.download import NZBGeek, SearchResult
-from nstv.models import Show
+from nstv.models import Show, Episode
+from nstv.views import download_episode
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
 
@@ -55,7 +58,8 @@ class NZBGeekTestCase(TestCase):
         self.nzb_geek.download_from_results(empty_result_set)
 
     def test_get_nzb_search_results_without_season_number(self):
-        search_results = self.nzb_geek.get_nzb_search_results(self.seinfeld_show_record, episode_title='The Pony Remark')
+        search_results = self.nzb_geek.get_nzb_search_results(self.seinfeld_show_record,
+                                                              episode_title='The Pony Remark')
         match_regex = re.compile(r'THE.PONY.REMARK', re.IGNORECASE)
         assert len(search_results) > 0
         for search_result in search_results:
@@ -111,3 +115,34 @@ class SearchResultTestCase(TestCase):
             'The.Secret.Life.of.the.Zoo-S10E01-Extraordinary.Births.HDTV-720p, TV > HD',
             search_result.__str__(),
         )
+
+
+class TestDownloadEpisode(TestCase):
+    def setUp(self):
+        self.nzb_geek = NZBGeek()
+        self.nzb_geek.login()
+        self.zoo_show_record = Show.objects.create(title='The Secret Life of the Zoo', gid='306705')
+        self.zoo_show_record.save()
+        self.zoo_show_episode = Episode.objects.create(
+            show=self.zoo_show_record,
+            season_number=10,
+            episode_number=6,
+            title='Episode 6',
+            on_disk=False,
+        )
+
+    def tearDown(self):
+        self.zoo_show_record.delete()
+        self.zoo_show_episode.delete()
+
+    def test_download_episode(self):
+        request = Mock()
+        request.META = {'HTTP_REFERER': 'http://127.0.0.1:8000/shows/52?page=1'}
+        download_episode(request, self.zoo_show_record.id, self.zoo_show_episode.id)
+        sleep(5)
+        self.assertTrue(
+            os.path.exists(os.path.join(
+                NZBGET_NZB_DIR,
+                'The.Secret.Life.of.the.Zoo-S10E06-Episode.6.WEBDL-1080p.nzb'))
+        )
+        return
