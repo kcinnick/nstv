@@ -32,16 +32,14 @@ def index(request):
             episode_number = form.cleaned_data["episode_number"]
             show_title_int = int(form.cleaned_data.get("show_title"))
             show_title = dict(form.fields["show_title"].choices)
-            show_title = show_title[show_title_int]
-            try:
-                show = Show.objects.get(title=show_title)
-            except Show.DoesNotExist:
-                return redirect("add_show_page")
+            show_title = show_title.get(show_title_int)
+            show = Show.objects.get(title=show_title)
             print(f"Downloading {show.title} S{season_number} E{episode_number}..")
             search_results = nzb_geek.get_nzb_search_results(show, season_number=season_number,
                                                              episode_number=episode_number)
             nzb_geek.download_from_results(search_results)
         else:
+            print(form.errors)
             index_context["form_errors"] = form.errors
             return render(request, "index.html", index_context)
 

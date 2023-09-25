@@ -3,6 +3,10 @@ from .models import Show
 
 
 class DownloadForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['show_title'].choices = [(show.id, show.title) for show in Show.objects.all()]
+
     title_choices = (
         (show.id, show.title) for show in Show.objects.all().order_by("id")
     )
