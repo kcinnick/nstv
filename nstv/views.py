@@ -89,7 +89,8 @@ def download_episode(request, show_id, episode_id):
     if episode.title:
         nzb_search_results = nzb_geek.get_nzb_search_results(
             show=parent_show, episode_title=episode.title,
-            season_number=episode.season_number, episode_number=episode.episode_number
+            season_number=episode.season_number, episode_number=episode.episode_number,
+            anime=parent_show.anime
         )
         nzb_geek.download_from_results(nzb_search_results)
     else:
@@ -175,6 +176,9 @@ def move_downloaded_files_to_plex(request):
         print(f"Moving {file_path} to {PLEX_TV_SHOW_DIR}")
         # move the file from file_path to PLEX_TV_SHOW_DIR
         shutil.move(file_path, os.path.join(PLEX_TV_SHOW_DIR, file_name))
+
+    from .plexController.add_episodes_to_show import main as add_episodes_to_show
+    add_episodes_to_show()
 
     return redirect(request.META.get('HTTP_REFERER'))
 
