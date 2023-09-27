@@ -84,7 +84,8 @@ class SearchResultTestCase(TestCase):
             self.zoo_show_record, season_number=10, episode_number=1, hd=True
         )
         self.search_results_for_anime = self.nzb_geek.get_nzb_search_results(
-            self.anime_record, season_number=1, episode_number=15, anime=True
+            self.anime_record, season_number=1, episode_number=15, anime=True,
+            hd=False
         )
 
     def tearDown(self):
@@ -105,7 +106,7 @@ class SearchResultTestCase(TestCase):
         self.assertTrue(search_result.grabs)
 
     def test_get_audio_tracks_for_anime(self):
-        search_result = self.search_results_for_anime[0]
+        search_result = self.search_results_for_anime[3]
         self.assertTrue(search_result.audio_tracks)
         self.assertTrue('Japanese' in search_result.audio_tracks)
 
