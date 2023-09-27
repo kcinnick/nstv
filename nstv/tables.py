@@ -58,8 +58,8 @@ class ShowTable(tables.Table):
     gid = tables.Column(attrs={"th": {"id": "gid"}})
     id = ShowIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
-    #start_date = tables.Column(attrs={"th": {"id": "start_date"}})
-    #end_date = tables.Column(attrs={"th": {"id": "end_date"}})
+    # start_date = tables.Column(attrs={"th": {"id": "start_date"}})
+    # end_date = tables.Column(attrs={"th": {"id": "end_date"}})
     delete = DeleteShowColumn()
 
     class Meta:
@@ -88,12 +88,22 @@ class EpisodeTable(tables.Table):
 
 class DeleteMovieColumn(tables.TemplateColumn):
     def __init__(self, *args, **kwargs):
-        delete_episode_html_str = '''
-        <form action="/delete/{{ record.show_id }}/episode/{{ record.id }}" method="post">
+        delete_movie_html_str = '''
+        <form action="/delete/movies/{{ record.id }}" method="post">
             {% csrf_token %}
             <input type="submit" value="Delete" />
         </form>'''
-        super().__init__(template_code=delete_episode_html_str, *args, **kwargs)
+        super().__init__(template_code=delete_movie_html_str, *args, **kwargs)
+
+
+class DownloadMovieColumn(tables.TemplateColumn):
+    def __init__(self, *args, **kwargs):
+        download_html_str = '''
+        <form action="/movies/{{ record.id }}/download" method="post">
+            {% csrf_token %}
+            <input type="submit" value="Download" />
+        </form>'''
+        super().__init__(template_code=download_html_str, *args, **kwargs)
 
 
 class MovieTable(tables.Table):
@@ -103,6 +113,7 @@ class MovieTable(tables.Table):
     genre = tables.Column(attrs={"th": {"id": "genre"}})
     director = tables.Column(attrs={"th": {"id": "director"}})
     delete = DeleteMovieColumn()
+    download = DownloadMovieColumn()
 
     class Meta:
         model = Movie

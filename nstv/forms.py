@@ -20,3 +20,7 @@ class DownloadForm(forms.Form):
 
 class AddShowForm(forms.Form):
     title = forms.CharField(label='Show Title')
+
+
+class AddMovieForm(forms.Form):
+    title = forms.CharField(label='Movie Title')

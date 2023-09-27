@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
 
-from .forms import DownloadForm, AddShowForm
+from .forms import DownloadForm, AddShowForm, AddMovieForm
 from .models import Show, Episode, Movie
 from .tables import ShowTable, EpisodeTable, MovieTable
 
@@ -126,6 +126,30 @@ def add_show_page(request):
     return render(request, "add_show.html", index_context)
 
 
+def add_movie_page(request):
+    form = AddMovieForm(request.POST or None)
+    index_context = {"title": "Add Movie", "add_movie_form": form}
+
+    if request.method == "POST" and form.is_valid():
+        movie = Movie(**form.cleaned_data)
+        if Movie.objects.filter(title=movie.title).exists():
+            print(f"Movie {movie.title} already exists.")  # TODO: find a way to flash these as messages on the page
+            return HttpResponseRedirect(reverse('movie_index'))  # TODO: in the future, should redirect to show's page
+        else:
+            print(
+                f"Movie {movie.title} did not previously exist. Movie created."
+            )  # TODO: find a way to flash these as messages on the page
+            movie.save()
+            return HttpResponseRedirect(reverse('movie_index'))
+
+    index_context["form_errors"] = form.errors
+
+    if form.errors:
+        raise Exception(form.errors)
+
+    return render(request, "add_movie.html", index_context)
+
+
 def delete_show(request, show_id):
     print('delete_show')
     if request.method == "POST":
@@ -185,3 +209,28 @@ def movie_index(request):
     movies_table = MovieTable(movies)
     index_context = {"title": "Movie Index", "movies": movies_table}
     return render(request, "movie_index.html", index_context)
+
+
+def delete_movie(request, movie_id):
+    print('delete_movie')
+    if request.method == "POST":
+        movie = Movie.objects.get(id=movie_id)
+        movie.delete()
+        print(f"Movie {movie.title} was deleted.")
+    else:
+        print('delete_movie: request.method != "POST"')
+        raise Exception('delete_movie: request.method != "POST"')
+
+    return HttpResponseRedirect(reverse('movie_index'))
+
+
+def download_movie(request, movie_id):
+    print('download_movie')
+    from nstv.download import NZBGeek
+    nzb_geek = NZBGeek()
+    nzb_geek.login()
+    movie = Movie.objects.get(id=movie_id)
+    print('movie title: {} ~'.format(movie.title))
+
+    return HttpResponseRedirect(reverse('movie_index'))
+

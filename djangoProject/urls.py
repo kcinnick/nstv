@@ -26,9 +26,13 @@ urlpatterns = [
     path('shows/<int:show_id>/episode/<int:episode_id>/download', views.download_episode, name='download_episode'),
     path('movie_index', views.movie_index, name='movie_index'),
     path('add_show', views.add_show_page, name='add_show'),
+    path('add_movie', views.add_movie_page, name='add_movie'),
+    path('delete/movies/<int:movie_id>', views.delete_movie, name='delete_movie'),
     path('delete/<int:show_id>', views.delete_show, name='delete_show'),
     path('delete/<int:show_id>/episode/<int:episode_id>', views.delete_episode_of_show, name='delete_episode_of_show'),
+    path('delete/movie/<int:movie_id>', views.delete_movie, name='delete_movie'),
     path('shows/<int:show_id>/add_episodes_to_database', views.add_episodes_to_database,
          name='add_episodes_to_database'),
+    path('movies/<int:movie_id>/download', views.download_movie, name='download_movie'),
     path('move_downloaded_files_to_plex', views.move_downloaded_files_to_plex, name='move_downloaded_files_to_plex')
 ]
