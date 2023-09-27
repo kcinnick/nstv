@@ -224,14 +224,13 @@ def delete_movie(request, movie_id):
     return HttpResponseRedirect(reverse('movie_index'))
 
 
-def delete_movie(request, movie_id):
-    print('delete_movie')
-    if request.method == "POST":
-        movie = Movie.objects.get(id=movie_id)
-        #movie.delete()
-        print(f"Movie {movie.title} was deleted.")
-    else:
-        print('delete_movie: request.method != "POST"')
-        raise Exception('delete_movie: request.method != "POST"')
+def download_movie(request, movie_id):
+    print('download_movie')
+    from nstv.download import NZBGeek
+    nzb_geek = NZBGeek()
+    nzb_geek.login()
+    movie = Movie.objects.get(id=movie_id)
+    print('movie title: {} ~'.format(movie.title))
 
     return HttpResponseRedirect(reverse('movie_index'))
+

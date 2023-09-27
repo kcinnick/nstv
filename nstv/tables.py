@@ -96,6 +96,16 @@ class DeleteMovieColumn(tables.TemplateColumn):
         super().__init__(template_code=delete_movie_html_str, *args, **kwargs)
 
 
+class DownloadMovieColumn(tables.TemplateColumn):
+    def __init__(self, *args, **kwargs):
+        download_html_str = '''
+        <form action="/movies/{{ record.id }}/download" method="post">
+            {% csrf_token %}
+            <input type="submit" value="Download" />
+        </form>'''
+        super().__init__(template_code=download_html_str, *args, **kwargs)
+
+
 class MovieTable(tables.Table):
     id = MovieIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
@@ -103,6 +113,7 @@ class MovieTable(tables.Table):
     genre = tables.Column(attrs={"th": {"id": "genre"}})
     director = tables.Column(attrs={"th": {"id": "director"}})
     delete = DeleteMovieColumn()
+    download = DownloadMovieColumn()
 
     class Meta:
         model = Movie
