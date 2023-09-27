@@ -42,6 +42,7 @@ class Episode(models.Model):
 
 
 class Movie(models.Model):
+    gid = models.IntegerField(default=None, null=True)
     title = models.TextField()
     release_date = models.DateField(default=None, null=True)
     genre = ArrayField(
