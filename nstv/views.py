@@ -142,10 +142,7 @@ def delete_show(request, show_id):
 def delete_episode_of_show(request, show_id, episode_id):
     print('delete_episode_of_show')
     if request.method == "POST":
-        print(show_id)
-        print(episode_id)
         show = Show.objects.get(id=show_id)
-
         for episode in show.episodes.all():
             if episode.id == episode_id:
                 episode.delete()
@@ -155,7 +152,7 @@ def delete_episode_of_show(request, show_id, episode_id):
         print('delete_episode_of_show: request.method != "POST"')
         raise Exception('delete_show: request.method != "POST"')
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return HttpResponseRedirect(reverse('show_index', args=(show_id,)))
 
 
 def add_episodes_to_database(request, show_id):
