@@ -16,7 +16,7 @@ class ShowIdColumn(tables.Column):
 
 class EpisodeIdColumn(tables.Column):
     def render(self, value):
-        return format_html('<a href="/episodes/{}" episode>{}</a>'.format(value, value, value))
+        return format_html('{}'.format(value, value, value))
 
 
 class DownloadColumn(tables.TemplateColumn):

@@ -17,11 +17,14 @@ def add_shows_to_nstv():
         print(show.title)
         is_anime = False
         for genre in show.genres:
-            if genre == 'Anime':
+            if str(genre).strip() == 'Anime':
                 is_anime = True
-            elif genre == 'Animation':
+                break
+            elif str(genre).strip() == 'Animation':
                 is_anime = True
+                break
             else:
+                print('genre: ', genre)
                 is_anime = False
         show_object = Show.objects.all().filter(title=show.title)
         if show_object:

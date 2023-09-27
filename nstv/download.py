@@ -156,7 +156,8 @@ class NZBGeek:
         @param anime:  bool, grabs original audio language if set to True
         @return:
         """
-        print(f"download.py: show.gid == {show.gid} for {show.title}")
+        print(f"download.get_nzb_search_results: show.gid == {show.gid} for {show.title}")
+        print("download.get_nzb_search_results: is anime is {}".format(anime))
         if not show.gid:
             show.gid = self.get_gid(show.title)
         print(f"show.gid == {show.gid} for {show.title}")
@@ -188,15 +189,19 @@ class NZBGeek:
 
         if hd:
             # if hd is True, we want to remove the non-HD-categorized files
+            print("download.get_nzb_search_results: Removing non-HD-categorized files.")
             for result in parsed_results.copy():
                 if 'HD' not in result.category:
                     if not anime:
+                        #print(f"download.get_nzb_search_results: Removing {result.title} because it's not HD or anime.")
                         parsed_results.remove(result)
                     else:
+                        #print(f"download.get_nzb_search_results: {result.title} is not HD, but anime is True, so we'll keep it.")
                         # sometimes anime isn't categorized as HD, but as TV > Anime
                         # we don't want to filter out in these cases, so we can pass
                         pass
                 else:
+                    #print(f"download.get_nzb_search_results: {result.title} is HD, so we'll keep it.")
                     pass
 
         if anime:
@@ -204,12 +209,10 @@ class NZBGeek:
             # we determine if anime is True by checking if the plex show genres contain Anime/Animation.
             for result in parsed_results.copy():
                 if 'English' in result.audio_tracks and len(result.audio_tracks) == 1:
+                    print(f"download.get_nzb_search_results: Removing {result.title} because it's only in English.")
                     parsed_results.remove(result)
                 else:
-                    if len(result.audio_tracks) == 0:
-                        parsed_results.remove(result)
-                    else:
-                        pass
+                    pass
 
         return parsed_results
 

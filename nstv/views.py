@@ -11,7 +11,8 @@ from .tables import ShowTable, EpisodeTable, MovieTable
 
 SHOW_ALIASES = {
     # plex title: django title
-    '6ixtynin9 the Series': '6ixtynin9'
+    '6ixtynin9 the Series': '6ixtynin9',
+    'Jeopardy!': 'Jeopardy',
 }
 
 NZBGET_COMPLETE_DIR = os.getenv("NZBGET_COMPLETE_DIR")
@@ -32,16 +33,14 @@ def index(request):
             episode_number = form.cleaned_data["episode_number"]
             show_title_int = int(form.cleaned_data.get("show_title"))
             show_title = dict(form.fields["show_title"].choices)
-            show_title = show_title[show_title_int]
-            try:
-                show = Show.objects.get(title=show_title)
-            except Show.DoesNotExist:
-                return redirect("add_show_page")
+            show_title = show_title.get(show_title_int)
+            show = Show.objects.get(title=show_title)
             print(f"Downloading {show.title} S{season_number} E{episode_number}..")
             search_results = nzb_geek.get_nzb_search_results(show, season_number=season_number,
                                                              episode_number=episode_number)
             nzb_geek.download_from_results(search_results)
         else:
+            print(form.errors)
             index_context["form_errors"] = form.errors
             return render(request, "index.html", index_context)
 
@@ -90,7 +89,8 @@ def download_episode(request, show_id, episode_id):
     if episode.title:
         nzb_search_results = nzb_geek.get_nzb_search_results(
             show=parent_show, episode_title=episode.title,
-            season_number=episode.season_number, episode_number=episode.episode_number
+            season_number=episode.season_number, episode_number=episode.episode_number,
+            anime=parent_show.anime
         )
         nzb_geek.download_from_results(nzb_search_results)
     else:
@@ -99,7 +99,7 @@ def download_episode(request, show_id, episode_id):
             'isn\'t currently supported.\n')
         raise NotImplementedError
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def add_show_page(request):
@@ -153,7 +153,6 @@ def add_movie_page(request):
 def delete_show(request, show_id):
     print('delete_show')
     if request.method == "POST":
-        print(show_id)
         show = Show.objects.get(id=show_id)
         show.delete()
         print(f"Show {show.title} was deleted.")
@@ -167,10 +166,7 @@ def delete_show(request, show_id):
 def delete_episode_of_show(request, show_id, episode_id):
     print('delete_episode_of_show')
     if request.method == "POST":
-        print(show_id)
-        print(episode_id)
         show = Show.objects.get(id=show_id)
-
         for episode in show.episodes.all():
             if episode.id == episode_id:
                 episode.delete()
@@ -180,7 +176,7 @@ def delete_episode_of_show(request, show_id, episode_id):
         print('delete_episode_of_show: request.method != "POST"')
         raise Exception('delete_show: request.method != "POST"')
 
-    return redirect(request.META.get('HTTP_REFERER'))
+    return HttpResponseRedirect(reverse('show_index', args=(show_id,)))
 
 
 def add_episodes_to_database(request, show_id):
@@ -200,6 +196,9 @@ def move_downloaded_files_to_plex(request):
         print(f"Moving {file_path} to {PLEX_TV_SHOW_DIR}")
         # move the file from file_path to PLEX_TV_SHOW_DIR
         shutil.move(file_path, os.path.join(PLEX_TV_SHOW_DIR, file_name))
+
+    from .plexController.add_episodes_to_show import main as add_episodes_to_show
+    add_episodes_to_show()
 
     return redirect(request.META.get('HTTP_REFERER'))
 
