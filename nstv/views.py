@@ -129,7 +129,6 @@ def add_show_page(request):
 def delete_show(request, show_id):
     print('delete_show')
     if request.method == "POST":
-        print(show_id)
         show = Show.objects.get(id=show_id)
         show.delete()
         print(f"Show {show.title} was deleted.")
