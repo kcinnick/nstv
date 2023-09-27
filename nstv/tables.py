@@ -58,8 +58,8 @@ class ShowTable(tables.Table):
     gid = tables.Column(attrs={"th": {"id": "gid"}})
     id = ShowIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
-    start_date = tables.Column(attrs={"th": {"id": "start_date"}})
-    end_date = tables.Column(attrs={"th": {"id": "end_date"}})
+    # start_date = tables.Column(attrs={"th": {"id": "start_date"}})
+    # end_date = tables.Column(attrs={"th": {"id": "end_date"}})
     delete = DeleteShowColumn()
 
     class Meta:
@@ -99,6 +99,7 @@ class DeleteMovieColumn(tables.TemplateColumn):
 class MovieTable(tables.Table):
     id = MovieIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
+    release_date = tables.Column(attrs={"th": {"id": "release_date"}})
     genre = tables.Column(attrs={"th": {"id": "genre"}})
     director = tables.Column(attrs={"th": {"id": "director"}})
     delete = DeleteMovieColumn()

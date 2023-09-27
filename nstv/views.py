@@ -216,6 +216,19 @@ def delete_movie(request, movie_id):
     print('delete_movie')
     if request.method == "POST":
         movie = Movie.objects.get(id=movie_id)
+        movie.delete()
+        print(f"Movie {movie.title} was deleted.")
+    else:
+        print('delete_movie: request.method != "POST"')
+        raise Exception('delete_movie: request.method != "POST"')
+
+    return HttpResponseRedirect(reverse('movie_index'))
+
+
+def delete_movie(request, movie_id):
+    print('delete_movie')
+    if request.method == "POST":
+        movie = Movie.objects.get(id=movie_id)
         #movie.delete()
         print(f"Movie {movie.title} was deleted.")
     else:
