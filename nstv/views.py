@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
 
+from .download import NZBGeek
 from .forms import DownloadForm, AddShowForm, AddMovieForm
 from .models import Show, Episode, Movie
 from .tables import ShowTable, EpisodeTable, MovieTable
@@ -20,8 +21,6 @@ PLEX_TV_SHOW_DIR = os.getenv("PLEX_TV_SHOW_DIR")
 
 
 def index(request):
-    from nstv.download import NZBGeek
-
     nzb_geek = NZBGeek()
     nzb_geek.login()
     form = DownloadForm(request.POST or None)
@@ -79,8 +78,6 @@ def show_index(request, show_id):
 def download_episode(request, show_id, episode_id):
     print('download_episode')
     # print(eid, sid)
-
-    from nstv.download import NZBGeek
     nzb_geek = NZBGeek()
     nzb_geek.login()
     episode = Episode.objects.get(id=episode_id)
@@ -134,12 +131,21 @@ def add_movie_page(request):
         movie = Movie(**form.cleaned_data)
         if Movie.objects.filter(title=movie.title).exists():
             print(f"Movie {movie.title} already exists.")  # TODO: find a way to flash these as messages on the page
+            if movie.gid is not None:
+                pass
+            else:
+                nzb_geek = NZBGeek()
+                nzb_geek.login()
+                nzb_geek.get_gid_for_movie(movie)
             return HttpResponseRedirect(reverse('movie_index'))  # TODO: in the future, should redirect to show's page
         else:
             print(
                 f"Movie {movie.title} did not previously exist. Movie created."
             )  # TODO: find a way to flash these as messages on the page
             movie.save()
+            nzb_geek = NZBGeek()
+            nzb_geek.login()
+            nzb_geek.get_gid_for_movie(movie)
             return HttpResponseRedirect(reverse('movie_index'))
 
     index_context["form_errors"] = form.errors
@@ -226,11 +232,9 @@ def delete_movie(request, movie_id):
 
 def download_movie(request, movie_id):
     print('download_movie')
-    from nstv.download import NZBGeek
     nzb_geek = NZBGeek()
     nzb_geek.login()
     movie = Movie.objects.get(id=movie_id)
     print('movie title: {} ~'.format(movie.title))
 
     return HttpResponseRedirect(reverse('movie_index'))
-

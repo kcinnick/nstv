@@ -6,7 +6,7 @@ import django
 from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
-
+from .models import Movie
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
@@ -138,6 +138,39 @@ class NZBGeek:
                 print("get_gid: " + 'Moving to next result if any.'.format(show_title))
 
         return show.gid
+
+    def get_gid_for_movie(self, movie):
+        print("get_gid_for_movie: " + 'Getting GID for {}'.format(movie.title))
+        movie = Movie.objects.all().filter(title=movie.title).first()
+
+        url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=2000&browseincludewords={}".format(
+            movie.title
+        ).replace(" ", "%20")
+        print("get_gid_for_movie: " + url)
+        r = self.session.get(url)
+
+        soup = BeautifulSoup(r.content, "html.parser")
+        geekseek_results = soup.find('div', class_='geekseek_results')
+        if 'returned 0' in geekseek_results.text:
+            print("get_gid_for_movie: " + 'No results found for {}'.format(movie.title))
+            return
+
+        releases_tables = soup.find_all("table", class_="releases")
+        for releases_table in releases_tables:
+            print('-------')
+            print("Movie title: ", movie.title)
+            if movie.title in releases_table.find('td', class_='releases_item_release').text.strip():
+                # TODO: add year check
+                print("get_gid_for_movie: " + 'Found a match for {}'.format(movie.title))
+                print(releases_table)
+                movie.gid = releases_table.find('a', class_='geekseek_results').get('href').split('?movieid=')[1]
+                movie.save()
+                print("get_gid_for_movie: " + 'Successfully updated GID for {}'.format(movie.title))
+                break
+            else:
+                continue
+
+        return movie.gid
 
     def get_nzb_search_results(
             self, show, season_number=None, episode_number=None,
