@@ -249,6 +249,23 @@ class NZBGeek:
 
         return parsed_results
 
+    def get_nzb_search_results_for_movie(self, movie, quality='1080p'):
+        url = f"https://nzbgeek.info/geekseek.php?movieid={movie.gid}&browsestatsordervar=desc"
+        if quality:
+            url += f"&view=1&browsequality={quality}"
+
+        r = self.session.get(url.replace(' ', '%20'))
+        print(f"\nRequesting {url}")
+
+        soup = BeautifulSoup(r.content, "html.parser")
+        results = soup.find_all("table", class_="releases")
+        parsed_results = []
+        for result in results:
+            if result.find("a", class_="releases_title"):
+                parsed_results.append(SearchResult(result))
+
+        return parsed_results
+
     def download_from_results(self, results):
         NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
         print("NZBGET_NZB_DIR: ", NZBGET_NZB_DIR)
