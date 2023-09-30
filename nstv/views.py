@@ -236,5 +236,7 @@ def download_movie(request, movie_id):
     nzb_geek.login()
     movie = Movie.objects.get(id=movie_id)
     print('movie title: {} ~'.format(movie.title))
+    search_results = nzb_geek.get_nzb_search_results_for_movie(movie)
+    nzb_geek.download_from_results(search_results)
 
     return HttpResponseRedirect(reverse('movie_index'))
