@@ -9,7 +9,8 @@ django.setup()
 from nstv.models import Show, Episode
 
 TVDB_ALIAS = {
-    '6ixtynin9': '6ixtynin9 The Series'
+    '6ixtynin9': '6ixtynin9 The Series',
+    "Little Shark's Day Out": "Little Shark's Outings",
 }
 
 
@@ -24,8 +25,8 @@ def find_tvdb_record_for_series(tvdb_api, series_name):
             return i
         else:
             print(f"{englishTranslation} != {series_name}")
-    print('No match found.')
-    raise Exception
+
+    raise Exception('No match found.')
 
 
 def main(show_id):

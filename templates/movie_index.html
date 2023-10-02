@@ -9,6 +9,41 @@
 </head>
 <body>
 {% block content %}
+    <center><button id="move_files_to_plex">Move downloaded files to Plex folder</button></center>
+
+    <script>
+$("#move_files_to_plex").click(function() {
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+let csrf_token = getCookie('csrftoken');
+    $.ajax({
+        type: "POST",
+        url: "/movies/move_downloaded_files_to_plex",
+        headers: {
+            "X-CSRFToken": csrf_token
+        },
+        success: function(data) {
+          location.reload();  // Refresh the page here
+        },
+        error: function() {
+            alert('Something went wrong! Look at the console for details.');
+        }
+    });
+});
+</script>
 
 <center>
     <h3>Movies</h3>

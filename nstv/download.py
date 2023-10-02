@@ -19,6 +19,7 @@ SHOW_TITLE_REPLACEMENTS = {
     # "title on plex": "title on nzbgeek"
     "6ixtynin9": "6ixtynin9 The Series",
     "Crash Course in Romance": "Crash Course In Romance",
+    "Little Shark's Day Out": "Little Sharks Outings",
 }
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
@@ -105,6 +106,11 @@ class NZBGeek:
         print("get_gid: " + 'Getting GID for {}'.format(show_title))
         from .models import Show
         show = Show.objects.all().filter(title=show_title).first()
+        print(show)
+
+        if show_title in SHOW_TITLE_REPLACEMENTS.keys():
+            show_title = SHOW_TITLE_REPLACEMENTS[show_title]
+            print("get_gid: " + 'Replacing show title with {}'.format(show_title))
 
         url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=5000&browseincludewords={}".format(
             show_title

@@ -18,6 +18,7 @@ SHOW_ALIASES = {
 
 NZBGET_COMPLETE_DIR = os.getenv("NZBGET_COMPLETE_DIR")
 PLEX_TV_SHOW_DIR = os.getenv("PLEX_TV_SHOW_DIR")
+PLEX_MOVIES_DIR = os.getenv("PLEX_MOVIES_DIR")
 
 
 def index(request):
@@ -192,20 +193,23 @@ def add_episodes_to_database(request, show_id):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-def move_downloaded_files_to_plex(request):
-    print('move_downloaded_files_to_plex')
-    # get all files in NZBGET_COMPLETE_DIR
-    # and move them to the appropriate plex library
+def move_downloaded_files_to_plex(request, plex_dir):
+    print(f'move_downloaded_files_to_{plex_dir.split("_")[-1]}')
     for file_name in os.listdir(NZBGET_COMPLETE_DIR):
         file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
-        # move the file to the appropriate plex library
-        print(f"Moving {file_path} to {PLEX_TV_SHOW_DIR}")
-        # move the file from file_path to PLEX_TV_SHOW_DIR
-        shutil.move(file_path, os.path.join(PLEX_TV_SHOW_DIR, file_name))
+        print(f"Moving {file_path} to {plex_dir}")
+        shutil.move(file_path, os.path.join(plex_dir, file_name))
 
+
+def move_downloaded_tv_show_files_to_plex(request):
+    move_downloaded_files_to_plex(request, PLEX_TV_SHOW_DIR)
     from .plexController.add_episodes_to_show import main as add_episodes_to_show
     add_episodes_to_show()
+    return redirect(request.META.get('HTTP_REFERER'))
 
+
+def move_downloaded_movie_files_to_plex(request):
+    move_downloaded_files_to_plex(request, PLEX_MOVIES_DIR)
     return redirect(request.META.get('HTTP_REFERER'))
 
 
