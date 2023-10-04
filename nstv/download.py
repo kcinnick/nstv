@@ -19,7 +19,7 @@ SHOW_TITLE_REPLACEMENTS = {
     # "title on plex": "title on nzbgeek"
     "6ixtynin9": "6ixtynin9 The Series",
     "Crash Course in Romance": "Crash Course In Romance",
-    "Little Shark's Day Out": "Little Sharks Outings",
+    "Little Shark's Day Out": "Little Shark Outings",
 }
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
@@ -68,6 +68,19 @@ class NZBGeek:
         self.db_session = None
         self.logged_in = False
 
+    def search_and_parse_results(self, url):
+        r = self.session.get(url.replace(' ', '%20'))
+        print(f"\nRequesting {url}")
+
+        soup = BeautifulSoup(r.content, "html.parser")
+        results = soup.find_all("table", class_="releases")
+        parsed_results = []
+        for result in results:
+            if result.find("a", class_="releases_title"):
+                parsed_results.append(SearchResult(result))
+
+        return parsed_results
+
     def login(self):
         # get nzbgeek csrf token
         r = self.session.get("https://nzbgeek.info/logon.php")
@@ -86,8 +99,6 @@ class NZBGeek:
                 print('This should never happen. Something is wrong.  Look at the stacktrace:')
                 print('\nHTML Content:', r.content)
                 raise e
-                #  until, (or if ever) the above occurs, we'll remove the noqa's above and test it accordingly.
-                #  until then, unsure how to test it.
         # login to nzbgeek
         nzbgeek_login_url = "https://nzbgeek.info/logon.php"
         login_payload = {
@@ -106,7 +117,6 @@ class NZBGeek:
         print("get_gid: " + 'Getting GID for {}'.format(show_title))
         from .models import Show
         show = Show.objects.all().filter(title=show_title).first()
-        print(show)
 
         if show_title in SHOW_TITLE_REPLACEMENTS.keys():
             show_title = SHOW_TITLE_REPLACEMENTS[show_title]
@@ -199,8 +209,10 @@ class NZBGeek:
         print("download.get_nzb_search_results: is anime is {}".format(anime))
         if not show.gid:
             show.gid = self.get_gid(show.title)
+            if not show.gid:
+                raise AttributeError(f"download.get_nzb_search_results: No GID found for {show.title}")
         print(f"show.gid == {show.gid} for {show.title}")
-        if season_number:
+        if season_number is not None:
             print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
             url = f"https://nzbgeek.info/geekseek.php?tvid={show.gid}"
             url += f"&season=S{str(season_number).zfill(2)}"
@@ -216,15 +228,7 @@ class NZBGeek:
                 url = f"https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=&browseincludewords={show.title} {episode_title}"
                 print(f"\nSearching for {show.title} {episode_title} via URL: {url}")
 
-        r = self.session.get(url.replace(' ', '%20'))
-        print(f"\nRequesting {url}")
-
-        soup = BeautifulSoup(r.content, "html.parser")
-        results = soup.find_all("table", class_="releases")
-        parsed_results = []
-        for result in results:
-            if result.find("a", class_="releases_title"):
-                parsed_results.append(SearchResult(result))
+        parsed_results = self.search_and_parse_results(url)
 
         if hd:
             # if hd is True, we want to remove the non-HD-categorized files
@@ -260,15 +264,7 @@ class NZBGeek:
         if quality:
             url += f"&view=1&browsequality={quality}"
 
-        r = self.session.get(url.replace(' ', '%20'))
-        print(f"\nRequesting {url}")
-
-        soup = BeautifulSoup(r.content, "html.parser")
-        results = soup.find_all("table", class_="releases")
-        parsed_results = []
-        for result in results:
-            if result.find("a", class_="releases_title"):
-                parsed_results.append(SearchResult(result))
+        parsed_results = self.search_and_parse_results(url)
 
         return parsed_results
 
@@ -284,7 +280,7 @@ class NZBGeek:
         #  wait until file is downloaded
         nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
         while len(nzb_files) == 0:
-            sleep(1)
+            sleep(5)
             nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
         print("\nNZB file downloaded.")
 
