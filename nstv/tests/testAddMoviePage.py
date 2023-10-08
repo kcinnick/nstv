@@ -35,7 +35,7 @@ class AddMoviePageTest(TestCase):
         Movie.objects.create(title='movie title 1', gid=1)
         Movie.objects.create(title='movie title 2', gid=2)
 
-        response = self.client.get('/movie_index')
+        response = self.client.get('/movies_index')
 
         self.assertIn('movie title 1', response.content.decode())
         self.assertIn('movie title 2', response.content.decode())
@@ -46,13 +46,13 @@ class AddMoviePageTest(TestCase):
 
         self.client.post('/add_movie', data={'title': 'A new movie title'})
 
-        response = self.client.get('/movie_index')
+        response = self.client.get('/movies_index')
         self.assertIn("A new movie title", response.content.decode())
 
     def test_redirects_after_POST(self):
         response = self.client.post('/add_movie', data=self.form_data)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['location'], '/movie_index')
+        self.assertEqual(response['location'], '/movies_index')
 
     def test_redirects_after_duplicate_POST(self):
         Movie.objects.create(title='movie title 1', gid=1)
@@ -60,4 +60,4 @@ class AddMoviePageTest(TestCase):
 
         response = self.client.post('/add_movie', data={'title': 'movie title 1'})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['location'], '/movie_index')
+        self.assertEqual(response['location'], '/movies_index')
