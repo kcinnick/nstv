@@ -175,11 +175,14 @@ class NZBGeek:
         for releases_table in releases_tables:
             print('-------')
             print("Movie title: ", movie.title)
-            if movie.title in releases_table.find('td', class_='releases_item_release').text.strip():
+            releases_item = releases_table.find('td', class_='releases_item_release')
+            if releases_item is None:
+                print("get_gid_for_movie: " + 'No results found for {}'.format(movie.title))
+            elif movie.title in releases_item.text.strip():
                 # TODO: add year check
                 print("get_gid_for_movie: " + 'Found a match for {}'.format(movie.title))
-                print(releases_table)
-                movie.gid = releases_table.find('a', class_='geekseek_results').get('href').split('?movieid=')[1]
+                print(releases_item)
+                movie.gid = releases_item.find('a', class_='geekseek_results').get('href').split('?movieid=')[1]
                 movie.save()
                 print("get_gid_for_movie: " + 'Successfully updated GID for {}'.format(movie.title))
                 break
