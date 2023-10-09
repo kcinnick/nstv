@@ -49,7 +49,7 @@ class DeleteEpisodeColumn(tables.TemplateColumn):
         super().__init__(template_code=delete_episode_html_str, *args, **kwargs)
 
 
-class MovieIdColumn:
+class MovieIdColumn(tables.Column):
     def render(self, value):
         return format_html('<a href="/movies/{}" movie>{}</a>'.format(value, value))
 
