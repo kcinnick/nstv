@@ -24,7 +24,7 @@ urlpatterns = [
     path('shows_index', views.shows_index, name='shows_index'),
     path('shows/<int:show_id>', views.show_index, name='show_index'),
     path('shows/<int:show_id>/episode/<int:episode_id>/download', views.download_episode, name='download_episode'),
-    path('movie_index', views.movie_index, name='movie_index'),
+    path('movies_index', views.movies_index, name='movies_index'),
     path('add_show', views.add_show_page, name='add_show'),
     path('add_movie', views.add_movie_page, name='add_movie'),
     path('delete/movies/<int:movie_id>', views.delete_movie, name='delete_movie'),
@@ -36,4 +36,5 @@ urlpatterns = [
     path('movies/<int:movie_id>/download', views.download_movie, name='download_movie'),
     path('shows/move_downloaded_files_to_plex', views.move_downloaded_tv_show_files_to_plex, name='move_downloaded_tv_show_files_to_plex'),
     path('movies/move_downloaded_files_to_plex', views.move_downloaded_movie_files_to_plex, name='move_downloaded_movie_files_to_plex'),
+    path('movies/<int:movie_id>', views.movie_index, name='movie_index'),
 ]

@@ -138,7 +138,7 @@ def add_movie_page(request):
                 nzb_geek = NZBGeek()
                 nzb_geek.login()
                 nzb_geek.get_gid_for_movie(movie)
-            return HttpResponseRedirect(reverse('movie_index'))  # TODO: in the future, should redirect to show's page
+            return HttpResponseRedirect(reverse('movies_index'))  # TODO: in the future, should redirect to movie's page
         else:
             print(
                 f"Movie {movie.title} did not previously exist. Movie created."
@@ -147,7 +147,7 @@ def add_movie_page(request):
             nzb_geek = NZBGeek()
             nzb_geek.login()
             nzb_geek.get_gid_for_movie(movie)
-            return HttpResponseRedirect(reverse('movie_index'))
+            return HttpResponseRedirect(reverse('movies_index'))
 
     index_context["form_errors"] = form.errors
 
@@ -213,12 +213,12 @@ def move_downloaded_movie_files_to_plex(request):
     return redirect(request.META.get('HTTP_REFERER'))
 
 
-def movie_index(request):
-    print('movie_index')
+def movies_index(request):
+    print('movies_index')
     movies = Movie.objects.all()
     movies_table = MovieTable(movies)
     index_context = {"title": "Movie Index", "movies": movies_table}
-    return render(request, "movie_index.html", index_context)
+    return render(request, "movies_index.html", index_context)
 
 
 def delete_movie(request, movie_id):
@@ -231,7 +231,7 @@ def delete_movie(request, movie_id):
         print('delete_movie: request.method != "POST"')
         raise Exception('delete_movie: request.method != "POST"')
 
-    return HttpResponseRedirect(reverse('movie_index'))
+    return HttpResponseRedirect(reverse('movies_index'))
 
 
 def download_movie(request, movie_id):
@@ -243,4 +243,12 @@ def download_movie(request, movie_id):
     search_results = nzb_geek.get_nzb_search_results_for_movie(movie)
     nzb_geek.download_from_results(search_results)
 
-    return HttpResponseRedirect(reverse('movie_index'))
+    return HttpResponseRedirect(reverse('movies_index'))
+
+
+def movie_index(request, movie_id):
+    print('movie_index')
+    movie = Movie.objects.filter(id=movie_id).first()
+    index_context = {"title": "Movie", "movie": movie}
+
+    return render(request, "movie.html", index_context)
