@@ -244,3 +244,11 @@ def download_movie(request, movie_id):
     nzb_geek.download_from_results(search_results)
 
     return HttpResponseRedirect(reverse('movies_index'))
+
+
+def movie_index(request, movie_id):
+    print('movie_index')
+    movie = Movie.objects.filter(id=movie_id).first()
+    index_context = {"title": "Movie", "movie": movie}
+
+    return render(request, "movie.html", index_context)

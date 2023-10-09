@@ -36,4 +36,5 @@ urlpatterns = [
     path('movies/<int:movie_id>/download', views.download_movie, name='download_movie'),
     path('shows/move_downloaded_files_to_plex', views.move_downloaded_tv_show_files_to_plex, name='move_downloaded_tv_show_files_to_plex'),
     path('movies/move_downloaded_files_to_plex', views.move_downloaded_movie_files_to_plex, name='move_downloaded_movie_files_to_plex'),
+    path('movies/<int:movie_id>', views.movie_index, name='movie_index'),
 ]
