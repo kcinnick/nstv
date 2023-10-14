@@ -217,6 +217,7 @@ def movies_index(request):
     print('movies_index')
     movies = Movie.objects.all()
     movies_table = MovieTable(movies)
+    movies_table.exclude = ("poster_path", )
     index_context = {"title": "Movie Index", "movies": movies_table}
     return render(request, "movies_index.html", index_context)
 
