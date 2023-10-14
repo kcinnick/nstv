@@ -51,6 +51,7 @@ class Movie(models.Model):
     )
     director = models.TextField()
     on_disk = models.BooleanField(default=False)
+    poster_path = models.TextField(default=None, null=True)
 
     def __str__(self):
         return self.title
