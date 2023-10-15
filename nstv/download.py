@@ -2,6 +2,9 @@ import os
 import re
 import webbrowser
 from glob import glob
+from urllib.parse import quote_plus
+from time import sleep
+
 import django
 from pathlib import Path
 import requests
@@ -10,7 +13,6 @@ from .models import Movie
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
-
 
 SHOW_TITLE_REPLACEMENTS = {
     # sometimes the show title differs from what's on plex and
@@ -68,16 +70,27 @@ class NZBGeek:
         self.db_session = None
         self.logged_in = False
 
-    def search_and_parse_results(self, url):
-        r = self.session.get(url.replace(' ', '%20'))
-        print(f"\nRequesting {url}")
-
+    def get_parsed_results(self, url):
+        r = self.session.get(url)
         soup = BeautifulSoup(r.content, "html.parser")
         results = soup.find_all("table", class_="releases")
-        parsed_results = []
-        for result in results:
-            if result.find("a", class_="releases_title"):
-                parsed_results.append(SearchResult(result))
+        parsed_results = [
+            SearchResult(result)
+            for result in results
+            if result.find("a", class_="releases_title")
+        ]
+        return parsed_results
+
+    def search_and_parse_results(self, url):
+        print(f"\nRequesting {url}")
+        url = quote_plus(url, safe=':/&=?')  # Replaces ' ' with '%20' and leaves other safe characters unchanged
+        parsed_results = self.get_parsed_results(url)
+
+        if not parsed_results and 'browsequality' in url:
+            print("No results found for {}. Checking for all qualities.".format(url))
+            url = url.split('&view=1&browsequality')[0]
+            print(f"\nRequesting {url}")
+            parsed_results = self.get_parsed_results(url)
 
         return parsed_results
 
@@ -185,6 +198,7 @@ class NZBGeek:
                 movie.gid = releases_item.find('a', class_='geekseek_results').get('href').split('?movieid=')[1]
                 movie.save()
                 print("get_gid_for_movie: " + 'Successfully updated GID for {}'.format(movie.title))
+                sleep(5)
                 break
             else:
                 continue
@@ -239,15 +253,15 @@ class NZBGeek:
             for result in parsed_results.copy():
                 if 'HD' not in result.category:
                     if not anime:
-                        #print(f"download.get_nzb_search_results: Removing {result.title} because it's not HD or anime.")
+                        # print(f"download.get_nzb_search_results: Removing {result.title} because it's not HD or anime.")
                         parsed_results.remove(result)
                     else:
-                        #print(f"download.get_nzb_search_results: {result.title} is not HD, but anime is True, so we'll keep it.")
+                        # print(f"download.get_nzb_search_results: {result.title} is not HD, but anime is True, so we'll keep it.")
                         # sometimes anime isn't categorized as HD, but as TV > Anime
                         # we don't want to filter out in these cases, so we can pass
                         pass
                 else:
-                    #print(f"download.get_nzb_search_results: {result.title} is HD, so we'll keep it.")
+                    # print(f"download.get_nzb_search_results: {result.title} is HD, so we'll keep it.")
                     pass
 
         if anime:
@@ -282,6 +296,7 @@ class NZBGeek:
 
         #  wait until file is downloaded
         nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
+        sleep(5)
         while len(nzb_files) == 0:
             sleep(5)
             nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")

@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 
@@ -217,7 +217,7 @@ def movies_index(request):
     print('movies_index')
     movies = Movie.objects.all()
     movies_table = MovieTable(movies)
-    movies_table.exclude = ("poster_path", )
+    movies_table.exclude = ("poster_path",)
     index_context = {"title": "Movie Index", "movies": movies_table}
     return render(request, "movies_index.html", index_context)
 
@@ -253,3 +253,22 @@ def movie_index(request, movie_id):
     index_context = {"title": "Movie", "movie": movie}
 
     return render(request, "movie.html", index_context)
+
+
+def movie_search(request):
+    title = request.GET.get('title', None)
+    print(f'movie_search: title={title}')
+    if title:
+        try:
+            movie = Movie.objects.get(title=title)
+            return JsonResponse({'id': movie.id})
+        except Movie.DoesNotExist:
+            new_movie = Movie(title=title)
+            new_movie.save()
+            nzb_geek = NZBGeek()
+            nzb_geek.login()
+            movie_gid = nzb_geek.get_gid_for_movie(new_movie)
+            if movie_gid:
+                return JsonResponse({'id': new_movie.id})
+            else:
+                return JsonResponse({'error': 'Movie not found'}, status=404)
