@@ -36,7 +36,7 @@ let csrf_token = getCookie('csrftoken');
           location.reload();  // Refresh the page here
         },
         error: function() {
-            alert('Something went wrong! Look at the console for details.');
+            alert('Network path was not found. Is your external HD turned on?');
         }
     });
 });

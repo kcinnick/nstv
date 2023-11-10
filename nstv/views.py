@@ -1,6 +1,7 @@
 import os
 import shutil
 
+import plexapi.exceptions
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -200,7 +201,7 @@ def move_downloaded_files_to_plex(request, plex_dir):
             file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
             shutil.move(file_path, os.path.join(plex_dir, file_name))
         return JsonResponse({'status': 'success'}, status=200)
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         return JsonResponse({'status': 'Network path was not found. Is your external HD turned on?'}, status=500)
     except Exception as e:
         print('failure: {}'.format(type(e)))
@@ -210,8 +211,11 @@ def move_downloaded_files_to_plex(request, plex_dir):
 def move_downloaded_tv_show_files_to_plex(request):
     json_response = move_downloaded_files_to_plex(request, PLEX_TV_SHOW_DIR)
     print(json_response)
-    from .plexController.add_episodes_to_show import main as add_episodes_to_show
-    add_episodes_to_show()
+    try:
+        from .plexController.add_episodes_to_show import main as add_episodes_to_show
+        add_episodes_to_show()
+    except plexapi.exceptions.NotFound:
+        return JsonResponse({'status': 'Network path was not found. Is your external HD turned on?'}, status=500)
     return redirect(request.META.get('HTTP_REFERER'))
 
 

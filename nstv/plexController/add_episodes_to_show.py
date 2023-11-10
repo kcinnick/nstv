@@ -8,11 +8,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
 from nstv.models import Show, Episode
 
-account = MyPlexAccount('nicktucker4@gmail.com', os.getenv('PLEX_API_KEY'))
-plex = account.resource(os.getenv('PLEX_SERVER')).connect()  # returns a PlexServer instance
-
-plex_tv_shows = plex.library.section('TV Shows')
-
 SHOW_ALIASES = {
     # plex title: django title
     '6ixtynin9 the Series': '6ixtynin9'
@@ -55,6 +50,10 @@ def add_existing_episodes_for_plex_show(plex_show):
 
 
 def main():
+    account = MyPlexAccount('nicktucker4@gmail.com', os.getenv('PLEX_API_KEY'))
+    plex = account.resource(os.getenv('PLEX_SERVER')).connect()  # returns a PlexServer instance
+
+    plex_tv_shows = plex.library.section('TV Shows')
     for plex_show in tqdm(plex_tv_shows.search()):
         add_existing_episodes_for_plex_show(plex_show)
     return
