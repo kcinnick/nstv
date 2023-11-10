@@ -51,11 +51,6 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGIN_VALUE = os.getenv('CORS_ALLOWED_ORIGIN_URL')
-CORS_ALLOWED_ORIGINS = [
-    CORS_ALLOWED_ORIGIN_VALUE
-]
-
 ROOT_URLCONF = 'djangoProject.urls'
 
 TEMPLATES = [

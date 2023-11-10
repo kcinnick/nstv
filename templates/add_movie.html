@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<!-- Google Fonts -->
+{% extends "base.html" %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+    <title>{% block title %}NSTV~ Add Movie{% endblock %}</title>
+</head>
+<body>
+{% block content %}
+<form action="/add_movie" method="post">
+    {% csrf_token %}
+    {{ add_movie_form }}
+    <input type="submit" value="Submit">
+</form>
+{% endblock %}
+</body>
+</html>

@@ -1,6 +1,7 @@
 import os
 import shutil
 
+import plexapi.exceptions
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -195,22 +196,32 @@ def add_episodes_to_database(request, show_id):
 
 def move_downloaded_files_to_plex(request, plex_dir):
     print(f'move_downloaded_files_to_{plex_dir.split("_")[-1]}')
-    for file_name in os.listdir(NZBGET_COMPLETE_DIR):
-        file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
-        print(f"Moving {file_path} to {plex_dir}")
-        shutil.move(file_path, os.path.join(plex_dir, file_name))
+    try:
+        for file_name in os.listdir(NZBGET_COMPLETE_DIR):
+            file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
+            shutil.move(file_path, os.path.join(plex_dir, file_name))
+        return JsonResponse({'status': 'success'}, status=200)
+    except FileNotFoundError:
+        return JsonResponse({'status': 'Network path was not found. Is your external HD turned on?'}, status=500)
+    except Exception as e:
+        print('failure: {}'.format(type(e)))
+        return JsonResponse({'status': str(e)}, status=500)
 
 
 def move_downloaded_tv_show_files_to_plex(request):
-    move_downloaded_files_to_plex(request, PLEX_TV_SHOW_DIR)
-    from .plexController.add_episodes_to_show import main as add_episodes_to_show
-    add_episodes_to_show()
+    json_response = move_downloaded_files_to_plex(request, PLEX_TV_SHOW_DIR)
+    print(json_response)
+    try:
+        from .plexController.add_episodes_to_show import main as add_episodes_to_show
+        add_episodes_to_show()
+    except plexapi.exceptions.NotFound:
+        return JsonResponse({'status': 'Network path was not found. Is your external HD turned on?'}, status=500)
     return redirect(request.META.get('HTTP_REFERER'))
 
 
 def move_downloaded_movie_files_to_plex(request):
-    move_downloaded_files_to_plex(request, PLEX_MOVIES_DIR)
-    return redirect(request.META.get('HTTP_REFERER'))
+    json_response = move_downloaded_files_to_plex(request, PLEX_MOVIES_DIR)
+    return json_response
 
 
 def movies_index(request):
