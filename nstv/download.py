@@ -22,6 +22,7 @@ SHOW_TITLE_REPLACEMENTS = {
     "6ixtynin9": "6ixtynin9 The Series",
     "Crash Course in Romance": "Crash Course In Romance",
     "Little Shark's Day Out": "Little Shark Outings",
+    "Reno 911!": "Reno 911"
 }
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
@@ -229,7 +230,9 @@ class NZBGeek:
             if not show.gid:
                 raise AttributeError(f"download.get_nzb_search_results: No GID found for {show.title}")
         print(f"show.gid == {show.gid} for {show.title}")
-        if season_number is not None:
+        if int(season_number) == 0:
+            url = f'https://nzbgeek.info/geekseek.php?tvid={show.gid}&season=S00&episode=all'
+        elif season_number is not None:
             print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
             url = f"https://nzbgeek.info/geekseek.php?tvid={show.gid}"
             url += f"&season=S{str(season_number).zfill(2)}"
