@@ -299,7 +299,7 @@ class NZBGeek:
 
         #  wait until file is downloaded
         nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
-        sleep(5)
+        sleep(15)
         while len(nzb_files) == 0:
             sleep(5)
             nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")

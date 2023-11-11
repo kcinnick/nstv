@@ -33,6 +33,7 @@ class Episode(models.Model):
     season_number = models.IntegerField(null=True)
     episode_number = models.IntegerField(null=True)
     on_disk = models.BooleanField(default=False)
+    tvdb_id = models.IntegerField(default=None, null=True)
 
     def __str__(self):
         return self.title
