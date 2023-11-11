@@ -12,6 +12,7 @@ class Show(models.Model):
     gid = models.IntegerField(default=None, null=True)
     title = models.TextField()
     anime = models.BooleanField(default=False)
+    cast = models.ManyToManyField('CastMember', related_name='shows')
 
     def __str__(self):
         return self.title
@@ -34,6 +35,7 @@ class Episode(models.Model):
     episode_number = models.IntegerField(null=True)
     on_disk = models.BooleanField(default=False)
     tvdb_id = models.IntegerField(default=None, null=True)
+    cast = models.ManyToManyField('CastMember', related_name='episodes')
 
     def __str__(self):
         return self.title
@@ -53,9 +55,22 @@ class Movie(models.Model):
     director = models.TextField()
     on_disk = models.BooleanField(default=False)
     poster_path = models.TextField(default=None, null=True)
+    cast = models.ManyToManyField('CastMember', related_name='movies')
 
     def __str__(self):
         return self.title
 
     class Meta:
         db_table = "movie"
+
+
+class CastMember(models.Model):
+    name = models.TextField()
+    role = models.TextField()
+    image_url = models.TextField()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "cast_member"
