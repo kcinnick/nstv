@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+{% extends "base.html" %}
+{% block title %}{{ cast_member.name }}{% endblock %}
+{% block content %}
+    <center>{{ cast_member.name }}</center>
+    <center><img src="{{ cast_member.image_url }}"></center>
+
+    <h2>TV Roles</h2>
+    <ul>
+        {% for show in shows %}
+            <li><a href="/shows/{{ show.id }}">{{ show.title }}</a></li>
+        {% endfor %}
+    </ul>
+
+    <h2>Film Roles</h2>
+    <ul>
+        {% for movie in movies %}
+            <li><a href="/shows/{{ movie.id }}">{{ movie.title }}</a></li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}
+</body>
+</html>

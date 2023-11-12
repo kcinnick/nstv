@@ -58,6 +58,7 @@ class ShowTable(tables.Table):
     gid = tables.Column(attrs={"th": {"id": "gid"}})
     id = ShowIdColumn()
     title = tables.Column(attrs={"th": {"id": "title"}})
+    tvdb_id = tables.Column(attrs={"th": {"id": "tvdb_id"}})
     # start_date = tables.Column(attrs={"th": {"id": "start_date"}})
     # end_date = tables.Column(attrs={"th": {"id": "end_date"}})
     delete = DeleteShowColumn()
