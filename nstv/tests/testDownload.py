@@ -141,9 +141,14 @@ class TestDownloadEpisode(TestCase):
         request.META = {'HTTP_REFERER': 'http://127.0.0.1:8000/shows/52?page=1'}
         download_episode(request, self.zoo_show_record.id, self.zoo_show_episode.id)
         sleep(5)
-        self.assertTrue(
-            os.path.exists(os.path.join(
-                NZBGET_NZB_DIR,
-                'The.Secret.Life.of.the.Zoo-S10E06-Episode.6.WEBDL-1080p.nzb'))
-        )
+
+        log_path = '\\'.join(NZBGET_NZB_DIR.split('\\')[:-1]) + '\\nzbget.log'
+
+        with open(log_path, 'r') as f:
+            log_contents = f.read()
+
+        latest_log_contents = log_contents.split('\n')[-50:]
+        latest_log_contents = '\n'.join(latest_log_contents)
+
+        assert 'The.Secret.Life.of.the.Zoo-S10E06-Episode.6.WEBDL-1080p' in latest_log_contents
         return
