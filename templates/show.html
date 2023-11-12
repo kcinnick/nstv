@@ -3,6 +3,34 @@
 {% load render_table from django_tables2 %}
 
 <html lang="en">
+
+<style>
+    .collapsible {
+  background-color: #eee;
+  color: #444;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+}
+
+/* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
+.active, .collapsible:hover {
+  background-color: #ccc;
+}
+
+/* Style the collapsible content. Note: hidden by default */
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+
+</style>
 <head>
   <meta charset="UTF-8">
     <title>NSTV~ Shows Index</title>
@@ -14,7 +42,6 @@
     <center><button id="get_info_from_tvdb">Get Info From TVDB</button></center>
     <br>
 <!--- TODO: need to add "Add GID" button/page for adding a GID for shows that don't appear in NZBGeek search. ex: Little Sharks Outings-->
-
 <script>
 $("#get_info_from_tvdb").click(function() {
 function getCookie(name) {
@@ -47,6 +74,31 @@ let csrf_token = getCookie('csrftoken');
         }
     });
 });
+</script>
+
+<center>
+<button type="button" class="collapsible" id="cast">Cast</button>
+<div class="content" style="display: none;">
+    {% for cast_member in show.cast.all %}
+        <a href="/cast/{{ cast_member.id }}">{{ cast_member.name }}</a><br> <img src="{{ cast_member.image_url }}" width="200" height="200"><br>
+    {% endfor %}
+</div>
+</center>
+<script>
+    var coll = document.getElementsByClassName("collapsible");
+    var i;
+
+    for (i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.display === "block") {
+          content.style.display = "none";
+        } else {
+          content.style.display = "block";
+        }
+      });
+    }
 </script>
 
 <center>

@@ -12,6 +12,7 @@ class Show(models.Model):
     gid = models.IntegerField(default=None, null=True)
     title = models.TextField()
     anime = models.BooleanField(default=False)
+    tvdb_id = models.TextField(default=None, null=True)
     cast = models.ManyToManyField('CastMember', related_name='shows')
 
     def __str__(self):
@@ -67,7 +68,7 @@ class Movie(models.Model):
 class CastMember(models.Model):
     name = models.TextField()
     role = models.TextField()
-    image_url = models.TextField()
+    image_url = models.TextField(null=True)
 
     def __str__(self):
         return self.name

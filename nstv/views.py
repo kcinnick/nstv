@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from .download import NZBGeek
 from .forms import DownloadForm, AddShowForm, AddMovieForm
-from .models import Show, Episode, Movie
+from .models import Show, Episode, Movie, CastMember
 from .tables import ShowTable, EpisodeTable, MovieTable
 
 SHOW_ALIASES = {
@@ -283,3 +283,16 @@ def movie_search(request):
                 return JsonResponse({'id': new_movie.id})
             else:
                 return JsonResponse({'error': 'Movie not found'}, status=404)
+
+
+def cast_member(request, cast_member_id):
+    cast_member_object = CastMember.objects.get(id=cast_member_id)
+    shows_for_cast_member = Show.objects.filter(cast__id=cast_member_id)
+    movies_for_cast_member = Movie.objects.filter(cast__id=cast_member_id)
+    index_context = {
+        "title": "Cast Member",
+        "shows": shows_for_cast_member,
+        "movies": movies_for_cast_member,
+        "cast_member": cast_member_object,
+    }
+    return render(request, "cast_member.html", index_context)
