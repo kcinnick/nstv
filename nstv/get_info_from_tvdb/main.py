@@ -105,6 +105,9 @@ def main(show_id=None):
         tvdb_record = find_tvdb_record_for_series(tvdb, show_title)
         # print(tvdb_record)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
+        print(tvdb_series)
+        show.tvdb_id = tvdb_series['id']
+        show.save()
         # print(tvdb_series)
         # add pagination until 0 episodes are found
         page = 0
