@@ -230,7 +230,7 @@ class NZBGeek:
             if not show.gid:
                 raise AttributeError(f"download.get_nzb_search_results: No GID found for {show.title}")
         print(f"show.gid == {show.gid} for {show.title}")
-        if int(season_number) == 0:
+        if season_number == 0:
             url = f'https://nzbgeek.info/geekseek.php?tvid={show.gid}&season=S00&episode=all'
         elif season_number is not None:
             print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
