@@ -22,7 +22,8 @@ SHOW_TITLE_REPLACEMENTS = {
     "6ixtynin9": "6ixtynin9 The Series",
     "Crash Course in Romance": "Crash Course In Romance",
     "Little Shark's Day Out": "Little Shark Outings",
-    "Reno 911!": "Reno 911"
+    "Reno 911!": "Reno 911",
+    "Château DIY": "Chateau DIY Living the Dream",
 }
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")

@@ -16,6 +16,7 @@ TVDB_ALIAS = {
     "This Week on the Farm": "This Week On The Farm",
     "The Great British Bake Off": "The Great British Baking Show",
     "Inside Culture": "Inside Culture with Mary Beard",
+    "Chateau DIY Living the Dream": "Château DIY",
 }
 
 
@@ -105,7 +106,6 @@ def main(show_id=None):
         tvdb_record = find_tvdb_record_for_series(tvdb, show_title)
         # print(tvdb_record)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
-        print(tvdb_series)
         show.tvdb_id = tvdb_series['id']
         show.save()
         # print(tvdb_series)
