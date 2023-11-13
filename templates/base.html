@@ -21,24 +21,53 @@
   th {
     height: 70px;
   }
+  #navbar {
+    background-color: #8f8e8e;
+    overflow: hidden;
+}
+
+#navbar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+#navbar li {
+    float: left;
+}
+
+#navbar li a {
+    display: block;
+    color: white; /* Example text color */
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+#navbar li a:hover {
+    background-color: #111; /* Example hover color */
+}
+
 </style>
 
 </head>
 
 <body>
-    <div id="sidebar">
-        {% block sidebar %}
-        <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/shows_index">Show Index</a></li>
-            <li><a href="/add_show">Add Show</a></li>
-            <li><a href="/movies_index">Movies Index</a></li>
-            <li><a href="/add_movie">Add Movie</a></li>
-        </ul>
-        {% endblock %}
-    </div>
+<div id="navbar">
+    {% block navbar %}
+    <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/shows_index">Show Index</a></li>
+        <li><a href="/add_show">Add Show</a></li>
+        <li><a href="/movies_index">Movies Index</a></li>
+        <li><a href="/add_movie">Add Movie</a></li>
+    </ul>
+    {% endblock %}
+</div>
 
     <div id="content">
+    <br>
+    <br>
         {% block content %}{% endblock %}
     </div>
 </body>
