@@ -14,6 +14,17 @@ class ShowIdColumn(tables.Column):
         return format_html('<a href="/shows/{}" show>{}</a>'.format(value, value))
 
 
+class TvTitleColumn(tables.Column):
+    def render(self, value):
+        id_for_title = Show.objects.get(title=value).id
+        return format_html('<a href="/shows/{}" show>{}</a>'.format(id_for_title, value))
+
+
+class TvGidColumn(tables.Column):
+    def render(self, value):
+        return format_html('<a href="https://nzbgeek.info/geekseek.php?tvid={}" show>{}</a>'.format(value, value))
+
+
 class EpisodeIdColumn(tables.Column):
     def render(self, value):
         return format_html('{}'.format(value, value, value))
@@ -55,9 +66,9 @@ class MovieIdColumn(tables.Column):
 
 
 class ShowTable(tables.Table):
-    gid = tables.Column(attrs={"th": {"id": "gid"}})
+    gid = TvGidColumn()
     id = ShowIdColumn()
-    title = tables.Column(attrs={"th": {"id": "title"}})
+    title = TvTitleColumn()
     tvdb_id = tables.Column(attrs={"th": {"id": "tvdb_id"}})
     # start_date = tables.Column(attrs={"th": {"id": "start_date"}})
     # end_date = tables.Column(attrs={"th": {"id": "end_date"}})
