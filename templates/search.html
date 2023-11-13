@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}NSTV~ Search{% endblock %}
+
+{% block content %}
+    <form method="get" action="{% url 'search_results' %}">
+        <input type="text" name="query" placeholder="Search for titles, actors...">
+        <button type="submit">Search</button>
+    </form>
+
+<h2>Results: </h2>
+{% for result in results %}
+    <p>
+        <a href="{{ result.object.get_absolute_url }}">{{ result.object.title }}</a>
+    </p>
+{% endfor %}
+{% endblock %}

@@ -296,3 +296,17 @@ def cast_member(request, cast_member_id):
         "cast_member": cast_member_object,
     }
     return render(request, "cast_member.html", index_context)
+
+
+def search_results(request):
+    query = request.GET.get('query', '')
+    print('query is ' + query)
+    if query:
+        print('query is not empty')
+        movies = Movie.objects.filter(title__icontains=query)
+        # Add more queries for other models like actors, etc.
+    else:
+        print('query is empty')
+        movies = Movie.objects.none()  # Return an empty queryset
+
+    return render(request, 'search.html', {'movies': movies})
