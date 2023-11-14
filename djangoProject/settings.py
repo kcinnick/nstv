@@ -80,7 +80,7 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': os.getenv('DJANGO_DB_PASSWORD'),
         'HOST': '127.0.0.1',
-        'PORT': '5433'
+        'PORT': '5432'
     }
 }
 

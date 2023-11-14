@@ -61,6 +61,9 @@ class Movie(models.Model):
     def __str__(self):
         return self.title
 
+    def get_absolute_url(self: 'Movie'):
+        return f"/movies/{self.id}"
+
     class Meta:
         db_table = "movie"
 

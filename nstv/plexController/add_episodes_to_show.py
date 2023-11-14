@@ -16,8 +16,6 @@ SHOW_ALIASES = {
 
 def add_existing_episodes_for_plex_show(plex_show):
     print("plex_show: ", plex_show.title)
-    if plex_show.title in SHOW_ALIASES:
-        plex_show.title = SHOW_ALIASES[plex_show.title]
     django_show_object = Show.objects.get(title=plex_show.title)
     django_episodes = Episode.objects.filter(show=django_show_object)
     #print("django_show_object: ", django_show_object)
