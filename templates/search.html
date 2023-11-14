@@ -26,16 +26,22 @@
     <button type="submit">Search</button>
 </form>
 
+<center>
 {% for key, items in results.items %}
     <h2>{{ key|title }}</h2>
     {% for item in items %}
         {% if key == 'cast_members' %}
-        <p>{{ item.name }}</p>
-        {% else %}
-        <p>{{ item.title }}</p>
+            <a href="/cast/{{ item.id }}"><p>{{ item.name }}</p></a>
+        {% elif key == 'movies' %}
+            <a href="/movies/{{ item.id }}"><p>{{ item.title }}</p></a>
+        {% elif key == 'shows' %}
+            <a href="/shows/{{ item.id }}"><p>{{ item.title }}</p></a>
+        {% elif key == 'episodes' %}
+            <a href="/episodes/{{ item.id }}"><p>{{ item.title }}</p></a>
         {% endif %}
     {% empty %}
         <p>No {{ key }} found.</p>
     {% endfor %}
 {% endfor %}
+</center>
 {% endblock %}
