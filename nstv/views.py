@@ -303,6 +303,7 @@ def search_results(request):
     search_movies = request.GET.get('movies') == 'on'
     search_shows = request.GET.get('shows') == 'on'
     search_cast = request.GET.get('cast_members') == 'on'
+    search_episodes = request.GET.get('episodes') == 'on'
 
     results = {}
 
@@ -318,6 +319,9 @@ def search_results(request):
         if search_cast:
             print('searching cast')
             results['cast_members'] = CastMember.objects.filter(name__icontains=query)
+        if search_episodes:
+            print('searching episodes')
+            results['episodes'] = Episode.objects.filter(title__icontains=query)
     else:
         print('query is empty')
         movies = Movie.objects.none()  # Return an empty queryset
