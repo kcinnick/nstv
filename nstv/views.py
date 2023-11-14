@@ -300,13 +300,28 @@ def cast_member(request, cast_member_id):
 
 def search_results(request):
     query = request.GET.get('query', '')
+    search_movies = request.GET.get('movies') == 'on'
+    search_shows = request.GET.get('shows') == 'on'
+    search_cast = request.GET.get('cast_members') == 'on'
+
+    results = {}
+
     print('query is ' + query)
     if query:
         print('query is not empty')
-        movies = Movie.objects.filter(title__icontains=query)
-        # Add more queries for other models like actors, etc.
+        if search_movies:
+            print('searching movies')
+            results['movies'] = Movie.objects.filter(title__icontains=query)
+        if search_shows:
+            print('searching shows')
+            results['shows'] = Show.objects.filter(title__icontains=query)
+        if search_cast:
+            print('searching cast')
+            results['cast_members'] = CastMember.objects.filter(name__icontains=query)
     else:
         print('query is empty')
         movies = Movie.objects.none()  # Return an empty queryset
 
-    return render(request, 'search.html', {'movies': movies})
+    print(results)
+
+    return render(request, 'search.html', {'results': results})

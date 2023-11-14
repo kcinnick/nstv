@@ -4,15 +4,38 @@
 {% block title %}NSTV~ Search{% endblock %}
 
 {% block content %}
-    <form method="get" action="{% url 'search_results' %}">
-        <input type="text" name="query" placeholder="Search for titles, actors...">
-        <button type="submit">Search</button>
-    </form>
+<form method="get" action="{% url 'search_results' %}">
+    <input type="text" name="query" placeholder="Search for titles, actors...">
+    <div>
+        <label for="movies">Movies</label>
+        <input type="checkbox" id="movies" name="movies" value="on">
+    </div>
+    <div>
+        <label for="shows">Shows</label>
+        <input type="checkbox" id="shows" name="shows" value="on">
+    </div>
+    <div>
+        <label for="episodes">Episodes</label>
+        <input type="checkbox" id="episodes" name="episodes" value="on">
+    </div>
+    <div>
+        <label for="cast_members">Cast Members</label>
+        <input type="checkbox" id="cast_members" name="cast_members" value="on">
+    </div>
+    <!-- Add checkboxes for episodes and cast members similarly -->
+    <button type="submit">Search</button>
+</form>
 
-<h2>Results: </h2>
-{% for result in results %}
-    <p>
-        <a href="{{ result.object.get_absolute_url }}">{{ result.object.title }}</a>
-    </p>
+{% for key, items in results.items %}
+    <h2>{{ key|title }}</h2>
+    {% for item in items %}
+        {% if key == 'cast_members' %}
+        <p>{{ item.name }}</p>
+        {% else %}
+        <p>{{ item.title }}</p>
+        {% endif %}
+    {% empty %}
+        <p>No {{ key }} found.</p>
+    {% endfor %}
 {% endfor %}
 {% endblock %}
