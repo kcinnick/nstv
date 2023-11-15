@@ -78,3 +78,17 @@ class CastMember(models.Model):
 
     class Meta:
         db_table = "cast_member"
+
+
+class Download(models.Model):
+    nzb_id = models.TextField(default=None, null=True)
+    site = models.TextField(default=None, null=True)
+    title = models.TextField()
+    url = models.TextField(default=None, null=True)
+    successful = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title, self.site
+
+    class Meta:
+        db_table = "download"

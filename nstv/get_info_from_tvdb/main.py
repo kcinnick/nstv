@@ -111,14 +111,15 @@ def main(show_id=None):
         # print(tvdb_series)
         # add pagination until 0 episodes are found
         page = 0
+        all_tvdb_series_episodes = []
         while True:
-            tvdb_series_episodes = tvdb.get_series_episodes(tvdb_series['id'], lang='eng', page=page)
+            tvdb_series_episodes = tvdb.get_series_episodes(tvdb_series['id'], lang='eng', page=page)['episodes']
+            all_tvdb_series_episodes.extend(tvdb_series_episodes)
             if len(tvdb_series_episodes) != 500:
                 break
             else:
                 page += 1
-        tvdb_episode_listings = tvdb_series_episodes['episodes']
-        for tvdb_episode_listing in tvdb_episode_listings:
+        for tvdb_episode_listing in all_tvdb_series_episodes:
             match = False
             # print('---')
             # print(tvdb_episode_listing)

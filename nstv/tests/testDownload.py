@@ -7,8 +7,8 @@ import pytest
 from bs4 import BeautifulSoup
 from django.test import TestCase
 
-from nstv.download import NZBGeek, SearchResult
-from nstv.models import Show, Episode
+from nstv.download import NZBGeek, SearchResult, NZBGet
+from nstv.models import Show, Episode, Download
 from nstv.views import download_episode
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
@@ -152,3 +152,18 @@ class TestDownloadEpisode(TestCase):
 
         assert 'The.Secret.Life.of.the.Zoo-S10E06-Episode.6.WEBDL-1080p' in latest_log_contents
         return
+
+
+class TestNZBGet(TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_get_and_update_history(self):
+        download_records = Download.objects.all()
+        assert len(download_records) == 0
+        NZBGet().get_and_update_history()
+        download_records = Download.objects.all()
+        assert len(download_records) > 0
