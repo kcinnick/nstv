@@ -9,7 +9,7 @@ from django.test import TestCase
 
 from nstv.download import NZBGeek, SearchResult, NZBGet
 from nstv.models import Show, Episode, Movie, Download
-from nstv.views import download_episode
+from nstv.views import download_episode, download_movie
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
 
@@ -157,6 +157,24 @@ class TestDownloadEpisode(TestCase):
 
         assert 'The.Secret.Life.of.the.Zoo' in latest_log_contents
         return
+
+
+class TestDownloadMovie(TestCase):
+    def setUp(self):
+        self.nzb_geek = NZBGeek()
+        self.nzb_geek.login()
+        self.movie_record = Movie.objects.create(name='Goldfinger')
+        self.movie_record.save()
+
+    def tearDown(self):
+        self.movie_record.delete()
+
+    def test_download_movie(self):
+        request = Mock()
+        request.META = {}
+        download_movie(request, self.movie_record.id)
+        sleep(5)
+
 
 
 class TestNZBGet(TestCase):

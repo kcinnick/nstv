@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from nstv.models import Show, Episode
+from nstv.models import Show, Episode, Movie
 
 
 class DeleteTestCase(TestCase):
@@ -14,6 +14,7 @@ class DeleteTestCase(TestCase):
             episode_number=1,
             on_disk=False
         )
+        self.dummy_movie_record = Movie.objects.create(name='Dummy movie to be deleted.')
 
     def tearDown(self):
         # Delete the record after each test
@@ -36,3 +37,8 @@ class DeleteTestCase(TestCase):
     def test_delete_episode_of_show_GET_request_fails(self):
         with self.assertRaises(Exception):
             self.client.get('/delete/{}/episode/{}'.format(self.dummy_show_record.id, self.dummy_show_record.episodes.first().id))
+
+    def test_delete_movie(self):
+        self.client.post('/delete/movies/{}'.format(self.dummy_movie_record.id))
+        movie_object = Movie.objects.filter(name='Dummy movie to be deleted.')
+        assert len(movie_object) == 0
