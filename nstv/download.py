@@ -277,6 +277,10 @@ class NZBGeek:
         return parsed_results
 
     def get_nzb_search_results_for_movie(self, movie, quality='1080p'):
+        if not movie.gid:
+            movie.gid = self.get_gid_for_movie(movie)
+            if not movie.gid:
+                raise AttributeError(f"download.get_nzb_search_results_for_movie: No GID found for {movie.name}")
         url = f"https://nzbgeek.info/geekseek.php?movieid={movie.gid}&browsestatsordervar=desc"
         if quality:
             url += f"&view=1&browsequality={quality}"
