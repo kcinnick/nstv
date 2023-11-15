@@ -16,7 +16,7 @@ def save_movie_poster(plex_movie):
     posterUrl = plex_movie.posterUrl
 
     if posterUrl:
-        posterSavePath = os.path.join(r'C:\Users\Nick\PycharmProjects\djangoProject\nstv\static' + '\\images\\posters',  plex_movie.title.replace(' ', '_') + '.jpg')
+        posterSavePath = os.path.join(r'C:\Users\Nick\PycharmProjects\djangoProject\nstv\static' + '\\images\\posters',  plex_movie.name.replace(' ', '_') + '.jpg')
         if not os.path.exists(posterSavePath):
             r = requests.get(posterUrl, allow_redirects=True)
             with open(posterSavePath, 'wb') as f:
@@ -30,7 +30,7 @@ def save_movie_poster(plex_movie):
 def add_movies_to_nstv():
     plex_movies = plex.library.section('Movies')
     for movie in plex_movies.search():
-        movie_object = Movie.objects.all().filter(title=movie.title)
+        movie_object = Movie.objects.all().filter(title=movie.name)
         if movie_object:
             print('movie already exists')
             # add missing movie details if any
@@ -53,7 +53,7 @@ def add_movies_to_nstv():
         else:
             print('movie does not exist')
             movie_object = Movie(
-                title=movie.title, release_date=movie.originallyAvailableAt, genre=movie.genres,
+                title=movie.name, release_date=movie.originallyAvailableAt, genre=movie.genres,
                 director=movie.directors[0], on_disk=True
             )
             movie_object.save()

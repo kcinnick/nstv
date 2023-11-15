@@ -23,4 +23,4 @@ class AddShowForm(forms.Form):
 
 
 class AddMovieForm(forms.Form):
-    title = forms.CharField(label='Movie Title')
+    name = forms.CharField(label='Movie name')
