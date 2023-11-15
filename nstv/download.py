@@ -128,7 +128,7 @@ class NZBGeek:
         assert os.getenv("NZBGEEK_USERNAME") in str(r.content)
         self.logged_in = True
 
-    def get_gid(self, show_title):
+    def get_gid_for_show(self, show_title):
         # print(show_title)
         print("get_gid: " + 'Getting GID for {}'.format(show_title))
         from .models import Show
@@ -160,11 +160,6 @@ class NZBGeek:
                 show.save()
                 print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
                 break
-            elif show_title in SHOW_TITLE_REPLACEMENTS.keys():
-                show.gid = result.get('href').split('tvid=')[1]
-                show.save()
-                print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
-                break
             else:
                 print(f"download.py: {result.find('span', class_='overlay_title').text.strip()} != {show_title}")
                 print("get_gid: " + 'Moving to next result if any.'.format(show_title))
@@ -172,11 +167,11 @@ class NZBGeek:
         return show.gid
 
     def get_gid_for_movie(self, movie):
-        print("get_gid_for_movie: " + 'Getting GID for {}'.format(movie.title))
-        movie = Movie.objects.all().filter(title=movie.title).first()
+        print("get_gid_for_movie: " + 'Getting GID for {}'.format(movie.name))
+        movie = Movie.objects.all().filter(name=movie.name).first()
 
         url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=2000&browseincludewords={}".format(
-            movie.title
+            movie.name
         ).replace(" ", "%20")
         print("get_gid_for_movie: " + url)
         r = self.session.get(url)
@@ -184,23 +179,23 @@ class NZBGeek:
         soup = BeautifulSoup(r.content, "html.parser")
         geekseek_results = soup.find('div', class_='geekseek_results')
         if 'returned 0' in geekseek_results.text:
-            print("get_gid_for_movie: " + 'No results found for {}'.format(movie.title))
+            print("get_gid_for_movie: " + 'No results found for {}'.format(movie.name))
             return
 
         releases_tables = soup.find_all("table", class_="releases")
         for releases_table in releases_tables:
             print('-------')
-            print("Movie title: ", movie.title)
+            print("Movie title: ", movie.name)
             releases_item = releases_table.find('td', class_='releases_item_release')
             if releases_item is None:
-                print("get_gid_for_movie: " + 'No results found for {}'.format(movie.title))
-            elif movie.title in releases_item.text.strip():
+                print("get_gid_for_movie: " + 'No results found for {}'.format(movie.name))
+            elif movie.name in releases_item.text.strip():
                 # TODO: add year check
-                print("get_gid_for_movie: " + 'Found a match for {}'.format(movie.title))
+                print("get_gid_for_movie: " + 'Found a match for {}'.format(movie.name))
                 print(releases_item)
                 movie.gid = releases_item.find('a', class_='geekseek_results').get('href').split('?movieid=')[1]
                 movie.save()
-                print("get_gid_for_movie: " + 'Successfully updated GID for {}'.format(movie.title))
+                print("get_gid_for_movie: " + 'Successfully updated GID for {}'.format(movie.name))
                 sleep(5)
                 break
             else:
@@ -228,7 +223,7 @@ class NZBGeek:
         print(f"download.get_nzb_search_results: show.gid == {show.gid} for {show.title}")
         print("download.get_nzb_search_results: is anime is {}".format(anime))
         if not show.gid:
-            show.gid = self.get_gid(show.title)
+            show.gid = self.get_gid_for_show(show.title)
             if not show.gid:
                 raise AttributeError(f"download.get_nzb_search_results: No GID found for {show.title}")
         print(f"show.gid == {show.gid} for {show.title}")
