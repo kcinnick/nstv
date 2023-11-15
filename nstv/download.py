@@ -9,7 +9,7 @@ import django
 from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
-from .models import Movie
+from .models import Movie, Download
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
@@ -24,6 +24,7 @@ SHOW_TITLE_REPLACEMENTS = {
     "Little Shark's Day Out": "Little Shark Outings",
     "Reno 911!": "Reno 911",
     "Château DIY": "Chateau DIY Living the Dream",
+    "Welcome Back, Kotter": "Welcome Back Kotter",
 }
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
@@ -314,4 +315,44 @@ class NZBGeek:
             if not os.path.exists(dest_path):
                 os.rename(file, dest_path)
             print(f"{file_name} moved to {dest_path}.")
+        return
+
+
+class NZBGet:
+    def __init__(self):
+        self.session = requests.Session()
+
+    def get_and_update_history(self):
+        r = self.session.get('http://127.0.0.1:6789/jsonrpc/history?=false')
+        results = r.json()['result']
+        for result in results:
+            status = result['Status']
+            if 'FAILURE' in status:
+                # add to list of failed downloads
+                d = Download.objects.all().filter(nzb_id=result['ID']).first()
+                if not d:
+                    d = Download(
+                        nzb_id=result['ID'],
+                        title=result['NZBName'],
+                        successful=False,
+                    )
+                    d.save()
+                    print(f"Added {result['NZBName']} to failed downloads.")
+                else:
+                    print(f"{result['NZBName']} already exists in failed downloads.")
+            elif 'SUCCESS' in status:
+                # add to list of successful downloads
+                d = Download.objects.all().filter(nzb_id=result['ID']).first()
+                if not d:
+                    d = Download(
+                        nzb_id=result['ID'],
+                        title=result['NZBName'],
+                        successful=True,
+                    )
+                    d.save()
+                    print(f"Added {result['NZBName']} to successful downloads.")
+                else:
+                    print(f"{result['NZBName']} already exists in successful downloads.")
+            else:
+                print(f"Status for {result['NZBName']} is {status}.")
         return
