@@ -59,7 +59,7 @@ class Movie(models.Model):
     cast = models.ManyToManyField('CastMember', related_name='movies')
 
     def __str__(self):
-        return self.title
+        return self.name
 
     def get_absolute_url(self: 'Movie'):
         return f"/movies/{self.id}"

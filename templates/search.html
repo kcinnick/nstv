@@ -33,7 +33,7 @@
         {% if key == 'cast_members' %}
             <a href="/cast/{{ item.id }}"><p>{{ item.name }}</p></a>
         {% elif key == 'movies' %}
-            <a href="/movies/{{ item.id }}"><p>{{ item.title }}</p></a>
+            <a href="/movies/{{ item.id }}"><p>{{ item.name }}</p></a>
         {% elif key == 'shows' %}
             <a href="/shows/{{ item.id }}"><p>{{ item.title }}</p></a>
         {% elif key == 'episodes' %}

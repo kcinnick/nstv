@@ -267,14 +267,14 @@ def movie_index(request, movie_id):
 
 
 def movie_search(request):
-    title = request.GET.get('title', None)
-    print(f'movie_search: title={title}')
-    if title:
+    name = request.GET.get('name', None)
+    print(f'movie_search: name={name}')
+    if name:
         try:
-            movie = Movie.objects.get(title=title)
+            movie = Movie.objects.get(name=name)
             return JsonResponse({'id': movie.id})
         except Movie.DoesNotExist:
-            new_movie = Movie(title=title)
+            new_movie = Movie(name=name)
             new_movie.save()
             nzb_geek = NZBGeek()
             nzb_geek.login()
@@ -312,7 +312,7 @@ def search_results(request):
         print('query is not empty')
         if search_movies:
             print('searching movies')
-            results['movies'] = Movie.objects.filter(title__icontains=query)
+            results['movies'] = Movie.objects.filter(name__icontains=query)
         if search_shows:
             print('searching shows')
             results['shows'] = Show.objects.filter(title__icontains=query)
@@ -325,7 +325,5 @@ def search_results(request):
     else:
         print('query is empty')
         movies = Movie.objects.none()  # Return an empty queryset
-
-    print(results)
 
     return render(request, 'search.html', {'results': results})
