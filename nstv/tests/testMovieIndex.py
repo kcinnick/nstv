@@ -1,6 +1,5 @@
 from django.test import TestCase
-from nstv.models import Show, Episode, Movie
-from nstv.views import movie_search, movie_index, movies_index
+from nstv.models import Movie
 
 
 class MovieIndexTest(TestCase):
