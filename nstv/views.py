@@ -266,25 +266,6 @@ def movie_index(request, movie_id):
     return render(request, "movie.html", index_context)
 
 
-def movie_search(request):
-    name = request.GET.get('name', None)
-    print(f'movie_search: name={name}')
-    if name:
-        try:
-            movie = Movie.objects.get(name=name)
-            return JsonResponse({'id': movie.id})
-        except Movie.DoesNotExist:
-            new_movie = Movie(name=name)
-            new_movie.save()
-            nzb_geek = NZBGeek()
-            nzb_geek.login()
-            movie_gid = nzb_geek.get_gid_for_movie(new_movie)
-            if movie_gid:
-                return JsonResponse({'id': new_movie.id})
-            else:
-                return JsonResponse({'error': 'Movie not found'}, status=404)
-
-
 def cast_member(request, cast_member_id):
     cast_member_object = CastMember.objects.get(id=cast_member_id)
     shows_for_cast_member = Show.objects.filter(cast__id=cast_member_id)
@@ -324,6 +305,5 @@ def search_results(request):
             results['episodes'] = Episode.objects.filter(title__icontains=query)
     else:
         print('query is empty')
-        movies = Movie.objects.none()  # Return an empty queryset
 
     return render(request, 'search.html', {'results': results})
