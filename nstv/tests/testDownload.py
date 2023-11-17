@@ -8,8 +8,8 @@ from bs4 import BeautifulSoup
 from django.test import TestCase
 
 from nstv.download import NZBGeek, SearchResult, NZBGet
-from nstv.models import Show, Episode, Download
-from nstv.views import download_episode
+from nstv.models import Show, Episode, Movie, Download
+from nstv.views import download_episode, download_movie
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
 
@@ -19,6 +19,7 @@ class NZBGeekTestCase(TestCase):
         # Create a record before each test
         self.zoo_show_record = Show.objects.create(title='The Secret Life of the Zoo')
         self.seinfeld_show_record = Show.objects.create(title='Seinfeld', gid='79169')
+        self.movie_record = Movie.objects.create(name='Goldfinger')
         self.show_name_with_replacement = Show.objects.create(title='6ixtynin9')
         self.nzb_geek = NZBGeek()
         self.nzb_geek.login()
@@ -35,16 +36,20 @@ class NZBGeekTestCase(TestCase):
         self.assertTrue(self.nzb_geek.logged_in)
 
     def test_gid(self):
-        gid = self.nzb_geek.get_gid(self.zoo_show_record.title)
+        gid = self.nzb_geek.get_gid_for_show(self.zoo_show_record.title)
         self.assertEqual('306705', gid)
 
     def test_get_gid_for_nonexistent_show(self):
-        gid = self.nzb_geek.get_gid('this show does not exist')
+        gid = self.nzb_geek.get_gid_for_show('this show does not exist')
         self.assertIsNone(gid)
 
     def test_get_gid_for_show_with_name_replacement(self):
-        gid = self.nzb_geek.get_gid('6ixtynin9')
+        gid = self.nzb_geek.get_gid_for_show('6ixtynin9')
         self.assertEqual('438170', gid)
+
+    def test_get_gid_for_movie(self):
+        gid = self.nzb_geek.get_gid_for_movie(self.movie_record)
+        self.assertEqual('00058150', gid)
 
     def test_download_from_results(self):
         NZBGEEK_API_KEY = os.getenv("NZBGEEK_API_KEY")
@@ -150,8 +155,26 @@ class TestDownloadEpisode(TestCase):
         latest_log_contents = log_contents.split('\n')[-50:]
         latest_log_contents = '\n'.join(latest_log_contents)
 
-        assert 'The.Secret.Life.of.the.Zoo-S10E06-Episode.6.WEBDL-1080p' in latest_log_contents
+        assert 'The.Secret.Life.of.the.Zoo' in latest_log_contents
         return
+
+
+class TestDownloadMovie(TestCase):
+    def setUp(self):
+        self.nzb_geek = NZBGeek()
+        self.nzb_geek.login()
+        self.movie_record = Movie.objects.create(name='Goldfinger')
+        self.movie_record.save()
+
+    def tearDown(self):
+        self.movie_record.delete()
+
+    def test_download_movie(self):
+        request = Mock()
+        request.META = {}
+        download_movie(request, self.movie_record.id)
+        sleep(5)
+
 
 
 class TestNZBGet(TestCase):

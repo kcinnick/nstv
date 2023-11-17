@@ -47,7 +47,7 @@ class Episode(models.Model):
 
 class Movie(models.Model):
     gid = models.IntegerField(default=None, null=True)
-    title = models.TextField()
+    name = models.TextField()  # title is a reserved word
     release_date = models.DateField(default=None, null=True)
     genre = ArrayField(
         models.CharField(max_length=200, blank=True),
@@ -59,7 +59,7 @@ class Movie(models.Model):
     cast = models.ManyToManyField('CastMember', related_name='movies')
 
     def __str__(self):
-        return self.title
+        return self.name
 
     def get_absolute_url(self: 'Movie'):
         return f"/movies/{self.id}"

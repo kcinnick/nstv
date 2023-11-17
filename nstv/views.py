@@ -131,8 +131,8 @@ def add_movie_page(request):
 
     if request.method == "POST" and form.is_valid():
         movie = Movie(**form.cleaned_data)
-        if Movie.objects.filter(title=movie.title).exists():
-            print(f"Movie {movie.title} already exists.")  # TODO: find a way to flash these as messages on the page
+        if Movie.objects.filter(name=movie.name).exists():
+            print(f"Movie {movie.name} already exists.")  # TODO: find a way to flash these as messages on the page
             if movie.gid is not None:
                 pass
             else:
@@ -142,7 +142,7 @@ def add_movie_page(request):
             return HttpResponseRedirect(reverse('movies_index'))  # TODO: in the future, should redirect to movie's page
         else:
             print(
-                f"Movie {movie.title} did not previously exist. Movie created."
+                f"Movie {movie.name} did not previously exist. Movie created."
             )  # TODO: find a way to flash these as messages on the page
             movie.save()
             nzb_geek = NZBGeek()
@@ -238,7 +238,7 @@ def delete_movie(request, movie_id):
     if request.method == "POST":
         movie = Movie.objects.get(id=movie_id)
         movie.delete()
-        print(f"Movie {movie.title} was deleted.")
+        print(f"Movie {movie.name} was deleted.")
     else:
         print('delete_movie: request.method != "POST"')
         raise Exception('delete_movie: request.method != "POST"')
@@ -251,7 +251,7 @@ def download_movie(request, movie_id):
     nzb_geek = NZBGeek()
     nzb_geek.login()
     movie = Movie.objects.get(id=movie_id)
-    print('movie title: {} ~'.format(movie.title))
+    print('movie name: {} ~'.format(movie.name))
     search_results = nzb_geek.get_nzb_search_results_for_movie(movie)
     nzb_geek.download_from_results(search_results)
 
@@ -264,25 +264,6 @@ def movie_index(request, movie_id):
     index_context = {"title": "Movie", "movie": movie}
 
     return render(request, "movie.html", index_context)
-
-
-def movie_search(request):
-    title = request.GET.get('title', None)
-    print(f'movie_search: title={title}')
-    if title:
-        try:
-            movie = Movie.objects.get(title=title)
-            return JsonResponse({'id': movie.id})
-        except Movie.DoesNotExist:
-            new_movie = Movie(title=title)
-            new_movie.save()
-            nzb_geek = NZBGeek()
-            nzb_geek.login()
-            movie_gid = nzb_geek.get_gid_for_movie(new_movie)
-            if movie_gid:
-                return JsonResponse({'id': new_movie.id})
-            else:
-                return JsonResponse({'error': 'Movie not found'}, status=404)
 
 
 def cast_member(request, cast_member_id):
@@ -312,7 +293,7 @@ def search_results(request):
         print('query is not empty')
         if search_movies:
             print('searching movies')
-            results['movies'] = Movie.objects.filter(title__icontains=query)
+            results['movies'] = Movie.objects.filter(name__icontains=query)
         if search_shows:
             print('searching shows')
             results['shows'] = Show.objects.filter(title__icontains=query)
@@ -324,8 +305,5 @@ def search_results(request):
             results['episodes'] = Episode.objects.filter(title__icontains=query)
     else:
         print('query is empty')
-        movies = Movie.objects.none()  # Return an empty queryset
-
-    print(results)
 
     return render(request, 'search.html', {'results': results})

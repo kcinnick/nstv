@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}NSTV~ Movie: {{ movie.title }}{% endblock %}
+{% block title %}NSTV~ Movie: {{ movie.name }}{% endblock %}
 
 {% block content %}
-    <center><b><font size="6">{{ movie.title }}</font></b></center>
+    <center><b><font size="6">{{ movie.name }}</font></b></center>
     <br>
     <center><img src="{% static 'images/posters/Extreme_Job.jpg' %}" width="300" height="400"></center>
 {% endblock %}

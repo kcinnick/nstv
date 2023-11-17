@@ -8,7 +8,7 @@ class AddMoviePageTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.form_data = {
-            "title": "Test Movie",
+            "name": "Test Movie",
         }
 
     def test_uses_add_movie_template(self):
@@ -28,12 +28,12 @@ class AddMoviePageTest(TestCase):
         self.assertEqual(Movie.objects.count(), 0)
 
     def test_renders_after_POST(self):
-        response = self.client.post('/add_movie', data={'title': 'A new movie title'})
+        response = self.client.post('/add_movie', data={'name': 'A new movie title'})
         self.assertEqual(response.status_code, 302)
 
     def test_displays_all_list_items(self):
-        Movie.objects.create(title='movie title 1', gid=1)
-        Movie.objects.create(title='movie title 2', gid=2)
+        Movie.objects.create(name='movie title 1', gid=1)
+        Movie.objects.create(name='movie title 2', gid=2)
 
         response = self.client.get('/movies_index')
 
@@ -41,10 +41,10 @@ class AddMoviePageTest(TestCase):
         self.assertIn('movie title 2', response.content.decode())
 
     def test_can_save_a_POST_request_to_an_existing_list(self):
-        Movie.objects.create(title='movie title 1', gid=1)
-        Movie.objects.create(title='movie title 2', gid=2)
+        Movie.objects.create(name='movie title 1', gid=1)
+        Movie.objects.create(name='movie title 2', gid=2)
 
-        self.client.post('/add_movie', data={'title': 'A new movie title'})
+        self.client.post('/add_movie', data={'name': 'A new movie title'})
 
         response = self.client.get('/movies_index')
         self.assertIn("A new movie title", response.content.decode())
@@ -55,9 +55,9 @@ class AddMoviePageTest(TestCase):
         self.assertEqual(response['location'], '/movies_index')
 
     def test_redirects_after_duplicate_POST(self):
-        Movie.objects.create(title='movie title 1', gid=1)
-        Movie.objects.create(title='movie title 2', gid=2)
+        Movie.objects.create(name='movie title 1', gid=1)
+        Movie.objects.create(name='movie title 2', gid=2)
 
-        response = self.client.post('/add_movie', data={'title': 'movie title 1'})
+        response = self.client.post('/add_movie', data={'name': 'movie title 1'})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['location'], '/movies_index')
