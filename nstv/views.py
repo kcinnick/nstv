@@ -5,6 +5,7 @@ import plexapi.exceptions
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from tqdm import tqdm
 
 from .download import NZBGeek
 from .forms import DownloadForm, AddShowForm, AddMovieForm
@@ -197,11 +198,14 @@ def add_episodes_to_database(request, show_id):
 def move_downloaded_files_to_plex(request, plex_dir):
     print(f'move_downloaded_files_to_{plex_dir.split("_")[-1]}')
     try:
-        for file_name in os.listdir(NZBGET_COMPLETE_DIR):
+        print(f'NZBGET_COMPLETE_DIR: {NZBGET_COMPLETE_DIR}')
+        for file_name in tqdm(os.listdir(NZBGET_COMPLETE_DIR)):
+            print('Moving file: ', file_name)
             file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
             shutil.move(file_path, os.path.join(plex_dir, file_name))
         return JsonResponse({'status': 'success'}, status=200)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        print(e)
         return JsonResponse({'status': 'Network path was not found. Is your external HD turned on?'}, status=500)
     except Exception as e:
         print('failure: {}'.format(type(e)))
