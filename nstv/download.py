@@ -25,6 +25,7 @@ SHOW_TITLE_REPLACEMENTS = {
     "Reno 911!": "Reno 911",
     "Château DIY": "Chateau DIY Living the Dream",
     "Welcome Back, Kotter": "Welcome Back Kotter",
+    "Welcome to Samdal-ri": "Welcome to Samdalri",
 }
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
