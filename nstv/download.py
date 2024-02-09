@@ -25,6 +25,15 @@ SHOW_TITLE_REPLACEMENTS = {
     "Reno 911!": "Reno 911",
     "Château DIY": "Chateau DIY Living the Dream",
     "Welcome Back, Kotter": "Welcome Back Kotter",
+    "Welcome to Samdal-ri": "Welcome to Samdalri",
+}
+
+SEASON_TITLE_REPLACEMENTS = {
+    # sometimes the season ordering is different from TVDB to NZBGeek.
+    # When this happens, we can use the below dict to map the episode correctly.
+    'Running Man': {
+        'S2010': 'S01'
+    }
 }
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
@@ -230,6 +239,9 @@ class NZBGeek:
         if season_number == 0:
             url = f'https://nzbgeek.info/geekseek.php?tvid={show.gid}&season=S00&episode=all'
         elif season_number is not None:
+            if show.title in SEASON_TITLE_REPLACEMENTS.keys():
+                if f'{season_number}' in SEASON_TITLE_REPLACEMENTS[show.title].keys():
+                    season_number = SEASON_TITLE_REPLACEMENTS[show.title][f'S{season_number}']
             print(f"\nSearching for {show.title} S{season_number} E{episode_number}")
             url = f"https://nzbgeek.info/geekseek.php?tvid={show.gid}"
             url += f"&season=S{str(season_number).zfill(2)}"
