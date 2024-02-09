@@ -13,13 +13,21 @@ SHOW_ALIASES = {
     '6ixtynin9 the Series': '6ixtynin9'
 }
 
+SEASON_TITLE_REPLACEMENTS = {
+    # sometimes the season ordering is different from TVDB to NZBGeek.
+    # When this happens, we can use the below dict to map the episode correctly.
+    'Running Man': {
+        'S2010': 'S01'
+    }
+}
+
 
 def add_existing_episodes_for_plex_show(plex_show):
     print("plex_show: ", plex_show.title)
     django_show_object = Show.objects.get(title=plex_show.title)
     django_episodes = Episode.objects.filter(show=django_show_object)
-    #print("django_show_object: ", django_show_object)
-    #print("django_episodes: ", django_episodes)
+    # print("django_show_object: ", django_show_object)
+    # print("django_episodes: ", django_episodes)
 
     # match the shows first, then match the episodes of the shows
     for plex_episode in plex_show.episodes():
@@ -28,16 +36,23 @@ def add_existing_episodes_for_plex_show(plex_show):
             if not django_episode:
                 django_episode = django_episodes.filter(title=plex_episode.title.replace('.', '')).first()
             if django_episode:
-                #print('episode already exists')
+                # print('episode already exists')
                 # if the show is on plex, it's on disk, so we can update that if necessary
                 django_episode.on_disk = True
                 django_episode.save()
             else:
+                if plex_show.title in SEASON_TITLE_REPLACEMENTS.keys():
+                    if plex_episode.seasonNumber in SEASON_TITLE_REPLACEMENTS[plex_show.title].keys():
+                        season_number = SEASON_TITLE_REPLACEMENTS[plex_show.title][plex_episode.seasonNumber]
+                    else:
+                        season_number = plex_episode.seasonNumber
+                else:
+                    season_number = plex_episode.seasonNumber
                 django_episode = Episode(
                     show=django_show_object,
                     air_date=plex_episode.originallyAvailableAt,
                     title=plex_episode.title,
-                    season_number=plex_episode.seasonNumber,
+                    season_number=season_number,
                     episode_number=plex_episode.index,
                     on_disk=True
                 )
