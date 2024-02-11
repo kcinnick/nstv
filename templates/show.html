@@ -106,4 +106,12 @@ let csrf_token = getCookie('csrftoken');
     {% render_table episodes %}
 </center>
 
+{% if messages %}
+    <script type="text/javascript">
+        {% for message in messages %}
+        alert("{{ message|escapejs }}");
+        {% endfor %}
+    </script>
+{% endif %}
+
 {% endblock %}
