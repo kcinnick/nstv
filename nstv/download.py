@@ -1,14 +1,15 @@
 import os
 import re
-import webbrowser
 from glob import glob
-from urllib.parse import quote_plus
+from pathlib import Path
 from time import sleep
+from urllib.parse import quote_plus
 
 import django
-from pathlib import Path
+from django.contrib import messages
 import requests
 from bs4 import BeautifulSoup
+
 from .models import Movie, Download
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
@@ -41,14 +42,10 @@ NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
 
 class SearchResult:
     def __init__(self, result_table):
-        # TODO: re-write this such that you don't need to return if not result_table
         if not result_table:
             return
         self.title = result_table.find("a", class_="releases_title")
-        if self.title:
-            self.title = self.title.text.strip()
-        else:
-            return
+        self.title = self.title.text.strip()
         self.category = result_table.find(
             "a", class_="releases_category_text"
         ).text.strip()
@@ -301,22 +298,31 @@ class NZBGeek:
 
         return parsed_results
 
-    def download_from_results(self, results):
+    def download_from_results(self, results, request):
+        pre_download_nzb_files = len(glob(f"{Path.home()}\\Downloads\\*.nzb"))
         NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
         print("NZBGET_NZB_DIR: ", NZBGET_NZB_DIR)
         if not len(results):
             print("No results found.")
             return
-        webbrowser.open(results[0].download_url)
+        print(f"Downloading {results[0].title} from {results[0].download_url}")
+        r = self.session.get(results[0].download_url)
+        with open(f"{Path.home()}\\Downloads\\{results[0].title}.nzb", "wb") as f:
+            f.write(r.content)
         from time import sleep
 
         #  wait until file is downloaded
-        nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
-        sleep(15)
-        while len(nzb_files) == 0:
-            sleep(5)
+        tries = 0
+        while tries < 60:
+            sleep(1)
             nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
-        print("\nNZB file downloaded.")
+            if len(nzb_files) > pre_download_nzb_files:
+                messages.info(request, f"\rNZB file downloaded!")
+                print(f"\rNZB file downloaded!")
+                break
+            else:
+                tries += 1
+                print(f"\rWaiting for NZB file to download... {tries}")
 
         for file in nzb_files:
             file_name = file.split("\\")[-1]
