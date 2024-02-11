@@ -38,9 +38,12 @@ def index(request):
             show_title = show_title.get(show_title_int)
             show = Show.objects.get(title=show_title)
             print(f"Downloading {show.title} S{season_number} E{episode_number}..")
-            search_results = nzb_geek.get_nzb_search_results(show, season_number=season_number,
-                                                             episode_number=episode_number)
-            nzb_geek.download_from_results(search_results)
+            search_results = nzb_geek.get_nzb_search_results(
+                show,
+                season_number=season_number,
+                episode_number=episode_number
+            )
+            nzb_geek.download_from_results(search_results, request)
         else:
             print(form.errors)
             index_context["form_errors"] = form.errors
@@ -92,7 +95,7 @@ def download_episode(request, show_id, episode_id):
             season_number=episode.season_number, episode_number=episode.episode_number,
             anime=parent_show.anime
         )
-        nzb_geek.download_from_results(nzb_search_results)
+        nzb_geek.download_from_results(nzb_search_results, request)
     else:
         print(
             'Searching shows by season or episode number '
@@ -257,7 +260,7 @@ def download_movie(request, movie_id):
     movie = Movie.objects.get(id=movie_id)
     print('movie name: {} ~'.format(movie.name))
     search_results = nzb_geek.get_nzb_search_results_for_movie(movie)
-    nzb_geek.download_from_results(search_results)
+    nzb_geek.download_from_results(search_results, request)
 
     return HttpResponseRedirect(reverse('movies_index'))
 
