@@ -317,7 +317,7 @@ class NZBGeek:
             sleep(1)
             nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
             if len(nzb_files) > pre_download_nzb_files:
-                messages.info(request, f"\rNZB file downloaded!")
+                messages.info(request, f"\r{results[0].title} downloaded!")
                 print(f"\rNZB file downloaded!")
                 break
             else:
