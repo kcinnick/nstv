@@ -23,7 +23,12 @@ SEASON_TITLE_REPLACEMENTS = {
     # sometimes the season ordering is different from TVDB to NZBGeek.
     # When this happens, we can use the below dict to map the episode correctly.
     'Running Man': {
-        'S2010': 'S01'
+        'S2010': 'S01',
+        'S2011': 'S01',
+        'S2012': 'S01',
+        'S2013': 'S01',
+        'S2014': 'S01',
+        'S2015': 'S01',
     }
 }
 
@@ -146,7 +151,7 @@ def main(show_id=None):
                 print(f'Show title {show_title} not in SEASON_TITLE_REPLACEMENTS.')
             match = False
             # print('---')
-            print(tvdb_episode_listing)
+            # print(str(tvdb_episode_listing).encode('utf-8'))
             if show_title in EPISODE_TITLE_REPLACEMENTS:
                 if str(tvdb_episode_listing['seasonNumber']) in EPISODE_TITLE_REPLACEMENTS[show_title]:
                     if tvdb_episode_listing['name'] in EPISODE_TITLE_REPLACEMENTS[show_title][str(tvdb_episode_listing['seasonNumber'])]:
