@@ -10,7 +10,7 @@ from django.contrib import messages
 import requests
 from bs4 import BeautifulSoup
 
-from .models import Movie, Download
+from .models import Movie, NZBDownload
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
@@ -305,71 +305,45 @@ class NZBGeek:
         if not len(results):
             print("No results found.")
             return
-        print(f"Downloading {results[0].title} from {results[0].download_url}")
-        r = self.session.get(results[0].download_url)
-        with open(f"{Path.home()}\\Downloads\\{results[0].title}.nzb", "wb") as f:
-            f.write(r.content)
-        from time import sleep
 
-        #  wait until file is downloaded
-        tries = 0
-        while tries < 60:
-            sleep(1)
-            nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
-            if len(nzb_files) > pre_download_nzb_files:
-                messages.info(request, f"\r{results[0].title} downloaded!")
-                print(f"\rNZB file downloaded!")
-                break
-            else:
-                tries += 1
-                print(f"\rWaiting for NZB file to download... {tries}")
-
-        for file in nzb_files:
-            file_name = file.split("\\")[-1]
-            print('Moving {} to {}'.format(file_name, NZBGET_NZB_DIR))
-            dest_path = os.path.join(NZBGET_NZB_DIR, file_name)
-
-            if not os.path.exists(dest_path):
-                os.rename(file, dest_path)
-            print(f"{file_name} moved to {dest_path}.")
-        return
-
-
-class NZBGet:
-    def __init__(self):
-        self.session = requests.Session()
-
-    def get_and_update_history(self):
-        r = self.session.get('http://127.0.0.1:6789/jsonrpc/history?=false')
-        results = r.json()['result']
         for result in results:
-            status = result['Status']
-            if 'FAILURE' in status:
-                # add to list of failed downloads
-                d = Download.objects.all().filter(nzb_id=result['ID']).first()
-                if not d:
-                    d = Download(
-                        nzb_id=result['ID'],
-                        title=result['NZBName'],
-                        successful=False,
-                    )
-                    d.save()
-                    print(f"Added {result['NZBName']} to failed downloads.")
+            print(f"Downloading {result.title} from {result.download_url}")
+            r = self.session.get(result.download_url)
+            with open(f"{Path.home()}\\Downloads\\{result.title}.nzb", "wb") as f:
+                f.write(r.content)
+            from time import sleep
+
+            #  wait until file is downloaded
+            tries = 0
+            while tries < 60:
+                sleep(1)
+                nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
+                if len(nzb_files) > pre_download_nzb_files:
+                    messages.info(request, f"\r{result.title} downloaded!")
+                    print(f"\rNZB file downloaded!")
+                    break
                 else:
-                    print(f"{result['NZBName']} already exists in failed downloads.")
-            elif 'SUCCESS' in status:
-                # add to list of successful downloads
-                d = Download.objects.all().filter(nzb_id=result['ID']).first()
-                if not d:
-                    d = Download(
-                        nzb_id=result['ID'],
-                        title=result['NZBName'],
-                        successful=True,
-                    )
-                    d.save()
-                    print(f"Added {result['NZBName']} to successful downloads.")
-                else:
-                    print(f"{result['NZBName']} already exists in successful downloads.")
-            else:
-                print(f"Status for {result['NZBName']} is {status}.")
+                    tries += 1
+                    print(f"\rWaiting for NZB file to download... {tries}")
+
+            for file in nzb_files:
+                file_name = file.split("\\")[-1]
+                print('Moving {} to {}'.format(file_name, NZBGET_NZB_DIR))
+                dest_path = os.path.join(NZBGET_NZB_DIR, file_name)
+
+                if not os.path.exists(dest_path):
+                    os.rename(file, dest_path)
+                print(f"{file_name} moved to {dest_path}.")
+
+            # start monitoring download
+            # while True:
+            #     nzbget_api.get_and_update_history()
+            #     sleep(5)
+            #     if Download.objects.all().filter(title=result.title).exists():
+            #         print(f"{result.title} has been added to the database.")
+            #         return
+            #         break
+
+
+
         return
