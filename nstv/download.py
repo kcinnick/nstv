@@ -352,6 +352,12 @@ class NZBGeek:
                     elif 'SUCCESS' in nzb_download.status:
                         print(f"{result.title} has successfully downloaded.")
                         return
+                    elif 'DELETED/' in nzb_download.status:
+                        print(f"{result.title} has been deleted.")
+                        break
+                    else:
+                        print(f"Status for {result.title} is {nzb_download.status}.")
+                        raise Exception(f"Status for {result.title} is {nzb_download.status}.")
             print('post-download loop ended')
 
         return

@@ -10,7 +10,7 @@ from django.test import TestCase
 from django.contrib import messages
 
 from nstv.download import NZBGeek, SearchResult, NZBGet
-from nstv.models import Show, Episode, Movie, Download
+from nstv.models import Show, Episode, Movie, NZBDownload
 from nstv.views import download_episode, download_movie
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
@@ -199,8 +199,8 @@ class TestNZBGet(TestCase):
         pass
 
     def test_get_and_update_history(self):
-        download_records = Download.objects.all()
+        download_records = NZBDownload.objects.all()
         assert len(download_records) == 0
         NZBGet().get_and_update_history()
-        download_records = Download.objects.all()
+        download_records = NZBDownload.objects.all()
         assert len(download_records) > 0

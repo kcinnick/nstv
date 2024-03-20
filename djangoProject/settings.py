@@ -35,8 +35,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'nstv.apps.NstvConfig',
     'django_tables2',
+    'nstv',
 ]
 
 MIDDLEWARE = [
