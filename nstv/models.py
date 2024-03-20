@@ -82,9 +82,14 @@ class CastMember(models.Model):
 
 class NZBDownload(models.Model):
     nzb_id = models.TextField(default=None, null=True)
+    site = models.TextField(default=None, null=True)
+    title = models.TextField(default=None, null=True)
+    url = models.TextField(default=None, null=True)
+    status = models.TextField(default=None, null=True)
 
     def __str__(self):
-        return self.nzb_id
+        return self.title
 
     class Meta:
-        db_table = "NZBDownload"
+        db_table = "nzb_download"
+

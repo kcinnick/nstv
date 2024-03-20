@@ -9,6 +9,7 @@ import django
 from django.contrib import messages
 import requests
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 from .models import Movie, NZBDownload
 
@@ -305,8 +306,10 @@ class NZBGeek:
         if not len(results):
             print("No results found.")
             return
+        else:
+            print(f"Found {len(results)} results.")
 
-        for result in results:
+        for result in tqdm(results):
             print(f"Downloading {result.title} from {result.download_url}")
             r = self.session.get(result.download_url)
             with open(f"{Path.home()}\\Downloads\\{result.title}.nzb", "wb") as f:
@@ -336,14 +339,61 @@ class NZBGeek:
                 print(f"{file_name} moved to {dest_path}.")
 
             # start monitoring download
-            # while True:
-            #     nzbget_api.get_and_update_history()
-            #     sleep(5)
-            #     if Download.objects.all().filter(title=result.title).exists():
-            #         print(f"{result.title} has been added to the database.")
-            #         return
-            #         break
+            nzbget_api = NZBGet()
+            while True:
+                nzbget_api.get_and_update_history()
+                sleep(5)
+                if NZBDownload.objects.all().filter(title=result.title).exists():
+                    nzb_download = NZBDownload.objects.all().filter(title=result.title).first()
+                    print(f"{result.title} has been added to NZBGet with status {nzb_download.status}.")
+                    if 'FAILURE' in nzb_download.status:
+                        print(f"{result.title} has failed to download.")
+                        break
+                    elif 'SUCCESS' in nzb_download.status:
+                        print(f"{result.title} has successfully downloaded.")
+                        return
+                    elif 'DELETED/' in nzb_download.status:
+                        print(f"{result.title} has been deleted.")
+                        break
+                    else:
+                        print(f"Status for {result.title} is {nzb_download.status}.")
+                        raise Exception(f"Status for {result.title} is {nzb_download.status}.")
+            print('post-download loop ended')
+
+        return
 
 
+class NZBGet:
+    def __init__(self):
+        self.session = requests.Session()
 
+    def save_nzb_download_record(self, result, status):
+        nzb_download = NZBDownload.objects.all().filter(nzb_id=result['ID']).first()
+        if not nzb_download:
+            nzb_download = NZBDownload(
+                nzb_id=result['ID'],
+                title=result['NZBName'],
+                status=status,
+            )
+            nzb_download.save()
+            # print(f"Added {result['NZBName']} to failed downloads.")
+        else:
+            # print(f"{result['NZBName']} already exists in failed downloads.")
+            pass
+
+    def get_and_update_history(self):
+        r = self.session.get('http://127.0.0.1:6789/jsonrpc/history?=false')
+        results = r.json()['result']
+        for result in results:
+            status = result['Status']
+            if 'FAILURE' in status:
+                self.save_nzb_download_record(result, status)
+            elif 'SUCCESS' in status:
+                self.save_nzb_download_record(result, status)
+            elif 'DELETED/' in status:
+                self.save_nzb_download_record(result, status)
+            elif 'WARNING' in status:
+                self.save_nzb_download_record(result, status)
+            else:
+                print(f"Status for {result['NZBName']} is {status}.")
         return
