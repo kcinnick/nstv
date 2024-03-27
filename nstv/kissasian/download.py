@@ -65,55 +65,85 @@ def download_video_from_vidmoly(logged_in_session, video_dl_url, video_id):
                                    '/html/body/div/div/div[3]/div/div/div[3]/div[2]/table/tbody/tr/td[1]/form/div/button').click()
     print('clicked download button')
     # poll downloads folder until video ID is found
-    files_in_download_filder = list(reversed(os.listdir(getenv('DOWNLOADS_FOLDER'))))
-    while f'{video_id}.mp4' not in files_in_download_filder:
+    files_in_download_folder = list(reversed(os.listdir(getenv('DOWNLOADS_FOLDER'))))
+    print(f'Looking for {video_id}.mp4')
+    while f'{video_id}.mp4' not in files_in_download_folder:
         sleep(30)
-        files_in_download_filder = os.listdir(getenv('DOWNLOADS_FOLDER'))
+        files_in_download_folder = os.listdir(getenv('DOWNLOADS_FOLDER'))
         print('waiting..')
 
     return
 
 
+def build_new_file_name(show_title, season, quality):
+    if len(season) == 1:
+        season = f'0{season}'
+    if quality:
+        quality = '720P'
+        new_file_name = f'{show_title.replace(" ", ".")}.S{season}.Eepisode_number.{quality}.mp4'
+    else:
+        new_file_name = f'{show_title.replace(" ", ".")}.S{season}.Eepisode_number.mp4'
+
+    return new_file_name
+
+
+def download_episode(show_title_to_url_dict, logged_in_session, episode_number, new_file_name, show_title):
+    episode_to_download = f'Episode-{episode_number}'
+    if len(episode_number) == 1:
+        episode_number = f'00{episode_number}'
+    elif len(episode_number) == 2:
+        episode_number = f'0{episode_number}'
+    else:
+        pass
+    new_file_name = new_file_name.replace('episode_number', episode_number)
+    print('new_file_name: ', new_file_name)
+    show_url = show_title_to_url_dict[show_title]
+    logged_in_session.get(show_url)
+    print('got show page')
+    sleep(5)
+    episode_links = get_episode_links(logged_in_session, show_url)
+    print('got episode links')
+    for episode_link in episode_links:
+        print(episode_link)
+        if episode_to_download not in episode_link:
+            continue
+        print('downloading episode')
+        logged_in_session.get(episode_link)
+        print('got episode page')
+        video_source = logged_in_session.find_element(By.ID, 'my_video_1').get_attribute('src')
+        video_id = video_source.split('/')[-1].split('.')[0].replace('embed-', '')
+        video_dl_url = f'https://vidmoly.me/dl/{video_id}'
+        download_video_from_vidmoly(logged_in_session, video_dl_url, video_id)
+        print(f'found {video_id}.mp4. Download finished.')
+        # rename file to episode number
+        os.rename(f'{getenv("DOWNLOADS_FOLDER")}/{video_id}.mp4', f'{getenv("DOWNLOADS_FOLDER")}/{new_file_name}')
+        # input('Press enter to continue to next episode.')
+        sleep(10)
+        print('continuing to next episode.')
+        return
+
+
 def main():
+    show_title_to_url_dict = {
+        'Running Man': 'https://kissasian.lu/Drama/Running-Man-Game-Show'
+    }
+    show_title = 'Running Man'
+    season = '1'
+    if len(season) == 1:
+        season = f'0{season}'
+    quality = '720P'
+    new_file_name = build_new_file_name(show_title, season, quality)
     # episode_numbers = ['94', '95', '96', '97', '98', '99', '100']
-    episode_numbers = [str(i) for i in range(82, 120)]
+    episode_numbers = [str(i) for i in range(87, 89)]
     logged_in_session = login()
     print('Login to vidmoly.')
     logged_in_session.get('https://vidmoly.me/login.html')
     print('got vidmoly login page')
-    input('Press enter after logging in to vidmoly.')
+    input('Press enter after logging in to vidmoly. \n>')
     sleep(5)
     print('logged in to both sites.')
     for episode_number in tqdm(episode_numbers):
-        episode_to_download = f'Episode-{episode_number}'
-        if len(episode_number) == 1:
-            episode_number = f'00{episode_number}'
-        elif len(episode_number) == 2:
-            episode_number = f'0{episode_number}'
-        else:
-            pass
-        new_file_name = f'Running.Man.S01.E{episode_number}.720P.mp4'
-        show_url = 'https://kissasian.lu/Drama/Running-Man-Game-Show'
-        logged_in_session.get(show_url)
-        print('got show page')
-        sleep(5)
-        episode_links = get_episode_links(logged_in_session, show_url)
-        print('got episode links')
-        for episode_link in episode_links:
-            if episode_to_download not in episode_link:
-                continue
-            logged_in_session.get(episode_link)
-            print('got episode page')
-            video_source = logged_in_session.find_element(By.ID, 'my_video_1').get_attribute('src')
-            video_id = video_source.split('/')[-1].split('.')[0].replace('embed-', '')
-            video_dl_url = f'https://vidmoly.me/dl/{video_id}'
-            download_video_from_vidmoly(logged_in_session, video_dl_url, video_id)
-            print(f'found {video_id}.mp4. Download finished.')
-            # rename file to episode number
-            os.rename(f'{getenv("DOWNLOADS_FOLDER")}/{video_id}.mp4', f'{getenv("DOWNLOADS_FOLDER")}/{new_file_name}')
-            #input('Press enter to continue to next episode.')
-            sleep(10)
-            print('continuing to next episode.')
+        download_episode(show_title_to_url_dict, logged_in_session, episode_number, new_file_name, show_title)
 
 
 if __name__ == '__main__':
