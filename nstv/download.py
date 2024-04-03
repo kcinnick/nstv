@@ -309,7 +309,10 @@ class NZBGeek:
         else:
             print(f"Found {len(results)} results.")
 
+        result_counter = 0
         for result in tqdm(results):
+            result_counter += 1
+            result.title = f"{result.title}_{result_counter}"
             print(f"Downloading {result.title} from {result.download_url}")
             r = self.session.get(result.download_url)
             with open(f"{Path.home()}\\Downloads\\{result.title}.nzb", "wb") as f:
