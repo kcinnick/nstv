@@ -104,7 +104,6 @@ def download_episode(show_title_to_url_dict, logged_in_session, episode_number, 
     episode_links = get_episode_links(logged_in_session, show_url)
     print('got episode links')
     for episode_link in episode_links:
-        print(episode_link)
         if episode_to_download not in episode_link:
             continue
         print('downloading episode')
@@ -134,12 +133,12 @@ def main():
     quality = '720P'
     new_file_name = build_new_file_name(show_title, season, quality)
     # episode_numbers = ['94', '95', '96', '97', '98', '99', '100']
-    episode_numbers = [str(i) for i in range(87, 89)]
+    episode_numbers = [str(i) for i in range(396, 464)]
     logged_in_session = login()
     print('Login to vidmoly.')
     logged_in_session.get('https://vidmoly.me/login.html')
     print('got vidmoly login page')
-    input('Press enter after logging in to vidmoly. \n>')
+    input('Press enter after logging in to vidmoly. \n> ')
     sleep(5)
     print('logged in to both sites.')
     for episode_number in tqdm(episode_numbers):

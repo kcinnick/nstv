@@ -344,7 +344,11 @@ class NZBGeek:
             # start monitoring download
             nzbget_api = NZBGet()
             while True:
-                nzbget_api.get_and_update_history()
+                try:
+                    nzbget_api.get_and_update_history()
+                except ConnectionError:
+                    print('Connection to NZBGet failed. Please check that it\'s running.')
+                    break
                 sleep(5)
                 if NZBDownload.objects.all().filter(title=result.title).exists():
                     nzb_download = NZBDownload.objects.all().filter(title=result.title).first()
