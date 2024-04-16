@@ -6,6 +6,7 @@ from os import getenv
 from time import sleep
 
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -14,11 +15,13 @@ from tqdm import tqdm
 
 def login():
     options = webdriver.ChromeOptions()
-
+    ublock_path = r'C:\Users\Nick\PycharmProjects\nstv\nstv\kissasian\ublock'
     chrome_prefs = {}
+    options.add_argument('load-extension=' + ublock_path)
+
     options.experimental_options["prefs"] = chrome_prefs
-    chrome_prefs["profile.default_content_settings"] = {"javascript": 2}
-    chrome_prefs["profile.managed_default_content_settings"] = {"javascript": 2}
+    #chrome_prefs["profile.default_content_settings"] = {"javascript": 2}
+    #chrome_prefs["profile.managed_default_content_settings"] = {"javascript": 2}
 
     chrome = webdriver.Chrome(options=options)
     sleep(5)
@@ -61,8 +64,16 @@ def download_video_from_vidmoly(logged_in_session, video_dl_url, video_id):
     logged_in_session.get(video_dl_url)
     print('got video download page')
     sleep(5)
-    logged_in_session.find_element(By.XPATH,
-                                   '/html/body/div/div/div[3]/div/div/div[3]/div[2]/table/tbody/tr/td[1]/form/div/button').click()
+    download_button_xpath = '/html/body/div/div/div[3]/div/div/div[3]/div[2]/table/tbody/tr/td[1]/form/div/button'
+    try:
+        logged_in_session.find_element(
+            By.XPATH,
+            download_button_xpath).click()
+    except NoSuchElementException:
+        input('Press enter after completing CAPTCHA. \n> ')
+        logged_in_session.find_element(
+            By.XPATH,
+            download_button_xpath).click()
     print('clicked download button')
     # poll downloads folder until video ID is found
     files_in_download_folder = list(reversed(os.listdir(getenv('DOWNLOADS_FOLDER'))))
@@ -124,7 +135,11 @@ def download_episode(show_title_to_url_dict, logged_in_session, episode_number, 
 
 def main():
     show_title_to_url_dict = {
-        'Running Man': 'https://kissasian.lu/Drama/Running-Man-Game-Show'
+        'Running Man': 'https://kissasian.lu/Drama/Running-Man-Game-Show',
+        'Hometown Cha-Cha-Cha': 'https://kissasian.lu/Drama/Hometown-Cha-Cha-Cha',
+        'Because This Is My First Life': 'https://kissasian.lu/Drama/Because-This-is-My-First-Life',
+        'Backstreet Rookie': 'https://kissasian.lu/Drama/Backstreet-Rookie',
+
     }
     show_title = 'Running Man'
     season = '1'
@@ -133,12 +148,12 @@ def main():
     quality = '720P'
     new_file_name = build_new_file_name(show_title, season, quality)
     # episode_numbers = ['94', '95', '96', '97', '98', '99', '100']
-    episode_numbers = [str(i) for i in range(396, 464)]
+    episode_numbers = [str(i) for i in range(510, 680)]
     logged_in_session = login()
     print('Login to vidmoly.')
     logged_in_session.get('https://vidmoly.me/login.html')
     print('got vidmoly login page')
-    input('Press enter after logging in to vidmoly. \n> ')
+    input('Press enter after logging in to vidmoly and completing one CAPTCHA. \n> ')
     sleep(5)
     print('logged in to both sites.')
     for episode_number in tqdm(episode_numbers):
