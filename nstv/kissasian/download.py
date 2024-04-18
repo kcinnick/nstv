@@ -70,7 +70,8 @@ def download_video_from_vidmoly(logged_in_session, video_dl_url, video_id):
             By.XPATH,
             download_button_xpath).click()
     except NoSuchElementException:
-        input('Press enter after completing CAPTCHA. \n> ')
+        input('Press enter after completing CAPTCHA and refreshing the page. \n> ')
+        logged_in_session.get(video_dl_url)
         logged_in_session.find_element(
             By.XPATH,
             download_button_xpath).click()
@@ -139,7 +140,6 @@ def main():
         'Hometown Cha-Cha-Cha': 'https://kissasian.lu/Drama/Hometown-Cha-Cha-Cha',
         'Because This Is My First Life': 'https://kissasian.lu/Drama/Because-This-is-My-First-Life',
         'Backstreet Rookie': 'https://kissasian.lu/Drama/Backstreet-Rookie',
-
     }
     show_title = 'Running Man'
     season = '1'
