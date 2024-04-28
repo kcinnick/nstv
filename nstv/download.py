@@ -28,6 +28,8 @@ SHOW_TITLE_REPLACEMENTS = {
     "Château DIY": "Chateau DIY Living the Dream",
     "Welcome Back, Kotter": "Welcome Back Kotter",
     "Welcome to Samdal-ri": "Welcome to Samdalri",
+    "The Twilight Zone": "The Twilight Zone (1959)",
+    "Girl from Nowhere": "Girl From Nowhere"
 }
 
 SEASON_TITLE_REPLACEMENTS = {

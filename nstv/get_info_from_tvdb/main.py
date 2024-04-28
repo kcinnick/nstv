@@ -17,6 +17,7 @@ TVDB_ALIAS = {
     "The Great British Bake Off": "The Great British Baking Show",
     "Inside Culture": "Inside Culture with Mary Beard",
     "Chateau DIY Living the Dream": "Château DIY",
+    "Girl From Nowhere": "Girl from Nowhere"
 }
 
 SEASON_TITLE_REPLACEMENTS = {
