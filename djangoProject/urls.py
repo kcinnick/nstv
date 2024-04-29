@@ -39,4 +39,5 @@ urlpatterns = [
     path('movies/<int:movie_id>', views.movie_index, name='movie_index'),
     path('cast/<int:cast_member_id>', views.cast_member, name='cast_member_index'),
     path('search/', views.search_results, name='search_results'),
+    path('shows/<int:show_id>/missing_episodes', views.find_missing_episodes, name='missing_episodes'),
 ]
