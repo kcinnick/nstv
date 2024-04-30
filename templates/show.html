@@ -84,6 +84,10 @@ let csrf_token = getCookie('csrftoken');
     {% endfor %}
 </div>
 </center>
+    <br>
+    <center>
+    <a href="/shows/{{ show.id }}/missing_episodes" class="button">Missing Episodes</a>
+    </center>
 <script>
     var coll = document.getElementsByClassName("collapsible");
     var i;
