@@ -286,6 +286,20 @@ def cast_member(request, cast_member_id):
     return render(request, "cast_member.html", index_context)
 
 
+def find_missing_episodes(request, show_id):
+    show = Show.objects.get(id=show_id)
+    missing_episodes = Episode.objects.filter(show=show, on_disk=False)
+    episodes_table = EpisodeTable(missing_episodes)
+    episodes_table.paginate(page=request.GET.get("page", 1), per_page=10)
+
+    index_context = {
+        "title": "Missing Episodes",
+        "show": show,
+        "episodes": episodes_table,
+    }
+    return render(request, "missing_episodes.html", index_context)
+
+
 def search_results(request):
     query = request.GET.get('query', '')
     search_movies = request.GET.get('movies') == 'on'

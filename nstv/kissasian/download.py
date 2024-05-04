@@ -129,7 +129,7 @@ def download_episode(show_title_to_url_dict, logged_in_session, episode_number, 
         # rename file to episode number
         os.rename(f'{getenv("DOWNLOADS_FOLDER")}/{video_id}.mp4', f'{getenv("DOWNLOADS_FOLDER")}/{new_file_name}')
         # input('Press enter to continue to next episode.')
-        sleep(10)
+        sleep(60)
         print('continuing to next episode.')
         return
 
@@ -148,7 +148,8 @@ def main():
     quality = '720P'
     new_file_name = build_new_file_name(show_title, season, quality)
     # episode_numbers = ['94', '95', '96', '97', '98', '99', '100']
-    episode_numbers = [str(i) for i in range(510, 680)]
+    episode_numbers = list(reversed([str(i) for i in range(557, 655)]))
+
     logged_in_session = login()
     print('Login to vidmoly.')
     logged_in_session.get('https://vidmoly.me/login.html')
