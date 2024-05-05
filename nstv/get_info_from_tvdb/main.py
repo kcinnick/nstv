@@ -25,20 +25,36 @@ SEASON_TITLE_REPLACEMENTS = {
     # When this happens, we can use the below dict to map the episode correctly.
     'Running Man': {
         'S2010': 'S01',
-        'S2011': 'S01',
-        'S2012': 'S01',
-        'S2013': 'S01',
-        'S2014': 'S01',
-        'S2015': 'S01',
+        'S2011': 'S02',
+        'S2012': 'S03',
+        'S2013': 'S04',
+        'S2014': 'S05',
+        'S2015': 'S06',
+        'S2016': 'S07',
+        'S2017': 'S08',
+        'S2018': 'S09',
+        'S2019': 'S10',
+        'S2020': 'S11',
+        'S2021': 'S12',
+        'S2022': 'S13',
+        'S2023': 'S14',
+        'S2024': 'S15',
     }
 }
 
 EPISODE_TITLE_REPLACEMENTS = {
     'Running Man': {
         'S01': {
+            # TVDB episode name: Plex episode name
             'Times Square': 'Times Square Mall',
             'Namsan Tower': 'N Seoul Tower',
-            'Seoul Museum of History, Gyeonghui Palace': 'Seoul Museum of History and Gyeonghui Palace'
+            'Seoul Museum of History, Gyeonghui Palace': 'Seoul Museum of History and Gyeonghui Palace',
+            'Xi Wi City': 'Men vs Women',
+            'Bucheon Museum Manhwa Information Center': 'Museum Comics Information Center',
+            'Nakwon Music Instruments Arcade': 'Nakwon Instruments Shopping Center',
+            'Ansung Natural Resort': 'The Strongest Guest',
+            'COEX Aquarium': 'Running Man Membership Training',
+            'National Center for Korean Traditional Performing Arts': '1 vs 8',
         }
     }
 }
@@ -109,6 +125,20 @@ def find_tvdb_record_for_series(tvdb_api, series_name):
     raise Exception('No match found.')
 
 
+def get_all_tvdb_episode_listings(tvdb, tvdb_series):
+    page = 0
+    all_tvdb_series_episodes = []
+    while True:
+        tvdb_series_episodes = tvdb.get_series_episodes(tvdb_series['id'], lang='eng', page=page)['episodes']
+        all_tvdb_series_episodes.extend(tvdb_series_episodes)
+        if len(tvdb_series_episodes) != 500:
+            break
+        else:
+            page += 1
+
+    return all_tvdb_series_episodes
+
+
 def main(show_id=None):
     tvdb = tvdb_v4_official.TVDB(os.getenv('TVDB_API_KEY'))
     shows_to_skip = [
@@ -124,44 +154,40 @@ def main(show_id=None):
             continue
         print('Searching for episodes for {}'.format(show.title))
         nstv_episodes = Episode.objects.filter(show=show)
-        # print(show.episodes)
-        # print(show)
         show_title = show.title
         tvdb_record = find_tvdb_record_for_series(tvdb, show_title)
-        # print(tvdb_record)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
         show.tvdb_id = tvdb_series['id']
         show.save()
-        # print(tvdb_series)
-        # add pagination until 0 episodes are found
-        page = 0
-        all_tvdb_series_episodes = []
-        while True:
-            tvdb_series_episodes = tvdb.get_series_episodes(tvdb_series['id'], lang='eng', page=page)['episodes']
-            all_tvdb_series_episodes.extend(tvdb_series_episodes)
-            if len(tvdb_series_episodes) != 500:
-                break
-            else:
-                page += 1
+
+        all_tvdb_series_episodes = get_all_tvdb_episode_listings(tvdb, tvdb_series)
+
         for tvdb_episode_listing in all_tvdb_series_episodes:
-            if tvdb_episode_listing['seasonNumber'] == 0:
+            tvdb_episode_listing_season_name = tvdb_episode_listing.get('seasonName')
+            if not tvdb_episode_listing_season_name:
+                tvdb_episode_listing_season_name = tvdb_episode_listing.get('seasonNumber')
+            if tvdb_episode_listing_season_name == 0:
                 continue
             if show_title in SEASON_TITLE_REPLACEMENTS:
-                tvdb_episode_listing['seasonNumber'] = SEASON_TITLE_REPLACEMENTS[show_title]['S' + str(tvdb_episode_listing['seasonNumber'])]
+                tvdb_episode_listing_season_name = SEASON_TITLE_REPLACEMENTS[show_title][
+                    'S' + str(tvdb_episode_listing_season_name)]
             else:
                 print(f'Show title {show_title} not in SEASON_TITLE_REPLACEMENTS.')
             match = False
             # print('---')
             # print(str(tvdb_episode_listing).encode('utf-8'))
             if show_title in EPISODE_TITLE_REPLACEMENTS:
-                if str(tvdb_episode_listing['seasonNumber']) in EPISODE_TITLE_REPLACEMENTS[show_title]:
-                    if tvdb_episode_listing['name'] in EPISODE_TITLE_REPLACEMENTS[show_title][str(tvdb_episode_listing['seasonNumber'])]:
-                        tvdb_episode_listing['name'] = EPISODE_TITLE_REPLACEMENTS.get(show_title)[str(tvdb_episode_listing['seasonNumber'])][tvdb_episode_listing['name']]
+                if str(tvdb_episode_listing_season_name) in EPISODE_TITLE_REPLACEMENTS[show_title]:
+                    if tvdb_episode_listing['name'] in EPISODE_TITLE_REPLACEMENTS[show_title][
+                        str(tvdb_episode_listing_season_name)]:
+                        tvdb_episode_listing['name'] = \
+                        EPISODE_TITLE_REPLACEMENTS.get(show_title)[str(tvdb_episode_listing_season_name)][
+                            tvdb_episode_listing['name']]
             for nstv_episode in nstv_episodes:
-                # print('Checking if {} == {}'.format(nstv_episode.title, tvdb_episode_listing['name']))
+                # print('Checking if {} == {}'.format(nstv_episode.title, tvdb_episode_listing['name']).encode('utf-8'))
                 if nstv_episode.title == tvdb_episode_listing['name']:
-                    print('Matched {}.'.format(nstv_episode.title, tvdb_episode_listing['name']))
-                    nstv_episode.season_number = str(tvdb_episode_listing['seasonNumber']).replace('S', '')
+                    print('Matched {}.'.format(nstv_episode.title, tvdb_episode_listing['name']).encode('utf-8'))
+                    nstv_episode.season_number = str(tvdb_episode_listing_season_name).replace('S', '')
                     nstv_episode.episode_number = tvdb_episode_listing['number']
                     nstv_episode.air_date = tvdb_episode_listing['aired']
                     nstv_episode.tvdb_id = tvdb_episode_listing['id']
@@ -169,17 +195,17 @@ def main(show_id=None):
                     match = True
                     break
             if not match:
-                print('No match found for {}'.format(tvdb_episode_listing['name']))
+                print('No match found for {}'.format(tvdb_episode_listing['name']).encode('utf-8'))
                 if tvdb_episode_listing['name'] is None:
                     continue
-                print('Creating episode for {}'.format(tvdb_episode_listing['name']))
-                if 'S' in str(tvdb_episode_listing['seasonNumber']):
-                    tvdb_episode_listing['seasonNumber'] = tvdb_episode_listing['seasonNumber'].replace('S', '')
+                print('Creating episode for {}'.format(tvdb_episode_listing['name']).encode('utf-8'))
+                if 'S' in str(tvdb_episode_listing_season_name):
+                    tvdb_episode_listing_season_name = tvdb_episode_listing_season_name.replace('S', '')
                 Episode.objects.create(
                     show=show,
                     air_date=tvdb_episode_listing['aired'],
                     title=tvdb_episode_listing['name'],
-                    season_number=tvdb_episode_listing['seasonNumber'],
+                    season_number=tvdb_episode_listing_season_name,
                     episode_number=tvdb_episode_listing['number'],
                     on_disk=False
                 )
@@ -187,4 +213,4 @@ def main(show_id=None):
 
 
 if __name__ == '__main__':
-    main()
+    main(145)

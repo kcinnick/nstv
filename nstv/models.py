@@ -32,7 +32,7 @@ class Episode(models.Model):
     )
     air_date = models.DateField(null=True)
     title = models.TextField()
-    season_number = models.IntegerField(null=True)
+    season_number = models.TextField(null=True)
     episode_number = models.IntegerField(null=True)
     on_disk = models.BooleanField(default=False)
     tvdb_id = models.IntegerField(default=None, null=True)
