@@ -17,7 +17,25 @@ SEASON_TITLE_REPLACEMENTS = {
     # sometimes the season ordering is different from TVDB to NZBGeek.
     # When this happens, we can use the below dict to map the episode correctly.
     'Running Man': {
-        'S2010': 'S01'
+        'S2010': 'S01',
+        'S2011': 'S02',
+        'S2012': 'S03',
+        'S2013': 'S04',
+        'S2014': 'S05',
+        'S2015': 'S06',
+        'S2016': 'S07',
+        'S2017': 'S08',
+        'S2018': 'S09',
+        'S2019': 'S10',
+        'S2020': 'S11',
+        'S2021': 'S12',
+        'S2022': 'S13',
+        'S2023': 'S14',
+        'S2024': 'S15',
+    },
+    'Lupin': {
+        'Season 1 - Part 1 & 2': 'S01',
+        'Season 2 - Part 3': 'S02'
     }
 }
 
@@ -32,18 +50,24 @@ def add_existing_episodes_for_plex_show(plex_show):
     # match the shows first, then match the episodes of the shows
     for plex_episode in plex_show.episodes():
         if plex_episode.title:
-            django_episode = django_episodes.filter(title=plex_episode.title).first()
+            django_episode = django_episodes.filter(
+                title=plex_episode.title,
+                season_number=plex_episode.seasonNumber
+            ).first()
             if not django_episode:
-                django_episode = django_episodes.filter(title=plex_episode.title.replace('.', '')).first()
+                django_episode = django_episodes.filter(
+                    title=plex_episode.title.replace('.', ''),
+                    season_number=plex_episode.seasonNumber
+                ).first()
             if django_episode:
-                # print('episode already exists')
+                print('episode already exists')
                 # if the show is on plex, it's on disk, so we can update that if necessary
                 django_episode.on_disk = True
                 django_episode.save()
             else:
                 if plex_show.title in SEASON_TITLE_REPLACEMENTS.keys():
                     if plex_episode.seasonNumber in SEASON_TITLE_REPLACEMENTS[plex_show.title].keys():
-                        season_number = SEASON_TITLE_REPLACEMENTS[plex_show.title][plex_episode.seasonNumber]
+                        season_number = SEASON_TITLE_REPLACEMENTS[plex_show.title][plex_episode.seasonName]
                     else:
                         season_number = plex_episode.seasonNumber
                 else:
