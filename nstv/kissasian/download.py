@@ -5,6 +5,7 @@ import os
 from os import getenv
 from time import sleep
 
+import plyer
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -24,6 +25,7 @@ def login():
     #chrome_prefs["profile.managed_default_content_settings"] = {"javascript": 2}
 
     chrome = webdriver.Chrome(options=options)
+    chrome.implicitly_wait(10)
     sleep(5)
     chrome.get('https://kissasian.lu/Login')
     sleep(5)
@@ -70,6 +72,11 @@ def download_video_from_vidmoly(logged_in_session, video_dl_url, video_id):
             By.XPATH,
             download_button_xpath).click()
     except NoSuchElementException:
+        plyer.notification.notify(
+            title='Desktop Alert',
+            message='CAPTCHA encountered.',
+            timeout=60
+        )
         input('Press enter after completing CAPTCHA and refreshing the page. \n> ')
         logged_in_session.get(video_dl_url)
         logged_in_session.find_element(
@@ -80,7 +87,7 @@ def download_video_from_vidmoly(logged_in_session, video_dl_url, video_id):
     files_in_download_folder = list(reversed(os.listdir(getenv('DOWNLOADS_FOLDER'))))
     print(f'Looking for {video_id}.mp4')
     while f'{video_id}.mp4' not in files_in_download_folder:
-        sleep(30)
+        sleep(5)
         files_in_download_folder = os.listdir(getenv('DOWNLOADS_FOLDER'))
         print('waiting..')
 
@@ -121,7 +128,16 @@ def download_episode(show_title_to_url_dict, logged_in_session, episode_number, 
         print('downloading episode')
         logged_in_session.get(episode_link)
         print('got episode page')
-        video_source = logged_in_session.find_element(By.ID, 'my_video_1').get_attribute('src')
+        try:
+            video_source = logged_in_session.find_element(By.ID, 'my_video_1').get_attribute('src')
+        except NoSuchElementException:
+            notification = plyer.notification.notify(
+                title='Desktop Alert',
+                message='video source not found.',
+                timeout=60
+            )
+            input('Press enter after completing CAPTCHA and refreshing the page. \n> ')
+            continue
         video_id = video_source.split('/')[-1].split('.')[0].replace('embed-', '')
         video_dl_url = f'https://vidmoly.me/dl/{video_id}'
         download_video_from_vidmoly(logged_in_session, video_dl_url, video_id)
@@ -129,7 +145,7 @@ def download_episode(show_title_to_url_dict, logged_in_session, episode_number, 
         # rename file to episode number
         os.rename(f'{getenv("DOWNLOADS_FOLDER")}/{video_id}.mp4', f'{getenv("DOWNLOADS_FOLDER")}/{new_file_name}')
         # input('Press enter to continue to next episode.')
-        sleep(60)
+        sleep(5)
         print('continuing to next episode.')
         return
 
@@ -148,14 +164,14 @@ def main():
     quality = '720P'
     new_file_name = build_new_file_name(show_title, season, quality)
     # episode_numbers = ['94', '95', '96', '97', '98', '99', '100']
-    episode_numbers = list(reversed([str(i) for i in range(557, 655)]))
+    episode_numbers = [str(i) for i in range(302, 620)]
 
     logged_in_session = login()
     print('Login to vidmoly.')
     logged_in_session.get('https://vidmoly.me/login.html')
     print('got vidmoly login page')
     input('Press enter after logging in to vidmoly and completing one CAPTCHA. \n> ')
-    sleep(5)
+    sleep(0.5)
     print('logged in to both sites.')
     for episode_number in tqdm(episode_numbers):
         download_episode(show_title_to_url_dict, logged_in_session, episode_number, new_file_name, show_title)
