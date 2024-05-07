@@ -173,6 +173,8 @@ def main():
         'Hometown Cha-Cha-Cha': 'https://kissasian.lu/Drama/Hometown-Cha-Cha-Cha',
         'Because This Is My First Life': 'https://kissasian.lu/Drama/Because-This-is-My-First-Life',
         'Backstreet Rookie': 'https://kissasian.lu/Drama/Backstreet-Rookie',
+        'Queen of Tears': 'https://kissasian.lu/Drama/Queen-of-Tears',
+
     }
     show_title = 'Running Man'
     season = '1'
@@ -182,7 +184,7 @@ def main():
     new_file_name = build_new_file_name(show_title, season, quality)
     # episode_numbers = ['94', '95', '96', '97', '98', '99', '100']
     episode_numbers = []
-    episode_numbers.extend([str(i) for i in range(423, 708)])
+    episode_numbers.extend([str(i) for i in range(472, 708)])
 
     logged_in_session = login()
     print('Login to vidmoly.')
