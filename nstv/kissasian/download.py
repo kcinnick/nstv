@@ -75,7 +75,7 @@ def download_video_from_vidmoly(logged_in_session, video_dl_url, video_id):
         plyer.notification.notify(
             title='Desktop Alert',
             message='CAPTCHA encountered.',
-            timeout=60
+            timeout=600
         )
         input('Press enter after completing CAPTCHA and refreshing the page. \n> ')
         logged_in_session.get(video_dl_url)
@@ -83,15 +83,29 @@ def download_video_from_vidmoly(logged_in_session, video_dl_url, video_id):
             By.XPATH,
             download_button_xpath).click()
     print('clicked download button')
+    seconds = 0
+    # check page source for 'error_wrong_ip' string and return if found
+    if 'error_wrong_ip' in logged_in_session.page_source:
+        plyer.notification.notify(
+            title='Desktop Alert',
+            message='Wrong IP error. Moving to next file.',
+            timeout=600
+        )
+        return False
     # poll downloads folder until video ID is found
     files_in_download_folder = list(reversed(os.listdir(getenv('DOWNLOADS_FOLDER'))))
     print(f'Looking for {video_id}.mp4')
     while f'{video_id}.mp4' not in files_in_download_folder:
         sleep(5)
+        seconds += 5
         files_in_download_folder = os.listdir(getenv('DOWNLOADS_FOLDER'))
-        print('waiting..')
+        print(f'waiting.. {seconds} seconds passed.')
+        # if it's been more than 10 minutes, return False
+        if seconds > 600:
+            print('download took too long')
+            return False
 
-    return
+    return True
 
 
 def build_new_file_name(show_title, season, quality):
@@ -134,19 +148,22 @@ def download_episode(show_title_to_url_dict, logged_in_session, episode_number, 
             notification = plyer.notification.notify(
                 title='Desktop Alert',
                 message='video source not found.',
-                timeout=60
+                timeout=600
             )
             input('Press enter after completing CAPTCHA and refreshing the page. \n> ')
             continue
         video_id = video_source.split('/')[-1].split('.')[0].replace('embed-', '')
         video_dl_url = f'https://vidmoly.me/dl/{video_id}'
-        download_video_from_vidmoly(logged_in_session, video_dl_url, video_id)
-        print(f'found {video_id}.mp4. Download finished.')
-        # rename file to episode number
-        os.rename(f'{getenv("DOWNLOADS_FOLDER")}/{video_id}.mp4', f'{getenv("DOWNLOADS_FOLDER")}/{new_file_name}')
-        # input('Press enter to continue to next episode.')
-        sleep(5)
-        print('continuing to next episode.')
+        downloaded = download_video_from_vidmoly(logged_in_session, video_dl_url, video_id)
+        if downloaded:
+            print(f'found {video_id}.mp4. Download finished.')
+            # rename file to episode number
+            os.rename(f'{getenv("DOWNLOADS_FOLDER")}/{video_id}.mp4', f'{getenv("DOWNLOADS_FOLDER")}/{new_file_name}')
+            # input('Press enter to continue to next episode.')
+            sleep(5)
+            print('continuing to next episode.')
+        else:
+            print('skipping to next episode.')
         return
 
 
@@ -164,7 +181,8 @@ def main():
     quality = '720P'
     new_file_name = build_new_file_name(show_title, season, quality)
     # episode_numbers = ['94', '95', '96', '97', '98', '99', '100']
-    episode_numbers = [str(i) for i in range(302, 620)]
+    episode_numbers = []
+    episode_numbers.extend([str(i) for i in range(423, 708)])
 
     logged_in_session = login()
     print('Login to vidmoly.')
