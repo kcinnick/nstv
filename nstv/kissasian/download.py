@@ -121,7 +121,7 @@ def build_new_file_name(show_title, season, quality):
 
 
 def download_episode(show_title_to_url_dict, logged_in_session, episode_number, new_file_name, show_title):
-    episode_to_download = f'Episode-{episode_number}'
+    episode_to_download = f'Episode-{episode_number}?'
     if len(episode_number) == 1:
         episode_number = f'00{episode_number}'
     elif len(episode_number) == 2:
@@ -174,7 +174,7 @@ def main():
         'Because This Is My First Life': 'https://kissasian.lu/Drama/Because-This-is-My-First-Life',
         'Backstreet Rookie': 'https://kissasian.lu/Drama/Backstreet-Rookie',
         'Queen of Tears': 'https://kissasian.lu/Drama/Queen-of-Tears',
-
+        'Moving': 'https://kissasian.lu/Drama/Moving',
     }
     show_title = 'Running Man'
     season = '1'
@@ -182,10 +182,16 @@ def main():
         season = f'0{season}'
     quality = '720P'
     new_file_name = build_new_file_name(show_title, season, quality)
-    # episode_numbers = ['94', '95', '96', '97', '98', '99', '100']
     episode_numbers = []
-    episode_numbers.extend([str(i) for i in range(472, 708)])
-
+    episode_numbers.extend([str(i) for i in range(418, 423)])
+    episode_numbers.extend([
+        '433', '459', '535', '580'
+    ])
+    episode_numbers.extend([str(i) for i in range(588, 620)])
+    episode_numbers.extend([
+        '637', '638'
+    ])
+    episode_numbers.extend([str(i) for i in range(654, 706)])
     logged_in_session = login()
     print('Login to vidmoly.')
     logged_in_session.get('https://vidmoly.me/login.html')
