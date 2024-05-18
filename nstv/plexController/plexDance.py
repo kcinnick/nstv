@@ -10,7 +10,7 @@ temp_folder_path = os.getenv('TEMP_FOLDER_PATH')
 
 def move_files():
     # take files currently on plex and move them to a temp folder
-    for file_name in tqdm(os.listdir(folder_path)):
+    for file_name in tqdm(os.listdir(folder_path)[:3]):
         print(f'Moving file: {file_name} to {temp_folder_path}')
         shutil.move(f'{folder_path}\\{file_name}', f'{temp_folder_path}\\{file_name}')
         print('Moved.')
