@@ -217,11 +217,11 @@ def move_downloaded_files_to_plex(request, plex_dir):
 
 def move_downloaded_tv_show_files_to_plex(request):
     json_response = move_downloaded_files_to_plex(request, PLEX_TV_SHOW_DIR)
-    print(json_response)
     try:
         from .plexController.add_episodes_to_show import main as add_episodes_to_show
         add_episodes_to_show()
-    except plexapi.exceptions.NotFound:
+    except plexapi.exceptions.NotFound as e:
+        print(e)
         return JsonResponse({'status': 'Network path was not found. Is your external HD turned on?'}, status=500)
     return redirect(request.META.get('HTTP_REFERER'))
 
