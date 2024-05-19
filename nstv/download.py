@@ -260,21 +260,20 @@ class NZBGeek:
         parsed_results = self.search_and_parse_results(url)
 
         if hd:
+            results_to_remove = []
             # if hd is True, we want to remove the non-HD-categorized files
             print("download.get_nzb_search_results: Removing non-HD-categorized files.")
             for result in parsed_results.copy():
-                if 'HD' not in result.category:
-                    if not anime:
-                        # print(f"download.get_nzb_search_results: Removing {result.title} because it's not HD or anime.")
-                        parsed_results.remove(result)
-                    else:
-                        # print(f"download.get_nzb_search_results: {result.title} is not HD, but anime is True, so we'll keep it.")
-                        # sometimes anime isn't categorized as HD, but as TV > Anime
-                        # we don't want to filter out in these cases, so we can pass
-                        pass
-                else:
-                    # print(f"download.get_nzb_search_results: {result.title} is HD, so we'll keep it.")
+                if 'HD' in result.category:
                     pass
+                else:
+                    print(f"download.get_nzb_search_results: Removing {result.title} because it's not HD.")
+                    results_to_remove.append(result)
+            if len(results_to_remove) == len(parsed_results):
+                print("download.get_nzb_search_results: No HD-categorized files found. Ignoring HD filter.")
+            else:
+                for result in results_to_remove:
+                    parsed_results.remove(result)
 
         if anime:
             # if anime is True, we want to grab the original audio language
