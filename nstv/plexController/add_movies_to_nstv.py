@@ -29,17 +29,17 @@ def save_movie_poster(plex_movie):
 
 def add_movies_to_nstv():
     plex_movies = plex.library.section('Movies')
-    for movie in plex_movies.search():
-        movie_object = Movie.objects.all().filter(title=movie.name)
+    for plex_movie in plex_movies.search():
+        movie_object = Movie.objects.all().filter(title=plex_movie.title)
         if movie_object:
             print('movie already exists')
             # add missing movie details if any
             if not movie_object[0].genre:
-                movie_object[0].genre = movie.genres
+                movie_object[0].genre = plex_movie.genres
                 movie_object[0].save()
                 print('genre added to movie')
             if not movie_object[0].director:
-                movie_object[0].director = movie.directors[0]
+                movie_object[0].director = plex_movie.directors[0]
                 movie_object[0].save()
                 print('director added to movie')
             if not movie_object[0].on_disk:
@@ -47,14 +47,17 @@ def add_movies_to_nstv():
                 movie_object[0].save()
                 print('on_disk added to movie')
             if not movie_object[0].release_date:
-                movie_object[0].release_date = movie.originallyAvailableAt
+                movie_object[0].release_date = plex_movie.originallyAvailableAt
                 movie_object[0].save()
                 print('release_date added to movie')
         else:
             print('movie does not exist')
             movie_object = Movie(
-                title=movie.name, release_date=movie.originallyAvailableAt, genre=movie.genres,
-                director=movie.directors[0], on_disk=True
+                title=plex_movie.name,
+                release_date=plex_movie.originallyAvailableAt,
+                genre=plex_movie.genres,
+                director=plex_movie.directors[0],
+                on_disk=True
             )
             movie_object.save()
             print('movie added to database')
