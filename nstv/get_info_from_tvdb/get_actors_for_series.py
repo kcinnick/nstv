@@ -1,5 +1,7 @@
 import os
 from pprint import pprint
+
+import requests
 import tvdb_v4_official
 from django.conf import settings
 from django import setup
@@ -28,23 +30,54 @@ def main():
             add_cast_members_for_series(series_id)
 
 
+def download_image(character):
+    image_url = character['image']
+    if not image_url:
+        image_url = character['personImgURL']
+    r = requests.get(image_url)
+    if r.status_code == 200:
+        new_image_path = os.path.join(settings.STATIC_DIR + '/cast_members/', os.path.basename(image_url)).replace('\\', '/')
+        with open(new_image_path, 'wb') as f:
+            f.write(r.content)
+        new_image_path = 'nstv' + new_image_path.split('/nstv/templates')[-1]
+        return new_image_path
+    else:
+        print('Failed to download image: {}'.format(image_url))
+        return None
+
+
 def add_cast_members_for_series(series_id):
     show = Show.objects.get(tvdb_id=series_id)
+    print('show: {}'.format(show))
     characters = tvdb.get_series_extended(series_id)['characters']
     for character in characters:
         #pprint(character)
         cast_member = CastMember.objects.filter(name=character['personName']).first()
         if not cast_member:
-            image_url = character['image']
-            if not image_url:
-                image_url = character['personImgURL']
+            image_url = download_image(character)
             cast_member = CastMember(
                 name=character['personName'],
                 image_url=image_url,
             )
+            cast_member.shows.add(show)
             cast_member.save()
-        cast_member.shows.add(show)
-        cast_member.save()
+        if not cast_member.image_url:
+            print('No image for cast member: {}'.format(cast_member))
+            continue
+        elif cast_member.image_url.startswith('https://artworks.thetvdb.com'):
+            # old cast member image that needs to be replaced w/ local image path
+            print('Old cast member image: {}'.format(cast_member.image_url))
+            image_url = download_image(character)
+            cast_member.image_url = image_url
+            cast_member.save()
+        elif cast_member.image_url.startswith('C:/'):
+            # old cast member image that needs to be replaced w/ local image path
+            print('Old cast member image: {}'.format(cast_member.image_url))
+            image_url = download_image(character)
+            cast_member.image_url = image_url
+            cast_member.save()
+        else:
+            print('cast member already exists: {}, {}'.format(cast_member, cast_member.image_url))
 
 
 if __name__ == '__main__':
