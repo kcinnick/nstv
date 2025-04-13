@@ -30,7 +30,7 @@ def save_movie_poster(plex_movie):
 def add_movies_to_nstv():
     plex_movies = plex.library.section('Movies')
     for plex_movie in plex_movies.search():
-        movie_object = Movie.objects.all().filter(title=plex_movie.title)
+        movie_object = Movie.objects.all().filter(title=plex_movie.__dict__['_data'][0]['title'])
         if movie_object:
             print('movie already exists')
             # add missing movie details if any

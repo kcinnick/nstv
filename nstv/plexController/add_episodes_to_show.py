@@ -10,7 +10,8 @@ from nstv.models import Show, Episode
 
 SHOW_ALIASES = {
     # plex title: django title
-    '6ixtynin9 the Series': '6ixtynin9'
+    '6ixtynin9 the Series': '6ixtynin9',
+    "Beachfront Bargain Hunt Renovation": "Beachfront Bargain Hunt: Renovation",
 }
 
 SEASON_TITLE_REPLACEMENTS = {
@@ -41,8 +42,13 @@ SEASON_TITLE_REPLACEMENTS = {
 
 
 def add_existing_episodes_for_plex_show(plex_show):
-    print("plex_show: ", plex_show.title)
-    django_show_object = Show.objects.get(title=plex_show.title)
+    show_title = plex_show.title
+    print('plex_show: ', plex_show)
+    print('show_title: ', show_title)
+    # check if the show is in the SHOW_ALIASES dict, and if so, use the alias
+    if show_title in SHOW_ALIASES.keys():
+        show_title = SHOW_ALIASES[plex_show.title]
+    django_show_object = Show.objects.get(title=show_title)
     django_episodes = Episode.objects.filter(show=django_show_object)
     # print("django_show_object: ", django_show_object)
     # print("django_episodes: ", django_episodes)

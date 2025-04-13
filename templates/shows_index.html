@@ -34,9 +34,6 @@ let csrf_token = getCookie('csrftoken');
         },
         success: function(data) {
           location.reload();  // Refresh the page here
-        },
-        error: function() {
-            alert('Network path was not found. Is your external HD turned on?');
         }
     });
 });

@@ -29,7 +29,8 @@ SHOW_TITLE_REPLACEMENTS = {
     "Welcome Back, Kotter": "Welcome Back Kotter",
     "Welcome to Samdal-ri": "Welcome to Samdalri",
     "The Twilight Zone": "The Twilight Zone (1959)",
-    "Girl from Nowhere": "Girl From Nowhere"
+    "Girl from Nowhere": "Girl From Nowhere",
+    "Beachfront Bargain Hunt Renovation": "Beachfront Bargain Hunt: Renovation",
 }
 
 SEASON_TITLE_REPLACEMENTS = {
@@ -308,6 +309,7 @@ class NZBGeek:
         return parsed_results
 
     def download_from_results(self, results, request):
+        print("download.download_from_results: Downloading from results.")
         pre_download_nzb_files = len(glob(f"{Path.home()}\\Downloads\\*.nzb"))
         NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
         print("NZBGET_NZB_DIR: ", NZBGET_NZB_DIR)
@@ -373,6 +375,9 @@ class NZBGeek:
                     else:
                         print(f"Status for {result.title} is {nzb_download.status}.")
                         raise Exception(f"Status for {result.title} is {nzb_download.status}.")
+                else:
+                    print(f"{result.title} not found in NZBGet.")
+                    break
             print('post-download loop ended')
 
         return
