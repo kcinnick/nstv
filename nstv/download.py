@@ -29,7 +29,8 @@ SHOW_TITLE_REPLACEMENTS = {
     "Welcome Back, Kotter": "Welcome Back Kotter",
     "Welcome to Samdal-ri": "Welcome to Samdalri",
     "The Twilight Zone": "The Twilight Zone (1959)",
-    "Girl from Nowhere": "Girl From Nowhere"
+    "Girl from Nowhere": "Girl From Nowhere",
+    "Beachfront Bargain Hunt Renovation": "Beachfront Bargain Hunt: Renovation",
 }
 
 SEASON_TITLE_REPLACEMENTS = {
@@ -198,7 +199,13 @@ class NZBGeek:
             releases_item = releases_table.find('td', class_='releases_item_release')
             if releases_item is None:
                 print("get_gid_for_movie: " + 'No results found for {}'.format(movie.name))
-            elif movie.name in releases_item.text.strip():
+
+            releases_item_title_text = releases_item.text.strip()
+            movie.name = releases_item_title_text.replace(
+                # NZBGeek removes the period after titles
+                'Mr. ', 'Mr').replace('Mrs. ', 'Mrs').replace('Ms. ', 'Ms')
+
+            if movie.name in releases_item_title_text:
                 # TODO: add year check
                 print("get_gid_for_movie: " + 'Found a match for {}'.format(movie.name))
                 print(releases_item)
@@ -208,6 +215,7 @@ class NZBGeek:
                 sleep(5)
                 break
             else:
+                print(f'{movie.name} not in {releases_item_title_text}')
                 continue
 
         return movie.gid
@@ -301,6 +309,7 @@ class NZBGeek:
         return parsed_results
 
     def download_from_results(self, results, request):
+        print("download.download_from_results: Downloading from results.")
         pre_download_nzb_files = len(glob(f"{Path.home()}\\Downloads\\*.nzb"))
         NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
         print("NZBGET_NZB_DIR: ", NZBGET_NZB_DIR)
@@ -366,6 +375,9 @@ class NZBGeek:
                     else:
                         print(f"Status for {result.title} is {nzb_download.status}.")
                         raise Exception(f"Status for {result.title} is {nzb_download.status}.")
+                else:
+                    print(f"{result.title} not found in NZBGet.")
+                    break
             print('post-download loop ended')
 
         return

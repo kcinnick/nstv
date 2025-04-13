@@ -200,22 +200,17 @@ def add_episodes_to_database(request, show_id):
 
 def move_downloaded_files_to_plex(request, plex_dir):
     print(f'move_downloaded_files_to_{plex_dir.split("_")[-1]}')
-    try:
-        print(f'NZBGET_COMPLETE_DIR: {NZBGET_COMPLETE_DIR}')
-        for file_name in tqdm(os.listdir(NZBGET_COMPLETE_DIR)):
-            print('Moving file: ', file_name)
-            file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
-            shutil.move(file_path, os.path.join(plex_dir, file_name))
-        return JsonResponse({'status': 'success'}, status=200)
-    except FileNotFoundError as e:
-        print(e)
-        return JsonResponse({'status': 'Network path was not found. Is your external HD turned on?'}, status=500)
-    except Exception as e:
-        print('failure: {}'.format(type(e)))
-        return JsonResponse({'status': str(e)}, status=500)
+    print(f'NZBGET_COMPLETE_DIR: {NZBGET_COMPLETE_DIR}')
+    for file_name in tqdm(os.listdir(NZBGET_COMPLETE_DIR)):
+        # TODO: Check if file is movie/TV and move to dir accordingly
+        print('Moving file: ', file_name)
+        file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
+        shutil.move(file_path, os.path.join(plex_dir, file_name))
+    return JsonResponse({'status': 'success'}, status=200)
 
 
 def move_downloaded_tv_show_files_to_plex(request):
+    print('move_downloaded_tv_show_files_to_plex')
     json_response = move_downloaded_files_to_plex(request, PLEX_TV_SHOW_DIR)
     try:
         from .plexController.add_episodes_to_show import main as add_episodes_to_show
@@ -274,6 +269,7 @@ def movie_index(request, movie_id):
 
 
 def cast_member(request, cast_member_id):
+    # TODO: GET CAST_MEMBERS OF SHOW IF NONE EXIST WHEN SHOW PAGE IS TRAVELED TO
     cast_member_object = CastMember.objects.get(id=cast_member_id)
     shows_for_cast_member = Show.objects.filter(cast__id=cast_member_id)
     movies_for_cast_member = Movie.objects.filter(cast__id=cast_member_id)
