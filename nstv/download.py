@@ -43,6 +43,41 @@ SEASON_TITLE_REPLACEMENTS = {
 
 NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
 
+class NZBGet:
+    def __init__(self):
+        self.session = requests.Session()
+
+    def save_nzb_download_record(self, result, status):
+        nzb_download = NZBDownload.objects.all().filter(nzb_id=result['ID']).first()
+        if not nzb_download:
+            nzb_download = NZBDownload(
+                nzb_id=result['ID'],
+                title=result['NZBName'],
+                status=status,
+            )
+            nzb_download.save()
+            # print(f"Added {result['NZBName']} to failed downloads.")
+        else:
+            # print(f"{result['NZBName']} already exists in failed downloads.")
+            pass
+
+    def get_and_update_history(self):
+        r = self.session.get('http://127.0.0.1:6789/jsonrpc/history?=false')
+        results = r.json()['result']
+        for result in results:
+            status = result['Status']
+            if 'FAILURE' in status:
+                self.save_nzb_download_record(result, status)
+            elif 'SUCCESS' in status:
+                self.save_nzb_download_record(result, status)
+            elif 'DELETED/' in status:
+                self.save_nzb_download_record(result, status)
+            elif 'WARNING' in status:
+                self.save_nzb_download_record(result, status)
+            else:
+                print(f"Status for {result['NZBName']} is {status}.")
+        return
+
 
 class SearchResult:
     def __init__(self, result_table):
@@ -164,15 +199,26 @@ class NZBGeek:
         for releases_table in releases_tables:
             release_table = releases_table.find('table')
             result = release_table.find('a', title='View Show Page')
+            result_title = result.find('span', class_='overlay_title').text.strip()
             # print(result)
-            if result.find('span', class_='overlay_title').text.strip() == show_title:
+            if result_title == show_title:
                 show.gid = result.get('href').split('tvid=')[1]
                 show.save()
                 print("get_gid: " + 'Successfully updated GID for {}'.format(show_title))
                 break
             else:
                 print(f"download.py: {result.find('span', class_='overlay_title').text.strip()} != {show_title}")
-                print("get_gid: " + 'Moving to next result if any.'.format(show_title))
+                # check if titles don't match because of year at end
+                year_in_title = re.search(r'\((\d{4})\)$', result_title)
+                if year_in_title:
+                    title_without_year = result_title[:year_in_title.start()].strip()
+                    if title_without_year == show_title:
+                        show.gid = result.get('href').split('tvid=')[1]
+                        show.save()
+                        print("get_gid: " + 'Successfully updated GID for {} after removing year.'.format(show_title))
+                        break
+                else:
+                    print("get_gid: " + 'Moving to next result if any.'.format(show_title))
 
         return show.gid
 
@@ -332,7 +378,7 @@ class NZBGeek:
             #  wait until file is downloaded
             tries = 0
             while tries < 60:
-                sleep(1)
+                sleep(60)
                 nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
                 if len(nzb_files) > pre_download_nzb_files:
                     messages.info(request, f"\r{result.title} downloaded!")
@@ -380,40 +426,4 @@ class NZBGeek:
                     break
             print('post-download loop ended')
 
-        return
-
-
-class NZBGet:
-    def __init__(self):
-        self.session = requests.Session()
-
-    def save_nzb_download_record(self, result, status):
-        nzb_download = NZBDownload.objects.all().filter(nzb_id=result['ID']).first()
-        if not nzb_download:
-            nzb_download = NZBDownload(
-                nzb_id=result['ID'],
-                title=result['NZBName'],
-                status=status,
-            )
-            nzb_download.save()
-            # print(f"Added {result['NZBName']} to failed downloads.")
-        else:
-            # print(f"{result['NZBName']} already exists in failed downloads.")
-            pass
-
-    def get_and_update_history(self):
-        r = self.session.get('http://127.0.0.1:6789/jsonrpc/history?=false')
-        results = r.json()['result']
-        for result in results:
-            status = result['Status']
-            if 'FAILURE' in status:
-                self.save_nzb_download_record(result, status)
-            elif 'SUCCESS' in status:
-                self.save_nzb_download_record(result, status)
-            elif 'DELETED/' in status:
-                self.save_nzb_download_record(result, status)
-            elif 'WARNING' in status:
-                self.save_nzb_download_record(result, status)
-            else:
-                print(f"Status for {result['NZBName']} is {status}.")
         return

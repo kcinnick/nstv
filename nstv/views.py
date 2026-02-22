@@ -41,7 +41,8 @@ def index(request):
             search_results = nzb_geek.get_nzb_search_results(
                 show,
                 season_number=season_number,
-                episode_number=episode_number
+                episode_number=episode_number,
+                hd=False
             )
             nzb_geek.download_from_results(search_results, request)
         else:
@@ -93,7 +94,7 @@ def download_episode(request, show_id, episode_id):
         nzb_search_results = nzb_geek.get_nzb_search_results(
             show=parent_show, episode_title=episode.title,
             season_number=episode.season_number, episode_number=episode.episode_number,
-            anime=parent_show.anime
+            anime=parent_show.anime, hd=False
         )
         nzb_geek.download_from_results(nzb_search_results, request)
     else:
