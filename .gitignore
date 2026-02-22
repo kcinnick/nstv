@@ -1,0 +1,68 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+venv/
+ENV/
+.venv/
+build/
+dist/
+eggs/
+parts/
+pip-wheel-metadata/
+*.egg-info/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / cache
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# Coverage and test reports
+.coverage
+.coverage.*
+coverage.xml
+nosetests.xml
+htmlcov/
+
+# Django
+*.sqlite3
+db.sqlite3
+local_settings.py
+
+# Virtualenv folder created in this repo
+activate/
+activate/**
+
+# Environment variables
+.env
+.env.*
+
+# VS Code
+.vscode/
+
+# IDEs
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Other
+*.log
