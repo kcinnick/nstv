@@ -1,7 +1,9 @@
 import os
 import shutil
+import threading
 
 import plexapi.exceptions
+from django.contrib import messages
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -44,7 +46,14 @@ def index(request):
                 episode_number=episode_number,
                 hd=False
             )
-            nzb_geek.download_from_results(search_results, request)
+            # Start download in background thread
+            download_thread = threading.Thread(
+                target=nzb_geek.download_from_results,
+                args=(search_results, request),
+                daemon=True
+            )
+            download_thread.start()
+            messages.info(request, f"Download started for {show.title} S{season_number}E{episode_number}. Check console for progress.")
         else:
             print(form.errors)
             index_context["form_errors"] = form.errors
@@ -96,11 +105,19 @@ def download_episode(request, show_id, episode_id):
             season_number=episode.season_number, episode_number=episode.episode_number,
             anime=parent_show.anime, hd=False
         )
-        nzb_geek.download_from_results(nzb_search_results, request)
+        # Start download in background thread
+        download_thread = threading.Thread(
+            target=nzb_geek.download_from_results,
+            args=(nzb_search_results, request),
+            daemon=True
+        )
+        download_thread.start()
+        messages.info(request, f"Download started for {parent_show.title} S{episode.season_number}E{episode.episode_number} - {episode.title}. Check console for progress.")
     else:
         print(
             'Searching shows by season or episode number '
             'isn\'t currently supported.\n')
+        messages.error(request, "Episode title is required for download.")
         raise NotImplementedError
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
@@ -256,7 +273,15 @@ def download_movie(request, movie_id):
     movie = Movie.objects.get(id=movie_id)
     print('movie name: {} ~'.format(movie.name))
     search_results = nzb_geek.get_nzb_search_results_for_movie(movie)
-    nzb_geek.download_from_results(search_results, request)
+    
+    # Start download in background thread
+    download_thread = threading.Thread(
+        target=nzb_geek.download_from_results,
+        args=(search_results, request),
+        daemon=True
+    )
+    download_thread.start()
+    messages.info(request, f"Download started for {movie.name}. Check console for progress.")
 
     return HttpResponseRedirect(reverse('movies_index'))
 

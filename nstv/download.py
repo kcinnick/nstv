@@ -354,12 +354,20 @@ class NZBGeek:
 
         return parsed_results
 
-    def download_from_results(self, results, request):
+    def download_from_results(self, results, request=None):
+        """
+        Download NZB files from search results and monitor progress in NZBGet.
+        
+        @param results: List of SearchResult objects to download
+        @param request: Django request object (optional, for user feedback messages)
+        """
         print("download.download_from_results: Downloading from results.")
         NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
         print("NZBGET_NZB_DIR: ", NZBGET_NZB_DIR)
         if not len(results):
             print("No results found.")
+            if request:
+                messages.warning(request, "No results found for download.")
             return
         else:
             print(f"Found {len(results)} results.")
@@ -383,7 +391,8 @@ class NZBGeek:
             tries = 0
             while tries < 10:  # Reduced from 60 to 10 tries
                 if os.path.exists(download_path) and os.path.getsize(download_path) > 0:
-                    messages.info(request, f"\r{result.title} downloaded!")
+                    if request:
+                        messages.info(request, f"\r{result.title} downloaded!")
                     print(f"\rNZB file downloaded successfully: {download_path}")
                     break
                 else:
@@ -435,14 +444,16 @@ class NZBGeek:
                         break
                     elif 'SUCCESS' in nzb_download.status:
                         print(f"SUCCESS: {result.title} has successfully downloaded and processed.")
-                        messages.success(request, f"{result.title} completed successfully!")
+                        if request:
+                            messages.success(request, f"{result.title} completed successfully!")
                         return
                     elif 'DELETED/' in nzb_download.status:
                         print(f"DELETED: {result.title} has been deleted from NZBGet.")
                         break
                     elif 'WARNING' in nzb_download.status:
                         print(f"WARNING: {result.title} completed with warnings.")
-                        messages.warning(request, f"{result.title} completed with warnings.")
+                        if request:
+                            messages.warning(request, f"{result.title} completed with warnings.")
                         return
                     else:
                         # Still downloading/processing
@@ -454,7 +465,8 @@ class NZBGeek:
                         
             if monitoring_tries >= max_monitoring_tries:
                 print(f"TIMEOUT: Stopped monitoring {result.title} after {max_monitoring_tries * 5} seconds.")
-                messages.warning(request, f"Monitoring timeout for {result.title}. Check NZBGet manually.")
+                if request:
+                    messages.warning(request, f"Monitoring timeout for {result.title}. Check NZBGet manually.")
             
             print(f'Monitoring completed for {result.title}')
 
