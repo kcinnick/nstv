@@ -41,42 +41,64 @@ SEASON_TITLE_REPLACEMENTS = {
 }
 
 
+def get_plex_connection():
+    plex_email = os.getenv('PLEX_EMAIL')
+    plex_api_key = os.getenv('PLEX_API_KEY')
+    plex_server = os.getenv('PLEX_SERVER')
+    if not plex_email or not plex_api_key or not plex_server:
+        raise ValueError('Missing one of PLEX_EMAIL, PLEX_API_KEY, or PLEX_SERVER environment variables.')
+
+    account = MyPlexAccount(plex_email, plex_api_key)
+    return account.resource(plex_server).connect()
+
+
+def _resolve_season_number(plex_show, plex_episode):
+    show_replacements = SEASON_TITLE_REPLACEMENTS.get(plex_show.title)
+    if not show_replacements:
+        return str(plex_episode.seasonNumber)
+
+    season_name = getattr(plex_episode, 'seasonName', None)
+    if season_name and season_name in show_replacements:
+        return show_replacements[season_name]
+
+    fallback_key = f"S{plex_episode.seasonNumber}"
+    if fallback_key in show_replacements:
+        return show_replacements[fallback_key]
+
+    return str(plex_episode.seasonNumber)
+
+
 def add_existing_episodes_for_plex_show(plex_show):
     show_title = plex_show.title
-    print('plex_show: ', plex_show)
-    print('show_title: ', show_title)
-    # check if the show is in the SHOW_ALIASES dict, and if so, use the alias
-    if show_title in SHOW_ALIASES.keys():
+    if show_title in SHOW_ALIASES:
         show_title = SHOW_ALIASES[plex_show.title]
-    django_show_object = Show.objects.get(title=show_title)
-    django_episodes = Episode.objects.filter(show=django_show_object)
-    # print("django_show_object: ", django_show_object)
-    # print("django_episodes: ", django_episodes)
 
-    # match the shows first, then match the episodes of the shows
+    django_show_object = Show.objects.filter(title=show_title).first()
+    if not django_show_object:
+        django_show_object = Show.objects.create(title=show_title)
+
+    django_episodes = Episode.objects.filter(show=django_show_object)
+    created_count = 0
+    updated_count = 0
+
     for plex_episode in plex_show.episodes():
-        if plex_episode.title:
+        if getattr(plex_episode, 'title', None):
             django_episode = django_episodes.filter(
                 title=plex_episode.title,
-                season_number=plex_episode.seasonNumber
+                season_number=str(plex_episode.seasonNumber)
             ).first()
             if not django_episode:
                 django_episode = django_episodes.filter(
                     title=plex_episode.title.replace('.', ''),
-                    season_number=plex_episode.seasonNumber
+                    season_number=str(plex_episode.seasonNumber)
                 ).first()
             if django_episode:
-                # if the show is on plex, it's on disk, so we can update that if necessary
-                django_episode.on_disk = True
-                django_episode.save()
+                if not django_episode.on_disk:
+                    django_episode.on_disk = True
+                    django_episode.save()
+                    updated_count += 1
             else:
-                if plex_show.title in SEASON_TITLE_REPLACEMENTS.keys():
-                    if plex_episode.seasonNumber in SEASON_TITLE_REPLACEMENTS[plex_show.title].keys():
-                        season_number = SEASON_TITLE_REPLACEMENTS[plex_show.title][plex_episode.seasonName]
-                    else:
-                        season_number = plex_episode.seasonNumber
-                else:
-                    season_number = plex_episode.seasonNumber
+                season_number = _resolve_season_number(plex_show, plex_episode)
                 django_episode = Episode(
                     show=django_show_object,
                     air_date=plex_episode.originallyAvailableAt,
@@ -86,18 +108,27 @@ def add_existing_episodes_for_plex_show(plex_show):
                     on_disk=True
                 )
                 django_episode.save()
-                print('episode added to database')
+                created_count += 1
 
-    return
+    return created_count, updated_count
+
+
+def add_episodes_to_nstv(plex=None):
+    if plex is None:
+        plex = get_plex_connection()
+
+    total_created = 0
+    total_updated = 0
+    plex_tv_shows = plex.library.section('TV Shows')
+    for plex_show in tqdm(plex_tv_shows.search()):
+        created_count, updated_count = add_existing_episodes_for_plex_show(plex_show)
+        total_created += created_count
+        total_updated += updated_count
+    return total_created, total_updated
 
 
 def main():
-    account = MyPlexAccount('nicktucker4@gmail.com', os.getenv('PLEX_API_KEY'))
-    plex = account.resource(os.getenv('PLEX_SERVER')).connect()  # returns a PlexServer instance
-
-    plex_tv_shows = plex.library.section('TV Shows')
-    for plex_show in tqdm(plex_tv_shows.search()):
-        add_existing_episodes_for_plex_show(plex_show)
+    add_episodes_to_nstv()
     return
 
 
