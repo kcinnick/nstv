@@ -2,6 +2,8 @@ import os
 import django
 from pprint import pprint
 import tvdb_v4_official
+import re
+from django.db.models import Count
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
@@ -139,6 +141,129 @@ def get_all_tvdb_episode_listings(tvdb, tvdb_series):
     return all_tvdb_series_episodes
 
 
+def _normalize_title(title):
+    if not title:
+        return ''
+    return re.sub(r'[^a-z0-9]+', '', str(title).lower())
+
+
+def _to_int(value):
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    value_str = str(value)
+    match = re.search(r"(\d+)", value_str)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def _resolve_tvdb_season_number(show_title, season_name_or_number):
+    if season_name_or_number == 0:
+        return 0
+
+    if show_title in SEASON_TITLE_REPLACEMENTS:
+        replacement_key = f"S{season_name_or_number}"
+        mapped = SEASON_TITLE_REPLACEMENTS[show_title].get(replacement_key, season_name_or_number)
+        return _to_int(mapped)
+
+    return _to_int(season_name_or_number)
+
+
+def upsert_episode_from_tvdb_listing(show, tvdb_episode_listing, show_title):
+    episode_title = tvdb_episode_listing.get('name')
+    if episode_title is None:
+        return None, False
+
+    tvdb_episode_id = tvdb_episode_listing.get('id')
+    season_raw = tvdb_episode_listing.get('seasonName') or tvdb_episode_listing.get('seasonNumber')
+    season_number = _resolve_tvdb_season_number(show_title, season_raw)
+    episode_number = _to_int(tvdb_episode_listing.get('number'))
+
+    existing_episode = None
+
+    if tvdb_episode_id:
+        existing_episode = Episode.objects.filter(show=show, tvdb_id=tvdb_episode_id).first()
+
+    if not existing_episode and season_number is not None and episode_number is not None:
+        existing_episode = Episode.objects.filter(
+            show=show,
+            season_number=season_number,
+            episode_number=episode_number,
+        ).first()
+
+    if not existing_episode and season_number is not None:
+        normalized_new_title = _normalize_title(episode_title)
+        for candidate in Episode.objects.filter(show=show, season_number=season_number):
+            if _normalize_title(candidate.title) == normalized_new_title:
+                existing_episode = candidate
+                break
+
+    if existing_episode:
+        existing_episode.title = episode_title
+        existing_episode.season_number = season_number
+        existing_episode.episode_number = episode_number
+        existing_episode.air_date = tvdb_episode_listing.get('aired')
+        if tvdb_episode_id:
+            existing_episode.tvdb_id = tvdb_episode_id
+        existing_episode.save()
+        return existing_episode, False
+
+    created_episode = Episode.objects.create(
+        show=show,
+        air_date=tvdb_episode_listing.get('aired'),
+        title=episode_title,
+        season_number=season_number,
+        episode_number=episode_number,
+        tvdb_id=tvdb_episode_id,
+        on_disk=False,
+    )
+    return created_episode, True
+
+
+def merge_duplicate_episodes_for_show(show):
+    duplicate_groups = (
+        Episode.objects.filter(show=show)
+        .exclude(season_number__isnull=True)
+        .exclude(episode_number__isnull=True)
+        .values('season_number', 'episode_number')
+        .annotate(total=Count('id'))
+        .filter(total__gt=1)
+    )
+
+    for duplicate_group in duplicate_groups:
+        season_number = duplicate_group['season_number']
+        episode_number = duplicate_group['episode_number']
+        episode_candidates = list(
+            Episode.objects.filter(
+                show=show,
+                season_number=season_number,
+                episode_number=episode_number,
+            ).order_by('-on_disk', '-tvdb_id', 'id')
+        )
+        primary_episode = episode_candidates[0]
+        duplicates = episode_candidates[1:]
+
+        for duplicate in duplicates:
+            if not primary_episode.on_disk and duplicate.on_disk:
+                primary_episode.on_disk = True
+            if not primary_episode.tvdb_id and duplicate.tvdb_id:
+                primary_episode.tvdb_id = duplicate.tvdb_id
+            if not primary_episode.air_date and duplicate.air_date:
+                primary_episode.air_date = duplicate.air_date
+            if (
+                duplicate.title
+                and (not primary_episode.title or primary_episode.title.lower().startswith('episode '))
+                and not duplicate.title.lower().startswith('episode ')
+            ):
+                primary_episode.title = duplicate.title
+
+            duplicate.delete()
+
+        primary_episode.save()
+
+
 def main(show_id=None):
     tvdb = tvdb_v4_official.TVDB(os.getenv('TVDB_API_KEY'))
     shows_to_skip = [
@@ -153,7 +278,6 @@ def main(show_id=None):
         if show.title in shows_to_skip:
             continue
         print('Searching for episodes for {}'.format(show.title))
-        nstv_episodes = Episode.objects.filter(show=show)
         show_title = show.title
         tvdb_record = find_tvdb_record_for_series(tvdb, show_title)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
@@ -168,14 +292,7 @@ def main(show_id=None):
                 tvdb_episode_listing_season_name = tvdb_episode_listing.get('seasonNumber')
             if tvdb_episode_listing_season_name == 0:
                 continue
-            if show_title in SEASON_TITLE_REPLACEMENTS:
-                tvdb_episode_listing_season_name = SEASON_TITLE_REPLACEMENTS[show_title][
-                    'S' + str(tvdb_episode_listing_season_name)]
-            else:
-                print(f'Show title {show_title} not in SEASON_TITLE_REPLACEMENTS.')
-            match = False
-            # print('---')
-            # print(str(tvdb_episode_listing).encode('utf-8'))
+
             if show_title in EPISODE_TITLE_REPLACEMENTS:
                 if str(tvdb_episode_listing_season_name) in EPISODE_TITLE_REPLACEMENTS[show_title]:
                     if tvdb_episode_listing['name'] in EPISODE_TITLE_REPLACEMENTS[show_title][
@@ -183,32 +300,12 @@ def main(show_id=None):
                         tvdb_episode_listing['name'] = \
                         EPISODE_TITLE_REPLACEMENTS.get(show_title)[str(tvdb_episode_listing_season_name)][
                             tvdb_episode_listing['name']]
-            for nstv_episode in nstv_episodes:
-                # print('Checking if {} == {}'.format(nstv_episode.title, tvdb_episode_listing['name']).encode('utf-8'))
-                if nstv_episode.title == tvdb_episode_listing['name']:
-                    print('Matched {}.'.format(nstv_episode.title, tvdb_episode_listing['name']).encode('utf-8'))
-                    nstv_episode.season_number = str(tvdb_episode_listing_season_name).replace('S', '')
-                    nstv_episode.episode_number = tvdb_episode_listing['number']
-                    nstv_episode.air_date = tvdb_episode_listing['aired']
-                    nstv_episode.tvdb_id = tvdb_episode_listing['id']
-                    nstv_episode.save()
-                    match = True
-                    break
-            if not match:
-                print('No match found for {}'.format(tvdb_episode_listing['name']).encode('utf-8'))
-                if tvdb_episode_listing['name'] is None:
-                    continue
-                print('Creating episode for {}'.format(tvdb_episode_listing['name']).encode('utf-8'))
-                if 'S' in str(tvdb_episode_listing_season_name):
-                    tvdb_episode_listing_season_name = tvdb_episode_listing_season_name.replace('S', '')
-                Episode.objects.create(
-                    show=show,
-                    air_date=tvdb_episode_listing['aired'],
-                    title=tvdb_episode_listing['name'],
-                    season_number=tvdb_episode_listing_season_name,
-                    episode_number=tvdb_episode_listing['number'],
-                    on_disk=False
-                )
+
+            _, created = upsert_episode_from_tvdb_listing(show, tvdb_episode_listing, show_title)
+            if created:
+                print('Created episode for {}'.format(tvdb_episode_listing['name']).encode('utf-8'))
+
+        merge_duplicate_episodes_for_show(show)
     return
 
 
