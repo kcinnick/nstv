@@ -2,6 +2,12 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file before Django setup
+env_path = Path(__file__).resolve().parent / '.env'
+load_dotenv(dotenv_path=env_path, override=True)
 
 
 def main():
@@ -17,6 +23,7 @@ def main():
         ) from exc
     execute_from_command_line(sys.argv)
 
-
+# we need to migrate our data from pg12 to pg14
 if __name__ == '__main__':
     main()
+
