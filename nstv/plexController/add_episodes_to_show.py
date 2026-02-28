@@ -1,8 +1,15 @@
 import os
+import re
+import sys
+from pathlib import Path
 
 import django
 from plexapi.myplex import MyPlexAccount
 from tqdm import tqdm
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
 django.setup()
@@ -55,7 +62,7 @@ def get_plex_connection():
 def _resolve_season_number(plex_show, plex_episode):
     show_replacements = SEASON_TITLE_REPLACEMENTS.get(plex_show.title)
     if not show_replacements:
-        return str(plex_episode.seasonNumber)
+        return int(plex_episode.seasonNumber)
 
     season_name = getattr(plex_episode, 'seasonName', None)
     if season_name and season_name in show_replacements:
@@ -65,7 +72,25 @@ def _resolve_season_number(plex_show, plex_episode):
     if fallback_key in show_replacements:
         return show_replacements[fallback_key]
 
-    return str(plex_episode.seasonNumber)
+    return int(plex_episode.seasonNumber)
+
+
+def _normalize_season_number(value):
+    if value is None:
+        return None
+
+    if isinstance(value, int):
+        return value
+
+    value_str = str(value).strip()
+    if value_str.isdigit():
+        return int(value_str)
+
+    match = re.search(r"(\d+)", value_str)
+    if match:
+        return int(match.group(1))
+
+    raise ValueError(f"Unable to normalize season number from value: {value}")
 
 
 def add_existing_episodes_for_plex_show(plex_show):
@@ -83,14 +108,15 @@ def add_existing_episodes_for_plex_show(plex_show):
 
     for plex_episode in plex_show.episodes():
         if getattr(plex_episode, 'title', None):
+            plex_season_number = _normalize_season_number(plex_episode.seasonNumber)
             django_episode = django_episodes.filter(
                 title=plex_episode.title,
-                season_number=str(plex_episode.seasonNumber)
+                season_number=plex_season_number
             ).first()
             if not django_episode:
                 django_episode = django_episodes.filter(
                     title=plex_episode.title.replace('.', ''),
-                    season_number=str(plex_episode.seasonNumber)
+                    season_number=plex_season_number
                 ).first()
             if django_episode:
                 if not django_episode.on_disk:
@@ -98,7 +124,7 @@ def add_existing_episodes_for_plex_show(plex_show):
                     django_episode.save()
                     updated_count += 1
             else:
-                season_number = _resolve_season_number(plex_show, plex_episode)
+                season_number = _normalize_season_number(_resolve_season_number(plex_show, plex_episode))
                 django_episode = Episode(
                     show=django_show_object,
                     air_date=plex_episode.originallyAvailableAt,

@@ -87,7 +87,7 @@ class PlexControllerTest(TestCase):
         Episode.objects.create(
             show=show,
             title='Episode 2',
-            season_number='1',
+            season_number=1,
             episode_number=2,
             on_disk=False,
         )
