@@ -96,10 +96,11 @@ def shows_index(request):
         # Calculate percentages and sort episodes
         for season in seasons_data.values():
             season['percentage'] = int((season['available'] / season['total'] * 100)) if season['total'] > 0 else 0
-            season['episodes'].sort(key=lambda x: x['number'])
+            # Sort episodes, handling None values by putting them at the end
+            season['episodes'].sort(key=lambda x: (x['number'] is None, x['number'] or 0))
         
-        # Sort seasons
-        sorted_seasons = sorted(seasons_data.values(), key=lambda x: x['number'])
+        # Sort seasons, handling None values by putting them at the end
+        sorted_seasons = sorted(seasons_data.values(), key=lambda x: (x['number'] is None, x['number'] or 0))
         
         # Calculate overall stats
         total_episodes = episodes.count()
