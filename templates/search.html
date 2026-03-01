@@ -4,44 +4,73 @@
 {% block title %}NSTV~ Search{% endblock %}
 
 {% block content %}
-<form method="get" action="{% url 'search_results' %}">
-    <input type="text" name="query" placeholder="Search for titles, actors...">
-    <div>
-        <label for="movies">Movies</label>
-        <input type="checkbox" id="movies" name="movies" value="on">
-    </div>
-    <div>
-        <label for="shows">Shows</label>
-        <input type="checkbox" id="shows" name="shows" value="on">
-    </div>
-    <div>
-        <label for="episodes">Episodes</label>
-        <input type="checkbox" id="episodes" name="episodes" value="on">
-    </div>
-    <div>
-        <label for="cast_members">Cast Members</label>
-        <input type="checkbox" id="cast_members" name="cast_members" value="on">
-    </div>
-    <!-- Add checkboxes for episodes and cast members similarly -->
-    <button type="submit">Search</button>
-</form>
 
-<center>
-{% for key, items in results.items %}
-    <h2>{{ key|title }}</h2>
-    {% for item in items %}
-        {% if key == 'cast_members' %}
-            <a href="/cast/{{ item.id }}"><p>{{ item.name }}</p></a>
-        {% elif key == 'movies' %}
-            <a href="/movies/{{ item.id }}"><p>{{ item.name }}</p></a>
-        {% elif key == 'shows' %}
-            <a href="/shows/{{ item.id }}"><p>{{ item.title }}</p></a>
-        {% elif key == 'episodes' %}
-            <a href="/episodes/{{ item.id }}"><p>{{ item.title }}</p></a>
+<div class="page-header">
+    <h1>🔍 Search</h1>
+    <p>Find shows, movies, episodes, and cast members</p>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <form method="get" action="{% url 'search_results' %}">
+        <input type="text" name="query" placeholder="Search for titles, actors..." style="font-size: 18px;">
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="movies" name="movies" value="on" style="width: auto; margin: 0;">
+                <label for="movies" style="margin: 0; cursor: pointer;">🎬 Movies</label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="shows" name="shows" value="on" style="width: auto; margin: 0;">
+                <label for="shows" style="margin: 0; cursor: pointer;">📺 Shows</label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="episodes" name="episodes" value="on" style="width: auto; margin: 0;">
+                <label for="episodes" style="margin: 0; cursor: pointer;">📼 Episodes</label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="cast_members" name="cast_members" value="on" style="width: auto; margin: 0;">
+                <label for="cast_members" style="margin: 0; cursor: pointer;">🎭 Cast Members</label>
+            </div>
+        </div>
+        
+        <button type="submit" style="width: 100%;">🔍 Search</button>
+    </form>
+</div>
+
+{% if results %}
+<div style="margin-top: 40px;">
+    {% for key, items in results.items %}
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 style="margin-bottom: 20px; color: #667eea;">{{ key|title }}</h2>
+        {% if items %}
+            <div style="display: grid; gap: 12px;">
+            {% for item in items %}
+                {% if key == 'cast_members' %}
+                    <a href="/cast/{{ item.id }}" style="padding: 12px; background: #f7fafc; border-radius: 8px; text-decoration: none; color: #2d3748; transition: all 0.3s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f7fafc'">
+                        🎭 {{ item.name }}
+                    </a>
+                {% elif key == 'movies' %}
+                    <a href="/movies/{{ item.id }}" style="padding: 12px; background: #f7fafc; border-radius: 8px; text-decoration: none; color: #2d3748; transition: all 0.3s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f7fafc'">
+                        🎬 {{ item.name }}
+                    </a>
+                {% elif key == 'shows' %}
+                    <a href="/shows/{{ item.id }}" style="padding: 12px; background: #f7fafc; border-radius: 8px; text-decoration: none; color: #2d3748; transition: all 0.3s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f7fafc'">
+                        📺 {{ item.title }}
+                    </a>
+                {% elif key == 'episodes' %}
+                    <a href="/shows/{{ item.show.id }}" style="padding: 12px; background: #f7fafc; border-radius: 8px; text-decoration: none; color: #2d3748; transition: all 0.3s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f7fafc'">
+                        📼 {{ item.title }}
+                        <span style="color: #718096; font-size: 0.9em;">({{ item.show.title }})</span>
+                    </a>
+                {% endif %}
+            {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: #718096;">No {{ key }} found.</p>
         {% endif %}
-    {% empty %}
-        <p>No {{ key }} found.</p>
+    </div>
     {% endfor %}
-{% endfor %}
-</center>
+</div>
+{% endif %}
+
 {% endblock %}

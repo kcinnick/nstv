@@ -64,9 +64,8 @@ def index(request):
 
 def shows_index(request):
     print('shows_index')
-    show_table = ShowTable(Show.objects.all().order_by("id"))
-    show_table.paginate(page=request.GET.get("page", 1), per_page=10)
-
+    show_table = ShowTable(Show.objects.all().order_by("title"))  # Order by title alphabetically
+    # Removed pagination for cleaner view
     index_context = {"title": "Show Index", "shows": show_table}
 
     return render(
@@ -79,9 +78,8 @@ def shows_index(request):
 def show_index(request, show_id):
     print('show_index')
     show = Show.objects.filter(id=show_id).first()
-    episodes_table = EpisodeTable(show.episodes)
-    episodes_table.paginate(page=request.GET.get("page", 1), per_page=10)
-
+    episodes_table = EpisodeTable(show.episodes.order_by("season_number", "episode_number"))
+    # Removed pagination - show all episodes for better UX
     index_context = {"title": "Show", "show": show, "episodes": episodes_table}
 
     return render(
@@ -417,10 +415,9 @@ def cast_member(request, cast_member_id):
 
 def find_missing_episodes(request, show_id):
     show = Show.objects.get(id=show_id)
-    missing_episodes = Episode.objects.filter(show=show, on_disk=False)
+    missing_episodes = Episode.objects.filter(show=show, on_disk=False).order_by("season_number", "episode_number")
     episodes_table = EpisodeTable(missing_episodes)
-    episodes_table.paginate(page=request.GET.get("page", 1), per_page=10)
-
+    # Removed pagination for simpler view
     index_context = {
         "title": "Missing Episodes",
         "show": show,

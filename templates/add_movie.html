@@ -1,18 +1,16 @@
-<!DOCTYPE html>
-<!-- Google Fonts -->
 {% extends "base.html" %}
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-    <title>{% block title %}NSTV~ Add Movie{% endblock %}</title>
-</head>
-<body>
+
 {% block content %}
-<form action="/add_movie" method="post">
-    {% csrf_token %}
-    {{ add_movie_form }}
-    <input type="submit" value="Submit">
-</form>
+<div class="page-header">
+    <h1>🎬 Add New Movie</h1>
+    <p>Add a movie to your collection</p>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <form action="/add_movie" method="post">
+        {% csrf_token %}
+        {{ add_movie_form }}
+        <input type="submit" value="✓ Add Movie" style="margin-top: 24px; width: 100%;">
+    </form>
+</div>
 {% endblock %}
-</body>
-</html>

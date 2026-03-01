@@ -1,14 +1,11 @@
-<!DOCTYPE html>
 {% extends "base.html" %}
 {% load render_table from django_tables2 %}
 
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-    <title>NSTV~ Movie Index</title>
-</head>
-<body>
 {% block content %}
+<div class="page-header">
+    <h1>🎬 Movies</h1>
+    <p>Browse and manage your movie collection</p>
+</div>
 
 <div class="action-container">
     <h4>📁 File Management</h4>
@@ -23,7 +20,6 @@
 
 <script>
 $("#move_files_to_plex").click(function() {
-    // Disable button and show spinner
     let btn = $(this);
     btn.prop('disabled', true);
     $('#btn-text').hide();
@@ -53,20 +49,12 @@ $("#move_files_to_plex").click(function() {
             "X-CSRFToken": csrf_token
         },
         success: function(data) {
-            // Reload page to show messages
             location.reload();
         },
         error: function(xhr, status, error) {
             let message = 'Failed to move files.';
             if (xhr.responseJSON?.message) {
                 message = xhr.responseJSON.message;
-            } else if (xhr.responseText) {
-                try {
-                    let response = JSON.parse(xhr.responseText);
-                    message = response.status || response.message || message;
-                } catch (e) {
-                    message = 'Error parsing response: ' + e.toString();
-                }
             }
             alert('Error: ' + message);
             btn.prop('disabled', false);
@@ -77,9 +65,8 @@ $("#move_files_to_plex").click(function() {
 });
 </script>
 
-<center>
-    <h3>Movies</h3>
+<div class="text-center">
     {% render_table movies %}
-</center>
+</div>
 
 {% endblock %}

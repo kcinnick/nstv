@@ -1,65 +1,160 @@
-<!DOCTYPE html>
 {% extends "base.html" %}
 {% load render_table from django_tables2 %}
 
-<html lang="en">
-
-<style>
-    .collapsible {
-  background-color: #eee;
-  color: #444;
-  cursor: pointer;
-  padding: 18px;
-  width: 100%;
-  border: none;
-  text-align: left;
-  outline: none;
-  font-size: 15px;
-}
-
-/* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
-.active, .collapsible:hover {
-  background-color: #ccc;
-}
-
-/* Style the collapsible content. Note: hidden by default */
-.content {
-  padding: 0 18px;
-  display: none;
-  overflow: hidden;
-  background-color: #f1f1f1;
-}
-
-</style>
-<head>
-  <meta charset="UTF-8">
-    <title>NSTV~ Shows Index</title>
-</head>
-<body>
 {% block content %}
 
-<div style="text-align: center;"><h1>{{ show.title }}</h1></div>
-    <center><button id="get_info_from_tvdb">Get Info From TVDB</button></center>
-    <br>
-<!--- TODO: need to add "Add GID" button/page for adding a GID for shows that don't appear in NZBGeek search. ex: Little Sharks Outings-->
-<script>
-$("#get_info_from_tvdb").click(function() {
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        let cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
+<style>
+.show-header {
+    text-align: center;
+    margin-bottom: 40px;
 }
 
-let csrf_token = getCookie('csrftoken');
+.show-header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+}
+
+.show-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.collapsible {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    cursor: pointer;
+    padding: 16px 24px;
+    width: auto;
+    min-width: 200px;
+    border: none;
+    text-align: center;
+    outline: none;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.collapsible:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.collapsible.active {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+.content {
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background-color: transparent;
+}
+
+.content.show {
+    max-height: 2000px;
+    padding: 20px 0;
+}
+
+.cast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 24px;
+    padding: 20px;
+}
+
+.cast-member-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cast-member-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.cast-member-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.cast-member-card a {
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.cast-member-card a:hover {
+    color: #764ba2;
+}
+
+.episodes-section {
+    margin-top: 40px;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 24px;
+    color: #2d3748;
+}
+</style>
+
+<div class="show-header">
+    <h1>{{ show.title }}</h1>
+</div>
+
+<div class="show-actions">
+    <button id="get_info_from_tvdb" class="button">
+        📥 Import Episodes from TVDB
+    </button>
+    <a href="/shows/{{ show.id }}/missing_episodes" class="button">
+        🔍 Missing Episodes
+    </a>
+</div>
+
+<script>
+$("#get_info_from_tvdb").click(function() {
+    let btn = $(this);
+    btn.prop('disabled', true);
+    btn.text('⏳ Importing...');
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    let csrf_token = getCookie('csrftoken');
+    
     $.ajax({
         type: "POST",
         url: "/shows/{{ show.id }}/add_episodes_to_database",
@@ -67,55 +162,52 @@ let csrf_token = getCookie('csrftoken');
             "X-CSRFToken": csrf_token
         },
         success: function(data) {
-          location.reload();  // Refresh the page here
+            location.reload();
         },
         error: function() {
-            alert('Something went wrong! Look at the console for details.');
+            alert('Import failed. Check the console for details.');
+            btn.prop('disabled', false);
+            btn.text('📥 Import Episodes from TVDB');
         }
     });
 });
 </script>
 
-<center>
-<button type="button" class="collapsible" id="cast">Cast</button>
-<div class="content" style="display: none;">
-    {% for cast_member in show.cast.all %}
-        <a href="/cast/{{ cast_member.id }}">{{ cast_member.name }}</a><br> <img src="{{ cast_member.image_url }}" width="200" height="200"><br>
-    {% endfor %}
+{% if show.cast.all %}
+<div class="text-center">
+    <button type="button" class="collapsible" id="cast-toggle">
+        👥 View Cast ({{ show.cast.all|length }})
+    </button>
+    <div class="content" id="cast-content">
+        <div class="cast-grid">
+            {% for cast_member in show.cast.all %}
+            <div class="cast-member-card">
+                {% if cast_member.image_url %}
+                <img src="{{ cast_member.image_url }}" alt="{{ cast_member.name }}">
+                {% else %}
+                <div style="width: 100%; height: 150px; background: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                    <span style="font-size: 48px;">👤</span>
+                </div>
+                {% endif %}
+                <a href="/cast/{{ cast_member.id }}">{{ cast_member.name }}</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
-</center>
-    <br>
-    <center>
-    <a href="/shows/{{ show.id }}/missing_episodes" class="button">Missing Episodes</a>
-    </center>
-<script>
-    var coll = document.getElementsByClassName("collapsible");
-    var i;
+{% endif %}
 
-    for (i = 0; i < coll.length; i++) {
-      coll[i].addEventListener("click", function() {
-        this.classList.toggle("active");
-        var content = this.nextElementSibling;
-        if (content.style.display === "block") {
-          content.style.display = "none";
-        } else {
-          content.style.display = "block";
-        }
-      });
-    }
+<script>
+document.getElementById('cast-toggle')?.addEventListener('click', function() {
+    this.classList.toggle('active');
+    let content = document.getElementById('cast-content');
+    content.classList.toggle('show');
+});
 </script>
 
-<center>
-    <h3>Episodes</h3>
+<div class="episodes-section">
+    <h2 class="section-title">📺 Episodes</h2>
     {% render_table episodes %}
-</center>
-
-{% if messages %}
-    <script type="text/javascript">
-        {% for message in messages %}
-        alert("{{ message|escapejs }}");
-        {% endfor %}
-    </script>
-{% endif %}
+</div>
 
 {% endblock %}

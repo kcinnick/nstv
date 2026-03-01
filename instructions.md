@@ -3,6 +3,10 @@
 ## Purpose
 This repository is a Django app (`nstv`) used to track TV shows, episodes, and movies and sync that data from a local Plex server.
 
+## Documentation
+- **Backend/Python**: This file (instructions.md)
+- **Frontend/UI**: See `frontend-design-guidelines.md` for HTML/CSS design system
+
 ## Core Rules
 - Keep changes minimal and scoped to the user request.
 - Prefer updating existing files over adding new abstractions.
@@ -37,8 +41,90 @@ This repository is a Django app (`nstv`) used to track TV shows, episodes, and m
 - `PLEX_EMAIL`
 - `PLEX_API_KEY`
 - `PLEX_SERVER`
+- `TVDB_API_KEY`
+- `NZBGEEK_USERNAME`
+- `NZBGEEK_PASSWORD`
+- `NZBGET_NZB_DIR`
+- `NZBGET_COMPLETE_DIR`
+- `PLEX_TV_SHOW_DIR`
+- `PLEX_MOVIES_DIR`
 - `SHOW_FOLDER_PATH`
 - `TEMP_FOLDER_PATH`
+
+## Download & File Management
+
+### Background Threading
+All long-running operations run in background threads to prevent blocking the UI:
+- **Downloads**: `download_episode()`, `download_movie()` - Start NZB downloads
+- **File moves**: `move_downloaded_tv_show_files_to_plex()`, `move_downloaded_movie_files_to_plex()`
+
+Pattern:
+```python
+def view_function(request):
+    # Start operation in background thread
+    thread = threading.Thread(
+        target=operation_function,
+        args=(arg1, request),
+        daemon=True
+    )
+    thread.start()
+    messages.info(request, "Operation started. Check console for progress.")
+    return redirect(request.META.get('HTTP_REFERER'))
+```
+
+### Download Flow
+1. User clicks download button
+2. NZBGeek login and search
+3. Download NZB file to ~/Downloads
+4. Move NZB to NZBGet watch directory
+5. Monitor NZBGet history for completion status
+6. Django messages provide user feedback
+
+### File Movement Flow
+1. User clicks "Move to Plex" button
+2. Validate source (NZBGET_COMPLETE_DIR) and destination exist
+3. Move files with detailed error handling
+4. For TV shows: Automatically sync episodes with Plex after move
+5. Return status via Django messages (success/warning/error)
+
+### Quality Filtering
+- Movie downloads: No quality filter by default (search all qualities)
+- TV downloads: HD filtering with fallback if no HD results found
+- Anime shows: Filter out English-only audio tracks
+
+## Django Management Commands
+
+### audit_episode_duplicates
+Detect and optionally fix duplicate episodes in the database.
+
+Usage:
+```bash
+# Dry run - show duplicates
+python manage.py audit_episode_duplicates
+
+# Fix duplicates by merging
+python manage.py audit_episode_duplicates --fix
+
+# Audit specific show
+python manage.py audit_episode_duplicates --show-id 123
+```
+
+Merge logic preserves:
+- Episodes with `on_disk=True`
+- Episodes with TVDB ID
+- Most descriptive titles
+- Air dates and episode numbers
+
+## TVDB Import
+
+### Deduplication Strategy
+`nstv/get_info_from_tvdb/main.py` uses three-tier matching to prevent duplicates:
+
+1. **TVDB ID match**: If episode has tvdb_id, update existing record
+2. **Season/Episode number match**: Canonical identifier (S01E01)
+3. **Normalized title match**: Fuzzy matching for edge cases
+
+After import, `merge_duplicate_episodes_for_show()` cleans up any remaining duplicates.
 
 ## Common Workflow
 1. Implement smallest functional change.
