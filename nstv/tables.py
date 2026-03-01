@@ -62,7 +62,7 @@ class DeleteEpisodeColumn(tables.TemplateColumn):
 
 class MovieIdColumn(tables.Column):
     def render(self, value):
-        return format_html('<a href="/movies/{}" movie>{}</a>'.format(value, value))
+        return format_html('<a href="/movies/{}">{}</a>', value, value)
 
 
 class ShowTable(tables.Table):
