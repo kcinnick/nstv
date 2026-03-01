@@ -1,5 +1,7 @@
 import os
+import re
 import sys
+from datetime import date
 from pathlib import Path
 
 import django
@@ -38,6 +40,29 @@ def _extract_genre_names(genres):
     return [getattr(genre, 'tag', str(genre)) for genre in genres]
 
 
+def _extract_year_from_title(title):
+    """
+    Extract year from movie title if present.
+    Returns (cleaned_title, year_as_date)
+    Example: "Red River 1948" -> ("Red River", date(1948, 1, 1))
+    """
+    # Match 4-digit year at the end of the title (optionally in parentheses)
+    # Patterns: "Title 1948", "Title (1948)"
+    year_pattern = r'\s*[\(]?(\d{4})[\)]?\s*$'
+    match = re.search(year_pattern, title)
+    
+    if match:
+        year = int(match.group(1))
+        # Only consider valid movie years (1900-current year + 5)
+        current_year = date.today().year
+        if 1900 <= year <= current_year + 5:
+            cleaned_title = re.sub(year_pattern, '', title).strip()
+            release_date = date(year, 1, 1)  # Use Jan 1 as default
+            return cleaned_title, release_date
+    
+    return title, None
+
+
 def save_movie_poster(plex_movie, posters_dir=None):
     poster_url = getattr(plex_movie, 'posterUrl', None)
     movie_name = getattr(plex_movie, 'title', None) or getattr(plex_movie, 'name', None)
@@ -67,11 +92,18 @@ def upsert_movie_from_plex_movie(plex_movie, download_posters=False):
     if not movie_name:
         return None, False
 
+    # Extract year from title if present and clean the title
+    cleaned_name, extracted_date = _extract_year_from_title(movie_name)
+    
     genre_names = _extract_genre_names(getattr(plex_movie, 'genres', []))
     director_name = _extract_director_name(getattr(plex_movie, 'directors', []))
     release_date = getattr(plex_movie, 'originallyAvailableAt', None)
+    
+    # Use extracted date if Plex doesn't provide one
+    if not release_date and extracted_date:
+        release_date = extracted_date
 
-    movie_object = Movie.objects.filter(name=movie_name).first()
+    movie_object = Movie.objects.filter(name=cleaned_name).first()
     if movie_object:
         if not movie_object.genre and genre_names:
             movie_object.genre = genre_names
@@ -87,7 +119,7 @@ def upsert_movie_from_plex_movie(plex_movie, download_posters=False):
         return movie_object, False
 
     movie_object = Movie.objects.create(
-        name=movie_name,
+        name=cleaned_name,
         release_date=release_date,
         genre=genre_names,
         director=director_name,
