@@ -2,7 +2,7 @@ import os
 
 import django
 import django_tables2 as tables
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 
 django.setup()
 
@@ -76,7 +76,7 @@ class GenreColumn(tables.Column):
                 '<a href="/movies/genre/{}" style="color: #667eea; text-decoration: none; margin-right: 8px;">{}</a>',
                 genre, genre
             ))
-        return format_html(' '.join(str(link) for link in genre_links))
+        return mark_safe(' '.join(genre_links))
 
 
 class DirectorColumn(tables.Column):
