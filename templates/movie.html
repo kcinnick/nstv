@@ -4,7 +4,148 @@
 {% block title %}NSTV~ Movie: {{ movie.name }}{% endblock %}
 
 {% block content %}
-    <center><b><font size="6">{{ movie.name }}</font></b></center>
-    <br>
-    <center><img src="{% static 'images/posters/Extreme_Job.jpg' %}" width="300" height="400"></center>
+
+<style>
+.movie-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.movie-header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+}
+
+.movie-info {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+.info-row {
+    display: flex;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #4a5568;
+    width: 120px;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: #2d3748;
+    flex: 1;
+}
+
+.genre-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.genre-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.director-link {
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.director-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.status-badge.available {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.status-badge.missing {
+    background: #fed7d7;
+    color: #742a2a;
+}
+</style>
+
+<div class="movie-header">
+    <h1>{{ movie.name }}</h1>
+</div>
+
+<div class="movie-info">
+    {% if movie.release_date %}
+    <div class="info-row">
+        <div class="info-label">Release Date:</div>
+        <div class="info-value">{{ movie.release_date|date:"F d, Y" }}</div>
+    </div>
+    {% endif %}
+    
+    {% if movie.director %}
+    <div class="info-row">
+        <div class="info-label">Director:</div>
+        <div class="info-value">
+            <a href="{% url 'movies_by_director' movie.director %}" class="director-link">
+                {{ movie.director }}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if movie.genre %}
+    <div class="info-row">
+        <div class="info-label">Genres:</div>
+        <div class="info-value">
+            {% for genre in movie.genre %}
+            <a href="{% url 'movies_by_genre' genre %}" class="genre-tag">{{ genre }}</a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="info-row">
+        <div class="info-label">Status:</div>
+        <div class="info-value">
+            <span class="status-badge {% if movie.on_disk %}available{% else %}missing{% endif %}">
+                {% if movie.on_disk %}✓ Available{% else %}✗ Missing{% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

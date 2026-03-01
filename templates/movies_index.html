@@ -3,8 +3,14 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>🎬 Movies</h1>
+    <h1>🎬 {{ title }}</h1>
+    {% if filter_type %}
+    <p>Filtered by {{ filter_type }}: <strong>{{ filter_value }}</strong> 
+        <a href="{% url 'movies_index' %}" style="margin-left: 12px; color: #667eea; text-decoration: none; font-weight: 600;">✕ Clear filter</a>
+    </p>
+    {% else %}
     <p>Browse and manage your movie collection</p>
+    {% endif %}
 </div>
 
 <div class="action-container">

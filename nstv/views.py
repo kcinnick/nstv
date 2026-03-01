@@ -12,7 +12,7 @@ from tqdm import tqdm
 from .download import NZBGeek
 from .forms import DownloadForm, AddShowForm, AddMovieForm
 from .models import Show, Episode, Movie, CastMember
-from .tables import ShowTable, EpisodeTable, MovieTable
+from .tables import EpisodeTable, MovieTable
 
 SHOW_ALIASES = {
     # plex title: django title
@@ -64,15 +64,63 @@ def index(request):
 
 def shows_index(request):
     print('shows_index')
-    show_table = ShowTable(Show.objects.all().order_by("title"))  # Order by title alphabetically
-    # Removed pagination for cleaner view
-    index_context = {"title": "Show Index", "shows": show_table}
+    shows = Show.objects.all().order_by("title")
+    
+    # Build health status data for each show
+    shows_data = []
+    for show in shows:
+        episodes = show.episodes.all()
+        
+        # Group episodes by season
+        seasons_data = {}
+        for episode in episodes:
+            season_num = episode.season_number
+            if season_num not in seasons_data:
+                seasons_data[season_num] = {
+                    'number': season_num,
+                    'episodes': [],
+                    'total': 0,
+                    'available': 0
+                }
+            
+            seasons_data[season_num]['episodes'].append({
+                'number': episode.episode_number,
+                'title': episode.title,
+                'on_disk': episode.on_disk,
+                'id': episode.id
+            })
+            seasons_data[season_num]['total'] += 1
+            if episode.on_disk:
+                seasons_data[season_num]['available'] += 1
+        
+        # Calculate percentages and sort episodes
+        for season in seasons_data.values():
+            season['percentage'] = int((season['available'] / season['total'] * 100)) if season['total'] > 0 else 0
+            season['episodes'].sort(key=lambda x: x['number'])
+        
+        # Sort seasons
+        sorted_seasons = sorted(seasons_data.values(), key=lambda x: x['number'])
+        
+        # Calculate overall stats
+        total_episodes = episodes.count()
+        available_episodes = episodes.filter(on_disk=True).count()
+        overall_percentage = int((available_episodes / total_episodes * 100)) if total_episodes > 0 else 0
+        
+        shows_data.append({
+            'id': show.id,
+            'title': show.title,
+            'seasons': sorted_seasons,
+            'total_episodes': total_episodes,
+            'available_episodes': available_episodes,
+            'overall_percentage': overall_percentage
+        })
+    
+    index_context = {
+        "title": "Show Index",
+        "shows_data": shows_data
+    }
 
-    return render(
-        request,
-        f"shows_index.html",
-        index_context,
-    )
+    return render(request, "shows_index.html", index_context)
 
 
 def show_index(request, show_id):
@@ -355,6 +403,36 @@ def movies_index(request):
     movies_table = MovieTable(movies)
     movies_table.exclude = ("poster_path",)
     index_context = {"title": "Movie Index", "movies": movies_table}
+    return render(request, "movies_index.html", index_context)
+
+
+def movies_by_genre(request, genre):
+    """Filter movies by genre."""
+    print(f'movies_by_genre: {genre}')
+    movies = Movie.objects.filter(genre__contains=[genre])
+    movies_table = MovieTable(movies)
+    movies_table.exclude = ("poster_path",)
+    index_context = {
+        "title": f"Movies - {genre}",
+        "movies": movies_table,
+        "filter_type": "genre",
+        "filter_value": genre
+    }
+    return render(request, "movies_index.html", index_context)
+
+
+def movies_by_director(request, director):
+    """Filter movies by director."""
+    print(f'movies_by_director: {director}')
+    movies = Movie.objects.filter(director__iexact=director)
+    movies_table = MovieTable(movies)
+    movies_table.exclude = ("poster_path",)
+    index_context = {
+        "title": f"Movies by {director}",
+        "movies": movies_table,
+        "filter_type": "director",
+        "filter_value": director
+    }
     return render(request, "movies_index.html", index_context)
 
 
