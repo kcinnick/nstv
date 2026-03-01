@@ -102,11 +102,60 @@
     background: #fed7d7;
     color: #742a2a;
 }
+
+.movie-overview {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin: 20px auto;
+    max-width: 800px;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #4a5568;
+}
+
+.rating-stars {
+    color: #f59e0b;
+    font-size: 1.2rem;
+}
+
+.rating-section {
+    margin-bottom: 20px;
+}
+
 </style>
 
 <div class="movie-header">
     <h1>{{ movie.name }}</h1>
 </div>
+
+{% if movie.overview %}
+<div class="movie-overview">
+    {% if movie.rating %}
+    <div class="rating-section">
+        <span class="rating-stars">
+            {% with ''|center:movie.rating|slice:':10' as range %}
+            {% for i in range %}★{% endfor %}
+            {% endwith %}
+        </span>
+        <strong>{{ movie.rating }}/10</strong>
+    </div>
+    {% endif %}
+    {{ movie.overview }}
+</div>
+{% elif movie.rating %}
+<div class="movie-overview">
+    <div class="rating-section">
+        <span class="rating-stars">
+            {% with ''|center:movie.rating|slice:':10' as range %}
+            {% for i in range %}★{% endfor %}
+            {% endwith %}
+        </span>
+        <strong>{{ movie.rating }}/10</strong>
+    </div>
+</div>
+{% endif %}
 
 <div class="movie-info">
     {% if movie.release_date %}

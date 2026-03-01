@@ -1,5 +1,6 @@
 import os
 import django
+from datetime import datetime
 from pprint import pprint
 import tvdb_v4_official
 import re
@@ -281,8 +282,51 @@ def main(show_id=None):
         show_title = show.title
         tvdb_record = find_tvdb_record_for_series(tvdb, show_title)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
+        
+        # Update show metadata from TVDB
         show.tvdb_id = tvdb_series['id']
+        
+        # Populate extended metadata fields
+        if tvdb_series.get('overview'):
+            show.overview = tvdb_series['overview']
+        
+        if tvdb_series.get('firstAired'):
+            try:
+                show.first_aired = datetime.strptime(tvdb_series['firstAired'], '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        if tvdb_series.get('status'):
+            # TVDB status can be: Continuing, Ended, Upcoming
+            show.status = tvdb_series['status'].get('name') if isinstance(tvdb_series['status'], dict) else tvdb_series['status']
+        
+        if tvdb_series.get('originalNetwork'):
+            show.network = tvdb_series['originalNetwork']
+        
+        if tvdb_series.get('genres'):
+            # genres is a list of genre objects or strings
+            genres = []
+            for genre in tvdb_series['genres']:
+                if isinstance(genre, dict):
+                    genres.append(genre.get('name', ''))
+                else:
+                    genres.append(str(genre))
+            show.genre = [g for g in genres if g]  # Remove empty strings
+        
+        if tvdb_series.get('image'):
+            # image is typically the full URL to the poster
+            show.poster_url = tvdb_series['image']
+        
+        # Note: Skipping score/rating for now as TVDB's score is not a 0-10 rating
+        # but rather a popularity score that can be very large (thousands)
+        # if tvdb_series.get('score'):
+        #     try:
+        #         show.rating = round(float(tvdb_series['score']), 1)
+        #     except (ValueError, TypeError):
+        #         pass
+        
         show.save()
+        print(f'Updated metadata for {show.title}')
 
         all_tvdb_series_episodes = get_all_tvdb_episode_listings(tvdb, tvdb_series)
 

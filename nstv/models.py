@@ -14,6 +14,19 @@ class Show(models.Model):
     anime = models.BooleanField(default=False)
     tvdb_id = models.TextField(default=None, null=True)
     cast = models.ManyToManyField('CastMember', related_name='shows')
+    
+    # TVDB metadata
+    overview = models.TextField(default=None, null=True, blank=True)
+    first_aired = models.DateField(default=None, null=True, blank=True)
+    status = models.TextField(default=None, null=True, blank=True)  # Continuing, Ended, etc.
+    network = models.TextField(default=None, null=True, blank=True)
+    genre = ArrayField(
+        models.CharField(max_length=200, blank=True),
+        default=list,
+        blank=True
+    )
+    poster_url = models.TextField(default=None, null=True, blank=True)
+    rating = models.DecimalField(max_digits=3, decimal_places=1, default=None, null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -53,10 +66,14 @@ class Movie(models.Model):
         models.CharField(max_length=200, blank=True),
         default=list,
     )
-    director = models.TextField()
+    director = models.TextField(default='', blank=True)
     on_disk = models.BooleanField(default=False)
     poster_path = models.TextField(default=None, null=True)
     cast = models.ManyToManyField('CastMember', related_name='movies')
+    
+    # Additional metadata
+    overview = models.TextField(default=None, null=True, blank=True)
+    rating = models.DecimalField(max_digits=3, decimal_places=1, default=None, null=True, blank=True)
 
     def __str__(self):
         return self.name
