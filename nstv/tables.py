@@ -11,23 +11,23 @@ from .models import Show, Episode, Movie
 
 class ShowIdColumn(tables.Column):
     def render(self, value):
-        return format_html('<a href="/shows/{}" show>{}</a>'.format(value, value))
+        return format_html('<a href="/shows/{}" show>{}</a>', value, value)
 
 
 class TvTitleColumn(tables.Column):
     def render(self, value):
         id_for_title = Show.objects.get(title=value).id
-        return format_html('<a href="/shows/{}" show>{}</a>'.format(id_for_title, value))
+        return format_html('<a href="/shows/{}" show>{}</a>', id_for_title, value)
 
 
 class TvGidColumn(tables.Column):
     def render(self, value):
-        return format_html('<a href="https://nzbgeek.info/geekseek.php?tvid={}" show>{}</a>'.format(value, value))
+        return format_html('<a href="https://nzbgeek.info/geekseek.php?tvid={}" show>{}</a>', value, value)
 
 
 class EpisodeIdColumn(tables.Column):
     def render(self, value):
-        return format_html('{}'.format(value, value, value))
+        return format_html('{}', value)
 
 
 class DownloadColumn(tables.TemplateColumn):
