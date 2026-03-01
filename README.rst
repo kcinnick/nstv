@@ -24,11 +24,16 @@ Features
 
 **User Interface**
 
+* Health status dashboard for TV shows with visual episode availability tracking
+* Season-by-season progress bars with completion percentages
+* Episode grids showing available (green) vs missing (red) episodes
+* Genre and director filtering for movies
 * Browse shows and movies with poster art
 * View episode lists and availability
 * Search functionality
 * Missing episode tracking
 * Detailed cast information pages
+* Clickable genre tags and director links
 
 Requirements
 ------------
@@ -127,7 +132,8 @@ Project Structure
 Documentation
 -------------
 
-* ``instructions.md`` - Claude Sonnet 4.5 development guidelines
+* ``instructions.md`` - Claude Sonnet 4.5 backend development guidelines
+* ``frontend-design-guidelines.md`` - UI/UX design system and component patterns
 * ``docs/plex-rebuild-runbook.md`` - Step-by-step Plex sync instructions
 * ``.env.example`` - Environment variable template
 
