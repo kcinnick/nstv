@@ -341,7 +341,7 @@ class NZBGeek:
 
         return parsed_results
 
-    def get_nzb_search_results_for_movie(self, movie, quality='1080p'):
+    def get_nzb_search_results_for_movie(self, movie, quality=None):
         if not movie.gid:
             movie.gid = self.get_gid_for_movie(movie)
             if not movie.gid:
@@ -354,13 +354,20 @@ class NZBGeek:
 
         return parsed_results
 
-    def download_from_results(self, results, request):
+    def download_from_results(self, results, request=None):
+        """
+        Download NZB files from search results and monitor progress in NZBGet.
+        
+        @param results: List of SearchResult objects to download
+        @param request: Django request object (optional, for user feedback messages)
+        """
         print("download.download_from_results: Downloading from results.")
-        pre_download_nzb_files = len(glob(f"{Path.home()}\\Downloads\\*.nzb"))
         NZBGET_NZB_DIR = os.getenv("NZBGET_NZB_DIR")
         print("NZBGET_NZB_DIR: ", NZBGET_NZB_DIR)
         if not len(results):
             print("No results found.")
+            if request:
+                messages.warning(request, "No results found for download.")
             return
         else:
             print(f"Found {len(results)} results.")
@@ -371,59 +378,96 @@ class NZBGeek:
             result.title = f"{result.title}_{result_counter}"
             print(f"Downloading {result.title} from {result.download_url}")
             r = self.session.get(result.download_url)
-            with open(f"{Path.home()}\\Downloads\\{result.title}.nzb", "wb") as f:
+            
+            # Write NZB file to Downloads folder
+            download_path = f"{Path.home()}\\Downloads\\{result.title}.nzb"
+            with open(download_path, "wb") as f:
                 f.write(r.content)
+            print(f"NZB file written to {download_path}")
+            
             from time import sleep
 
-            #  wait until file is downloaded
+            #  Wait until the specific file exists and has content
             tries = 0
-            while tries < 60:
-                sleep(60)
-                nzb_files = glob(f"{Path.home()}\\Downloads\\*.nzb")
-                if len(nzb_files) > pre_download_nzb_files:
-                    messages.info(request, f"\r{result.title} downloaded!")
-                    print(f"\rNZB file downloaded!")
+            while tries < 10:  # Reduced from 60 to 10 tries
+                if os.path.exists(download_path) and os.path.getsize(download_path) > 0:
+                    if request:
+                        messages.info(request, f"\r{result.title} downloaded!")
+                    print(f"\rNZB file downloaded successfully: {download_path}")
                     break
                 else:
                     tries += 1
-                    print(f"\rWaiting for NZB file to download... {tries}")
-
-            for file in nzb_files:
-                file_name = file.split("\\")[-1]
-                print('Moving {} to {}'.format(file_name, NZBGET_NZB_DIR))
-                dest_path = os.path.join(NZBGET_NZB_DIR, file_name)
-
-                if not os.path.exists(dest_path):
-                    os.rename(file, dest_path)
-                print(f"{file_name} moved to {dest_path}.")
+                    sleep(1)  # Reduced from 60s to 1s
+                    print(f"\rWaiting for NZB file to be written... {tries}/10")
+            
+            if not os.path.exists(download_path):
+                print(f"ERROR: Failed to download {download_path}. Skipping.")
+                continue
+            
+            # Move the specific file to NZBGet directory
+            file_name = f"{result.title}.nzb"
+            dest_path = os.path.join(NZBGET_NZB_DIR, file_name)
+            
+            if os.path.exists(dest_path):
+                print(f"File already exists at {dest_path}. Removing and replacing.")
+                os.remove(dest_path)
+            
+            print(f'Moving {file_name} to {NZBGET_NZB_DIR}')
+            os.rename(download_path, dest_path)
+            print(f"{file_name} moved to {dest_path}.")
 
             # start monitoring download
+            print(f"Starting to monitor NZBGet for {result.title}...")
             nzbget_api = NZBGet()
-            while True:
+            monitoring_tries = 0
+            max_monitoring_tries = 120  # 10 minutes (120 * 5 seconds)
+            
+            while monitoring_tries < max_monitoring_tries:
                 try:
                     nzbget_api.get_and_update_history()
                 except ConnectionError:
                     print('Connection to NZBGet failed. Please check that it\'s running.')
                     break
+                except Exception as e:
+                    print(f'Error connecting to NZBGet: {e}')
+                    break
+                    
                 sleep(5)
+                monitoring_tries += 1
+                
                 if NZBDownload.objects.all().filter(title=result.title).exists():
                     nzb_download = NZBDownload.objects.all().filter(title=result.title).first()
-                    print(f"{result.title} has been added to NZBGet with status {nzb_download.status}.")
+                    print(f"[{monitoring_tries * 5}s] {result.title} status: {nzb_download.status}")
+                    
                     if 'FAILURE' in nzb_download.status:
-                        print(f"{result.title} has failed to download.")
+                        print(f"FAILED: {result.title} has failed to download.")
                         break
                     elif 'SUCCESS' in nzb_download.status:
-                        print(f"{result.title} has successfully downloaded.")
+                        print(f"SUCCESS: {result.title} has successfully downloaded and processed.")
+                        if request:
+                            messages.success(request, f"{result.title} completed successfully!")
                         return
                     elif 'DELETED/' in nzb_download.status:
-                        print(f"{result.title} has been deleted.")
+                        print(f"DELETED: {result.title} has been deleted from NZBGet.")
                         break
+                    elif 'WARNING' in nzb_download.status:
+                        print(f"WARNING: {result.title} completed with warnings.")
+                        if request:
+                            messages.warning(request, f"{result.title} completed with warnings.")
+                        return
                     else:
-                        print(f"Status for {result.title} is {nzb_download.status}.")
-                        raise Exception(f"Status for {result.title} is {nzb_download.status}.")
+                        # Still downloading/processing
+                        if monitoring_tries % 6 == 0:  # Print status every 30 seconds
+                            print(f"Status for {result.title}: {nzb_download.status}")
                 else:
-                    print(f"{result.title} not found in NZBGet.")
-                    break
-            print('post-download loop ended')
+                    if monitoring_tries % 6 == 0:  # Print every 30 seconds
+                        print(f"[{monitoring_tries * 5}s] {result.title} not yet in NZBGet history. Still queued or processing...")
+                        
+            if monitoring_tries >= max_monitoring_tries:
+                print(f"TIMEOUT: Stopped monitoring {result.title} after {max_monitoring_tries * 5} seconds.")
+                if request:
+                    messages.warning(request, f"Monitoring timeout for {result.title}. Check NZBGet manually.")
+            
+            print(f'Monitoring completed for {result.title}')
 
         return
