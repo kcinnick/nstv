@@ -146,6 +146,7 @@ def download_episode(request, show_id, episode_id):
     episode = Episode.objects.get(id=episode_id)
     parent_show = Show.objects.get(id=show_id)
     print('episode title: {} ~'.format(episode.title))
+    
     if episode.title:
         nzb_search_results = nzb_geek.get_nzb_search_results(
             show=parent_show, episode_title=episode.title,
@@ -159,12 +160,24 @@ def download_episode(request, show_id, episode_id):
             daemon=True
         )
         download_thread.start()
-        messages.info(request, f"Download started for {parent_show.title} S{episode.season_number}E{episode.episode_number} - {episode.title}. Check console for progress.")
+        
+        message = f"Download started for {parent_show.title} S{episode.season_number}E{episode.episode_number} - {episode.title}. Check console for progress."
+        messages.info(request, message)
+        
+        # Return JSON for AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept') == 'application/json':
+            return JsonResponse({'status': 'success', 'message': message})
     else:
         print(
             'Searching shows by season or episode number '
             'isn\'t currently supported.\n')
-        messages.error(request, "Episode title is required for download.")
+        error_message = "Episode title is required for download."
+        messages.error(request, error_message)
+        
+        # Return JSON for AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept') == 'application/json':
+            return JsonResponse({'status': 'error', 'message': error_message}, status=400)
+        
         raise NotImplementedError
 
     return redirect(request.META.get('HTTP_REFERER', '/'))

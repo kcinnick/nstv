@@ -142,6 +142,22 @@
 .episode-indicator.missing {
     background: #f56565;
     color: white;
+    cursor: pointer;
+}
+
+.episode-indicator.missing:hover {
+    background: #e53e3e;
+}
+
+.episode-indicator.downloading {
+    background: #ed8936;
+    cursor: wait;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 
 .episode-indicator:hover {
@@ -234,6 +250,64 @@ $("#move_files_to_plex").click(function() {
 });
 </script>
 
+<script>
+// Handle episode download clicks
+$(document).on('click', '.episode-indicator.missing', function(e) {
+    e.preventDefault();
+    
+    let indicator = $(this);
+    if (indicator.hasClass('downloading')) {
+        return; // Already downloading
+    }
+    
+    let showId = indicator.data('show-id');
+    let episodeId = indicator.data('episode-id');
+    let episodeNum = indicator.text().trim();
+    
+    // Mark as downloading
+    indicator.addClass('downloading');
+    indicator.removeClass('missing');
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    let csrf_token = getCookie('csrftoken');
+    
+    $.ajax({
+        type: "POST",
+        url: "/shows/" + showId + "/episode/" + episodeId + "/download",
+        headers: {
+            "X-CSRFToken": csrf_token,
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        success: function(data) {
+            // Keep downloading state - will turn green after file move/refresh
+            setTimeout(function() {
+                location.reload();
+            }, 2000);
+        },
+        error: function(xhr, status, error) {
+            alert('Error downloading episode ' + episodeNum + ': ' + (xhr.responseJSON?.message || 'Download failed'));
+            // Revert to missing state
+            indicator.removeClass('downloading');
+            indicator.addClass('missing');
+        }
+    });
+});
+</script>
+
 {% for show in shows_data %}
 <div class="show-card">
     <div class="show-header">
@@ -260,7 +334,9 @@ $("#move_files_to_plex").click(function() {
             <div class="episodes-grid">
                 {% for episode in season.episodes %}
                 <div class="episode-indicator {% if episode.on_disk %}available{% else %}missing{% endif %}"
-                     title="E{{ episode.number }}: {{ episode.title|default:'Untitled' }}">
+                     data-show-id="{{ show.id }}"
+                     data-episode-id="{{ episode.id }}"
+                     title="E{{ episode.number }}: {{ episode.title|default:'Untitled' }}{% if not episode.on_disk %} - Click to download{% endif %}">
                     {{ episode.number }}
                 </div>
                 {% endfor %}
