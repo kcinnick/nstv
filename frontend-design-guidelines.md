@@ -435,18 +435,108 @@ $("#button").click(function() {
 .mt-4 { margin-top: 32px; }
 ```
 
-## Page-Specific Notes
+## Page-Specific Patterns
 
-### Shows Index / Movies Index
-- Remove pagination (show all items)
-- Order shows alphabetically by title
-- Include file management action container at top
+### Health Status Dashboard (Shows Index)
+**Purpose**: Visual overview of TV show collection with episode availability tracking
+
+**Show Card Structure**:
+```html
+<div class="show-card">
+    <div class="show-header">
+        <a href="/shows/{{ show.id }}" class="show-title">{{ show.title }}</a>
+        <div class="show-stats">
+            <span>{{ show.available_episodes }}/{{ show.total_episodes }} episodes</span>
+            <span class="overall-percentage">{{ show.overall_percentage }}%</span>
+        </div>
+    </div>
+    <!-- Season rows -->
+</div>
+```
+
+**Season Row Pattern**:
+```html
+<div class="season-row">
+    <div class="season-header">
+        <div class="season-label">Season {{ season.number }}</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ season.percentage }}%"></div>
+            <div class="progress-text">{{ season.percentage }}%</div>
+        </div>
+        <div class="season-stats">{{ season.available }}/{{ season.total }} available</div>
+    </div>
+    <div class="episodes-grid">
+        <!-- Episode indicators -->
+    </div>
+</div>
+```
+
+**Episode Grid**:
+- Grid layout: `repeat(auto-fill, minmax(32px, 1fr))`
+- Episode indicators: 32x32px squares with episode number
+- Green background (#48bb78) for available episodes
+- Red background (#f56565) for missing episodes
+- Hover: Scale 1.15, show tooltip with episode title
+- Gap: 4px between indicators
+
+**Progress Bar Colors**:
+- Green gradient: ≥80% completion
+- Orange gradient: 50-79% completion
+- Red gradient: <50% completion
+
+**Styling Guidelines**:
+- Card background: White with subtle shadow
+- Season rows: Light gray background (#f7fafc)
+- Compact layout for quick scanning
+- Hover effects on both cards and episode indicators
+
+### Genre/Director Tags (Movies)
+**Clickable Genre Tags**:
+```html
+<a href="{% url 'movies_by_genre' genre %}" class="genre-tag">{{ genre }}</a>
+```
+
+**Styling**:
+- Gradient background (primary → secondary)
+- White text, 500 weight
+- 6px vertical, 12px horizontal padding
+- 6px border-radius
+- Inline-block with margins for wrapping
+- Hover: `translateY(-2px)` + shadow
+
+**Director Links**:
+```html
+<a href="{% url 'movies_by_director' movie.director %}" class="director-link">{{ movie.director }}</a>
+```
+
+**Styling**:
+- Primary color (#667eea)
+- 600 font weight
+- Underline on hover
+
+### Filtered Views (Movies)
+**Pattern for showing active filter**:
+```html
+{% if filter_type %}
+<p>Filtered by {{ filter_type }}: <strong>{{ filter_value }}</strong>
+    <a href="{% url 'movies_index' %}">✕ Clear filter</a>
+</p>
+{% endif %}
+```
 
 ### Show Detail Page
 - Large gradient title
 - Action buttons for TVDB import and missing episodes
 - Collapsible cast section with grid layout
 - Episodes table ordered by season/episode number
+
+### Movie Detail Page
+- Large gradient title
+- Info rows with labels and values
+- Clickable genre tags (gradient style)
+- Clickable director link
+- Status badge (green for available, red for missing)
+- Centered layout with max-width 800px
 
 ### Missing Episodes
 - Back button to return to show page
@@ -494,13 +584,40 @@ $("#button").click(function() {
 - [ ] No hardcoded colors or fonts
 - [ ] Follows existing component patterns
 
+## Visual Data Patterns
+
+### Status Badges
+```html
+<span class="status-badge available">✓ Available</span>
+<span class="status-badge missing">✗ Missing</span>
+```
+
+**Styling**:
+- `.available`: Light green (#c6f6d5), dark green text (#22543d)
+- `.missing`: Light red (#fed7d7), dark red text (#742a2a)
+- 8px vertical, 16px horizontal padding
+- Border-radius: 8px
+- Semi-bold font weight
+
+### Info Row Pattern (Movie Detail)
+```html
+<div class="info-row">
+    <div class="info-label">Label:</div>
+    <div class="info-value">Value content</div>
+</div>
+```
+
+**Layout**: Flexbox with 120px label width, flex: 1 for value
+**Borders**: Light bottom border, removed on last row
+
 ## Future Enhancements to Consider
 
 - Dark mode toggle
 - Mobile hamburger menu
 - Poster image galleries
-- Filtering/sorting on index pages
+- Advanced filtering UI with multi-select
 - Keyboard shortcuts
 - Progressive web app features
 - Image lazy loading
 - Skeleton loading states
+- Episode watch history tracking

@@ -126,6 +126,48 @@ Merge logic preserves:
 
 After import, `merge_duplicate_episodes_for_show()` cleans up any remaining duplicates.
 
+## Views & Data Presentation
+
+### Health Status Dashboard (shows_index)
+The TV shows index displays a health status dashboard instead of a traditional table:
+
+**Data Structure**: View builds nested dictionaries with:
+- Shows → Seasons → Episodes
+- Availability tracking (on_disk boolean)
+- Progress calculations (available/total, percentages)
+- Sorted by season/episode number (None values sorted last)
+
+**Pattern**:
+```python
+shows_data.append({
+    'id': show.id,
+    'title': show.title,
+    'seasons': sorted_seasons,  # Each season has episodes list
+    'total_episodes': total_episodes,
+    'available_episodes': available_episodes,
+    'overall_percentage': overall_percentage
+})
+```
+
+**Sorting with None values**:
+```python
+# Put None values at end, sort others numerically
+season['episodes'].sort(key=lambda x: (x['number'] is None, x['number'] or 0))
+```
+
+### Genre/Director Filtering (movies)
+Movies can be filtered by genre or director using dedicated views:
+
+**Views**: 
+- `movies_by_genre(request, genre)` - Uses `Movie.objects.filter(genre__contains=[genre])`
+- `movies_by_director(request, director)` - Uses `Movie.objects.filter(director__iexact=director)`
+
+**URL Patterns**:
+- `/movies/genre/<str:genre>`
+- `/movies/director/<str:director>`
+
+**Template Context**: Pass `filter_type` and `filter_value` to show active filter with clear option
+
 ## Common Workflow
 1. Implement smallest functional change.
 2. Run targeted tests.
