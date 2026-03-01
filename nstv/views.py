@@ -217,31 +217,138 @@ def add_episodes_to_database(request, show_id):
 
 
 def move_downloaded_files_to_plex(request, plex_dir):
-    print(f'move_downloaded_files_to_{plex_dir.split("_")[-1]}')
+    """
+    Move completed downloads from NZBGet to Plex media directories.
+    
+    @param request: Django request object
+    @param plex_dir: Target Plex directory path
+    @return: JsonResponse with status and details
+    """
+    dir_type = plex_dir.split("\\")[-1]  # Get last part of path (TV Shows or Movies)
+    print(f'move_downloaded_files_to_{dir_type}')
     print(f'NZBGET_COMPLETE_DIR: {NZBGET_COMPLETE_DIR}')
-    for file_name in tqdm(os.listdir(NZBGET_COMPLETE_DIR)):
-        # TODO: Check if file is movie/TV and move to dir accordingly
-        print('Moving file: ', file_name)
-        file_path = os.path.join(NZBGET_COMPLETE_DIR, file_name)
-        shutil.move(file_path, os.path.join(plex_dir, file_name))
-    return JsonResponse({'status': 'success'}, status=200)
+    print(f'Target Plex Directory: {plex_dir}')
+    
+    # Validate directories exist
+    if not os.path.exists(NZBGET_COMPLETE_DIR):
+        error_msg = f"NZBGet complete directory not found: {NZBGET_COMPLETE_DIR}"
+        print(f"ERROR: {error_msg}")
+        messages.error(request, error_msg)
+        return JsonResponse({'status': 'error', 'message': error_msg}, status=500)
+    
+    if not os.path.exists(plex_dir):
+        error_msg = f"Plex directory not found: {plex_dir}. Is your external drive mounted?"
+        print(f"ERROR: {error_msg}")
+        messages.error(request, error_msg)
+        return JsonResponse({'status': 'error', 'message': error_msg}, status=500)
+    
+    # Get list of files/folders to move
+    items_to_move = os.listdir(NZBGET_COMPLETE_DIR)
+    if not items_to_move:
+        msg = "No files found in NZBGet complete directory."
+        print(msg)
+        messages.info(request, msg)
+        return JsonResponse({'status': 'success', 'message': msg, 'moved_count': 0}, status=200)
+    
+    print(f"Found {len(items_to_move)} items to move.")
+    moved_count = 0
+    failed_items = []
+    
+    for item_name in tqdm(items_to_move, desc="Moving files"):
+        try:
+            source_path = os.path.join(NZBGET_COMPLETE_DIR, item_name)
+            dest_path = os.path.join(plex_dir, item_name)
+            
+            print(f'Moving: {item_name}')
+            
+            # Handle existing destination
+            if os.path.exists(dest_path):
+                print(f'WARNING: {dest_path} already exists. Skipping.')
+                failed_items.append({'name': item_name, 'reason': 'Already exists at destination'})
+                continue
+            
+            shutil.move(source_path, dest_path)
+            moved_count += 1
+            print(f'✓ Successfully moved: {item_name}')
+            
+        except PermissionError as e:
+            error_msg = f"Permission denied moving {item_name}: {e}"
+            print(f"ERROR: {error_msg}")
+            failed_items.append({'name': item_name, 'reason': 'Permission denied'})
+        except Exception as e:
+            error_msg = f"Error moving {item_name}: {e}"
+            print(f"ERROR: {error_msg}")
+            failed_items.append({'name': item_name, 'reason': str(e)})
+    
+    # Prepare response message
+    if moved_count > 0:
+        success_msg = f"Successfully moved {moved_count} item(s) to {dir_type}."
+        print(success_msg)
+        messages.success(request, success_msg)
+    
+    if failed_items:
+        failed_msg = f"Failed to move {len(failed_items)} item(s)."
+        print(failed_msg)
+        messages.warning(request, failed_msg)
+    
+    return JsonResponse({
+        'status': 'success' if not failed_items else 'partial',
+        'message': f'Moved {moved_count} item(s)',
+        'moved_count': moved_count,
+        'failed_count': len(failed_items),
+        'failed_items': failed_items
+    }, status=200)
 
 
 def move_downloaded_tv_show_files_to_plex(request):
+    """
+    Move downloaded TV show files to Plex and refresh episode database.
+    """
     print('move_downloaded_tv_show_files_to_plex')
-    json_response = move_downloaded_files_to_plex(request, PLEX_TV_SHOW_DIR)
-    try:
-        from .plexController.add_episodes_to_show import main as add_episodes_to_show
-        add_episodes_to_show()
-    except plexapi.exceptions.NotFound as e:
-        print(e)
-        return JsonResponse({'status': 'Network path was not found. Is your external HD turned on?'}, status=500)
+    
+    # Start file movement in background thread
+    def move_and_sync():
+        json_response = move_downloaded_files_to_plex(request, PLEX_TV_SHOW_DIR)
+        
+        # If files were moved, sync with Plex
+        if json_response.status_code == 200:
+            try:
+                from .plexController.add_episodes_to_show import main as add_episodes_to_show
+                print("Syncing episodes with Plex...")
+                add_episodes_to_show()
+                print("✓ Episode sync completed.")
+            except plexapi.exceptions.NotFound as e:
+                error_msg = f'Plex sync error: {e}. Is your external drive mounted?'
+                print(f"ERROR: {error_msg}")
+                messages.error(request, error_msg)
+            except Exception as e:
+                error_msg = f'Error syncing with Plex: {e}'
+                print(f"ERROR: {error_msg}")
+                messages.error(request, error_msg)
+    
+    # Run in background thread
+    move_thread = threading.Thread(target=move_and_sync, daemon=True)
+    move_thread.start()
+    
+    messages.info(request, "File move and Plex sync started. Check console for progress.")
     return redirect(request.META.get('HTTP_REFERER'))
 
 
 def move_downloaded_movie_files_to_plex(request):
-    json_response = move_downloaded_files_to_plex(request, PLEX_MOVIES_DIR)
-    return json_response
+    """
+    Move downloaded movie files to Plex directory in background.
+    """
+    print('move_downloaded_movie_files_to_plex')
+    
+    # Run in background thread
+    def move_movies():
+        move_downloaded_files_to_plex(request, PLEX_MOVIES_DIR)
+    
+    move_thread = threading.Thread(target=move_movies, daemon=True)
+    move_thread.start()
+    
+    messages.info(request, "Movie file move started. Check console for progress.")
+    return redirect(request.META.get('HTTP_REFERER'))
 
 
 def movies_index(request):

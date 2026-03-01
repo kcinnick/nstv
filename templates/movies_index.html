@@ -9,26 +9,43 @@
 </head>
 <body>
 {% block content %}
-    <center><button id="move_files_to_plex">Move downloaded files to Plex folder</button></center>
 
-    <script>
+<div class="action-container">
+    <h4>📁 File Management</h4>
+    <button id="move_files_to_plex" class="plex-action-btn">
+        <span id="btn-text">🎬 Move Downloaded Files to Plex</span>
+        <span id="btn-spinner" style="display:none;">⏳ Moving...</span>
+    </button>
+    <p style="color: #666; font-size: 14px; margin-top: 10px;">
+        Moves completed downloads from NZBGet to your Plex Movies library
+    </p>
+</div>
+
+<script>
 $("#move_files_to_plex").click(function() {
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        let cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+    // Disable button and show spinner
+    let btn = $(this);
+    btn.prop('disabled', true);
+    $('#btn-text').hide();
+    $('#btn-spinner').show();
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
+        return cookieValue;
     }
-    return cookieValue;
-}
 
-let csrf_token = getCookie('csrftoken');
+    let csrf_token = getCookie('csrftoken');
+    
     $.ajax({
         type: "POST",
         url: "/movies/move_downloaded_files_to_plex",
@@ -36,24 +53,26 @@ let csrf_token = getCookie('csrftoken');
             "X-CSRFToken": csrf_token
         },
         success: function(data) {
-          location.reload();  // Refresh the page here
+            // Reload page to show messages
+            location.reload();
         },
-        error: function(jqXHR, textStatus, errorThrown) {
-    let message = 'Something went wrong!';
-    if (jqXHR.responseText) {
-        try {
-            let response = JSON.parse(jqXHR.responseText);
-            message = response.status; // Access the 'status' key directly from the response object.
-        } catch (e) {
-            message = 'Additionally, an error occurred while parsing the error message: ' + e.toString();
+        error: function(xhr, status, error) {
+            let message = 'Failed to move files.';
+            if (xhr.responseJSON?.message) {
+                message = xhr.responseJSON.message;
+            } else if (xhr.responseText) {
+                try {
+                    let response = JSON.parse(xhr.responseText);
+                    message = response.status || response.message || message;
+                } catch (e) {
+                    message = 'Error parsing response: ' + e.toString();
+                }
+            }
+            alert('Error: ' + message);
+            btn.prop('disabled', false);
+            $('#btn-text').show();
+            $('#btn-spinner').hide();
         }
-    } else {
-        message = 'No response text.';
-    }
-
-    alert(message);
-    }
-
     });
 });
 </script>
