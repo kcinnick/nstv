@@ -1,18 +1,16 @@
-<!DOCTYPE html>
-<!-- Google Fonts -->
 {% extends "base.html" %}
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-    <title>{% block title %}NSTV~ Add Show{% endblock %}</title>
-</head>
-<body>
+
 {% block content %}
-<form action="/add_show" method="post">
-    {% csrf_token %}
-    {{ add_show_form }}
-    <input type="submit" value="Submit">
-</form>
+<div class="page-header">
+    <h1>➕ Add New Show</h1>
+    <p>Add a TV show to your collection</p>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <form action="/add_show" method="post">
+        {% csrf_token %}
+        {{ add_show_form }}
+        <input type="submit" value="✓ Add Show" style="margin-top: 24px; width: 100%;">
+    </form>
+</div>
 {% endblock %}
-</body>
-</html>

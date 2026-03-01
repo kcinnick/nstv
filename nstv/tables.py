@@ -2,7 +2,7 @@ import os
 
 import django
 import django_tables2 as tables
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 
 django.setup()
 
@@ -11,23 +11,23 @@ from .models import Show, Episode, Movie
 
 class ShowIdColumn(tables.Column):
     def render(self, value):
-        return format_html('<a href="/shows/{}" show>{}</a>'.format(value, value))
+        return format_html('<a href="/shows/{}" show>{}</a>', value, value)
 
 
 class TvTitleColumn(tables.Column):
     def render(self, value):
         id_for_title = Show.objects.get(title=value).id
-        return format_html('<a href="/shows/{}" show>{}</a>'.format(id_for_title, value))
+        return format_html('<a href="/shows/{}" show>{}</a>', id_for_title, value)
 
 
 class TvGidColumn(tables.Column):
     def render(self, value):
-        return format_html('<a href="https://nzbgeek.info/geekseek.php?tvid={}" show>{}</a>'.format(value, value))
+        return format_html('<a href="https://nzbgeek.info/geekseek.php?tvid={}" show>{}</a>', value, value)
 
 
 class EpisodeIdColumn(tables.Column):
     def render(self, value):
-        return format_html('{}'.format(value, value, value))
+        return format_html('{}', value)
 
 
 class DownloadColumn(tables.TemplateColumn):
@@ -62,7 +62,39 @@ class DeleteEpisodeColumn(tables.TemplateColumn):
 
 class MovieIdColumn(tables.Column):
     def render(self, value):
-        return format_html('<a href="/movies/{}" movie>{}</a>'.format(value, value))
+        return format_html('<a href="/movies/{}">{}</a>', value, value)
+
+
+class GenreColumn(tables.Column):
+    def render(self, value):
+        if not value:
+            return ''
+        # value is an array of genres
+        genre_links = []
+        for genre in value:
+            genre_links.append(format_html(
+                '<a href="/movies/genre/{}" style="color: #667eea; text-decoration: none; margin-right: 8px;">{}</a>',
+                genre, genre
+            ))
+        return mark_safe(' '.join(genre_links))
+
+
+class DirectorColumn(tables.Column):
+    def render(self, value):
+        if not value:
+            return ''
+        return format_html(
+            '<a href="/movies/director/{}" style="color: #667eea; font-weight: 600; text-decoration: none;">{}</a>',
+            value, value
+        )
+
+
+class MovieTitleColumn(tables.Column):
+    def render(self, value, record):
+        return format_html(
+            '<a href="/movies/{}" style="color: #667eea; font-weight: 600; text-decoration: none;">{}</a>',
+            record.id, value
+        )
 
 
 class ShowTable(tables.Table):
@@ -120,10 +152,10 @@ class DownloadMovieColumn(tables.TemplateColumn):
 
 class MovieTable(tables.Table):
     id = MovieIdColumn()
-    title = tables.Column(attrs={"th": {"id": "title"}})
+    name = MovieTitleColumn(attrs={"th": {"id": "name"}}, verbose_name="Title")
     release_date = tables.Column(attrs={"th": {"id": "release_date"}})
-    genre = tables.Column(attrs={"th": {"id": "genre"}})
-    director = tables.Column(attrs={"th": {"id": "director"}})
+    genre = GenreColumn(attrs={"th": {"id": "genre"}})
+    director = DirectorColumn(attrs={"th": {"id": "director"}})
     delete = DeleteMovieColumn()
     download = DownloadMovieColumn()
 

@@ -1,11 +1,200 @@
-<!DOCTYPE html>
 {% extends "base.html" %}
 
 {% block content %}
-<head>
-  <meta charset="UTF-8">
-    <title>NSTV~ Shows Index</title>
-</head>
+
+<style>
+.show-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.show-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.show-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.show-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2d3748;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.show-title:hover {
+    color: #667eea;
+}
+
+.show-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.9rem;
+    color: #718096;
+}
+
+.overall-percentage {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2d3748;
+}
+
+.season-row {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.season-header {
+    display: grid;
+    grid-template-columns: 100px 1fr 120px;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.season-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.95rem;
+}
+
+.progress-bar-container {
+    background: #e2e8f0;
+    border-radius: 10px;
+    height: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.progress-bar.low {
+    background: linear-gradient(90deg, #f56565 0%, #e53e3e 100%);
+}
+
+.progress-bar.medium {
+    background: linear-gradient(90deg, #ed8936 0%, #dd6b20 100%);
+}
+
+.progress-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    line-height: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.season-stats {
+    text-align: right;
+    font-size: 0.85rem;
+    color: #718096;
+    white-space: nowrap;
+}
+
+.episodes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.episode-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: help;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.episode-indicator.available {
+    background: #48bb78;
+    color: white;
+}
+
+.episode-indicator.missing {
+    background: #f56565;
+    color: white;
+    cursor: pointer;
+}
+
+.episode-indicator.missing:hover {
+    background: #e53e3e;
+}
+
+.episode-indicator.downloading {
+    background: #ed8936;
+    cursor: wait;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.episode-indicator:hover {
+    transform: scale(1.15);
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.episode-indicator:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.no-episodes {
+    color: #a0aec0;
+    font-style: italic;
+    padding: 16px;
+    text-align: center;
+}
+</style>
+
+<div class="page-header">
+    <h1>📺 TV Shows Health Status</h1>
+    <p>Track episode availability across your collection</p>
+</div>
 
 <div class="action-container">
     <h4>📁 File Management</h4>
@@ -20,7 +209,6 @@
 
 <script>
 $("#move_files_to_plex").click(function() {
-    // Disable button and show spinner
     let btn = $(this);
     btn.prop('disabled', true);
     $('#btn-text').hide();
@@ -50,7 +238,6 @@ $("#move_files_to_plex").click(function() {
             "X-CSRFToken": csrf_token
         },
         success: function(data) {
-            // Reload page to show messages
             location.reload();
         },
         error: function(xhr, status, error) {
@@ -62,14 +249,108 @@ $("#move_files_to_plex").click(function() {
     });
 });
 </script>
-{% load render_table from django_tables2 %}
-<html lang="en">
 
-<body>
-<center>
-<table>
-    {% render_table shows %}
-</table>
-</center>
+<script>
+// Handle episode download clicks
+$(document).on('click', '.episode-indicator.missing', function(e) {
+    e.preventDefault();
+    
+    let indicator = $(this);
+    if (indicator.hasClass('downloading')) {
+        return; // Already downloading
+    }
+    
+    let showId = indicator.data('show-id');
+    let episodeId = indicator.data('episode-id');
+    let episodeNum = indicator.text().trim();
+    
+    // Mark as downloading
+    indicator.addClass('downloading');
+    indicator.removeClass('missing');
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    let csrf_token = getCookie('csrftoken');
+    
+    $.ajax({
+        type: "POST",
+        url: "/shows/" + showId + "/episode/" + episodeId + "/download",
+        headers: {
+            "X-CSRFToken": csrf_token,
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        success: function(data) {
+            // Keep downloading state - will turn green after file move/refresh
+            setTimeout(function() {
+                location.reload();
+            }, 2000);
+        },
+        error: function(xhr, status, error) {
+            alert('Error downloading episode ' + episodeNum + ': ' + (xhr.responseJSON?.message || 'Download failed'));
+            // Revert to missing state
+            indicator.removeClass('downloading');
+            indicator.addClass('missing');
+        }
+    });
+});
+</script>
+
+{% for show in shows_data %}
+<div class="show-card">
+    <div class="show-header">
+        <a href="/shows/{{ show.id }}" class="show-title">{{ show.title }}</a>
+        <div class="show-stats">
+            <span>{{ show.available_episodes }}/{{ show.total_episodes }} episodes</span>
+            <span class="overall-percentage">{{ show.overall_percentage }}%</span>
+        </div>
+    </div>
+    
+    {% if show.seasons %}
+        {% for season in show.seasons %}
+        <div class="season-row">
+            <div class="season-header">
+                <div class="season-label">Season {{ season.number }}</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar {% if season.percentage < 50 %}low{% elif season.percentage < 80 %}medium{% endif %}" 
+                         style="width: {{ season.percentage }}%"></div>
+                    <div class="progress-text">{{ season.percentage }}%</div>
+                </div>
+                <div class="season-stats">{{ season.available }}/{{ season.total }} available</div>
+            </div>
+            
+            <div class="episodes-grid">
+                {% for episode in season.episodes %}
+                <div class="episode-indicator {% if episode.on_disk %}available{% else %}missing{% endif %}"
+                     data-show-id="{{ show.id }}"
+                     data-episode-id="{{ episode.id }}"
+                     title="E{{ episode.number }}: {{ episode.title|default:'Untitled' }}{% if not episode.on_disk %} - Click to download{% endif %}">
+                    {{ episode.number }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-episodes">No episodes tracked for this show</div>
+    {% endif %}
+</div>
+{% empty %}
+<div class="card text-center">
+    <p style="color: #718096; padding: 40px;">No shows found. <a href="/add_show" class="button" style="margin-top: 16px;">Add your first show</a></p>
+</div>
+{% endfor %}
 
 {% endblock %}
