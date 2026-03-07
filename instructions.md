@@ -14,6 +14,40 @@ This repository is a Django app (`nstv`) used to track TV shows, episodes, and m
 - Use environment variables for runtime configuration.
 - Add/adjust tests for behavior changes.
 
+## Git Workflow
+
+### Branching Strategy
+**Always use feature/bugfix branches when working on non-trivial changes.**
+
+- **Features**: `feature/<descriptive-name>` (e.g., `feature/health-dashboard`)
+- **Bug Fixes**: `bugfix/<descriptive-name>` (e.g., `bugfix/movie-title-year-extraction`)
+- **Hotfixes**: `hotfix/<descriptive-name>` (for urgent production fixes)
+
+### Branch Creation Rules
+1. **New Features**: Always create a feature branch from `master`
+2. **Bug Fixes**: If not already on a feature branch, create a `bugfix/` branch from `master`
+3. **Small Typos/Docs**: Can be committed directly to current branch if already on a feature branch
+
+### Workflow
+```bash
+# Check current branch
+git branch --show-current
+
+# Create new branch if on master
+git checkout -b feature/my-feature  # or bugfix/my-fix
+
+# Make changes, commit frequently
+git add -A
+git commit -m "Descriptive commit message"
+
+# When complete, merge or create PR
+```
+
+### Commit Messages
+- Use present tense: "Add feature" not "Added feature"
+- Be descriptive: Include what changed and why
+- Reference issues if applicable
+
 ## Local Setup
 1. Activate virtual environment.
 2. Ensure `.env` has required keys (see `.env.example`).
@@ -125,6 +159,43 @@ Merge logic preserves:
 3. **Normalized title match**: Fuzzy matching for edge cases
 
 After import, `merge_duplicate_episodes_for_show()` cleans up any remaining duplicates.
+
+## Movie Data Quality
+
+### Title & Release Date Handling
+Movies imported from Plex may have years embedded in titles (e.g., "Red River 1948").
+
+**Automatic Cleaning**: `plexController/add_movies_to_nstv.py` automatically:
+1. Detects year patterns at end of title: `\s*[\(]?(\d{4})[\)]?\s*$`
+2. Extracts year if in valid range (1900 to current year + 5)
+3. Stores cleaned title without year
+4. Populates `release_date` if Plex doesn't provide `originallyAvailableAt`
+
+**Pattern**:
+```python
+# Input: "Red River 1948"
+# Output: name="Red River", release_date=date(1948, 1, 1)
+
+# Input: "The Matrix (1999)"  
+# Output: name="The Matrix", release_date=date(1999, 1, 1)
+```
+
+### fix_movie_titles Management Command
+Clean existing movies with years in titles:
+
+```bash
+# Dry run - show what would change
+python manage.py fix_movie_titles --dry-run
+
+# Apply fixes
+python manage.py fix_movie_titles
+```
+
+The command:
+- Scans all movies for year patterns in title
+- Extracts year to `release_date` if field is empty
+- Updates title to remove year
+- Preserves existing release dates
 
 ## Views & Data Presentation
 

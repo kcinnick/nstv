@@ -1,5 +1,6 @@
 import os
 import django
+from datetime import datetime
 from pprint import pprint
 import tvdb_v4_official
 import re
@@ -63,68 +64,107 @@ EPISODE_TITLE_REPLACEMENTS = {
 
 
 def find_tvdb_record_for_series(tvdb_api, series_name):
-    print(series_name)
+    """
+    Find TVDB record for a series by searching and matching across multiple fields.
+    
+    Matching priority:
+    1. Exact match in English translation
+    2. Match in TVDB_ALIAS mappings
+    3. Match in any translation (any language)
+    4. Match in aliases list
+    5. If only one result, accept it with logging
+    """
+    print(f'Searching TVDB for: {series_name}')
+    
+    # Try direct search first
     items = tvdb_api.search(query=series_name, type='series', language='eng')
-    if len(items) == 0:
+    
+    # If no results and series has an alias, try that
+    if len(items) == 0 and series_name in TVDB_ALIAS:
+        print(f'No direct results, trying alias: {TVDB_ALIAS[series_name]}')
         items = tvdb_api.search(query=TVDB_ALIAS[series_name], type='series', language='eng')
+    
+    if len(items) == 0:
+        raise Exception(f'No TVDB results found for "{series_name}"')
+    
+    # Normalize series name for comparison
+    series_name_lower = series_name.lower()
+    series_name_normalized = series_name.replace(' the ', ' The ')
+    
     for i in items:
-        translations = i.get('translations')
-        try:
-            englishTranslation = translations['eng']
-        except KeyError:
-            print('No english translation found for {}'.format(i['name']))
+        translations = i.get('translations', {})
+        aliases = i.get('aliases', [])
+        
+        # Get English translation (if available)
+        english_translation = translations.get('eng')
+        if not english_translation:
+            print(f'Warning: No English translation for {i.get("name")}')
             continue
-        if englishTranslation == series_name:
-            print(33)
-            # update Show record with tvdb id
+        
+        # Priority 1: Exact match with English translation
+        if english_translation == series_name or english_translation == series_name_normalized:
+            print(f'✓ Matched via English translation: "{english_translation}"')
             show = Show.objects.get(title=series_name)
-            print(show)
             show.tvdb_id = i['id']
             show.save()
             return i
-        elif englishTranslation in TVDB_ALIAS.keys():
-            print(36)
-            if TVDB_ALIAS[englishTranslation] == series_name:
-                # update Show record with tvdb id
+        
+        # Priority 2: Match via TVDB_ALIAS
+        if english_translation in TVDB_ALIAS and TVDB_ALIAS[english_translation] == series_name:
+            print(f'✓ Matched via TVDB_ALIAS: "{english_translation}" -> "{series_name}"')
+            show = Show.objects.get(title=series_name)
+            show.tvdb_id = i['id']
+            show.save()
+            return i
+        
+        if series_name in TVDB_ALIAS and TVDB_ALIAS[series_name] == english_translation:
+            print(f'✓ Matched via TVDB_ALIAS reverse: "{series_name}" -> "{english_translation}"')
+            show = Show.objects.get(title=series_name)
+            show.tvdb_id = i['id']
+            show.save()
+            return i
+        
+        # Priority 3: Match in any translation (any language)
+        for lang_code, translation in translations.items():
+            if translation and translation.lower() == series_name_lower:
+                print(f'✓ Matched via {lang_code} translation: "{translation}"')
                 show = Show.objects.get(title=series_name)
-                print(show)
                 show.tvdb_id = i['id']
                 show.save()
                 return i
-            elif TVDB_ALIAS[englishTranslation] == series_name.replace(' the ', ' The '):
-                print(45)
-                # update Show record with tvdb id
+        
+        # Priority 4: Match in aliases
+        for alias in aliases:
+            if alias and alias.lower() == series_name_lower:
+                print(f'✓ Matched via alias: "{alias}"')
                 show = Show.objects.get(title=series_name)
-                print(show)
                 show.tvdb_id = i['id']
                 show.save()
                 return i
-            elif englishTranslation == series_name.replace(' the ', ' The '):
-                print(58)
-                show = Show.objects.get(title=series_name)
-                print(show)
-                show.tvdb_id = i['id']
-                show.save()
-                return i
-            else:
-                print(64)
-                print(f"{englishTranslation} != {series_name}")
-                quit()
-        else:
-            print(71)
-            print(f"{englishTranslation} != {series_name}")
-            if englishTranslation == TVDB_ALIAS.get(series_name):
-                print(74)
-                show = Show.objects.get(title=series_name)
-                print(show)
-                show.tvdb_id = i['id']
-                show.save()
-                return i
-            else:
-                print(80)
-                print(f"{englishTranslation} != {TVDB_ALIAS.get(series_name)}")
-
-    raise Exception('No match found.')
+    
+    # Priority 5: If only one result and no exact match, accept it with logging
+    if len(items) == 1:
+        result = items[0]
+        english_translation = result.get('translations', {}).get('eng', result.get('name'))
+        print(f'⚠ Only one TVDB result found - auto-matching:')
+        print(f'  Search term: "{series_name}"')
+        print(f'  TVDB title: "{english_translation}"')
+        print(f'  TVDB ID: {result.get("id")}')
+        print(f'  Available translations: {list(result.get("translations", {}).values())}')
+        print(f'  Aliases: {result.get("aliases", [])}')
+        
+        show = Show.objects.get(title=series_name)
+        show.tvdb_id = result['id']
+        show.save()
+        return result
+    
+    # No match found
+    print(f'✗ No match found for "{series_name}" among {len(items)} results:')
+    for idx, item in enumerate(items[:5], 1):
+        eng_title = item.get('translations', {}).get('eng', item.get('name'))
+        print(f'  {idx}. {eng_title} (ID: {item.get("id")})')
+    
+    raise Exception(f'No match found for "{series_name}". Please add to TVDB_ALIAS or verify the title.')
 
 
 def get_all_tvdb_episode_listings(tvdb, tvdb_series):
@@ -281,8 +321,51 @@ def main(show_id=None):
         show_title = show.title
         tvdb_record = find_tvdb_record_for_series(tvdb, show_title)
         tvdb_series = tvdb.get_series(tvdb_record['id'].split('-')[1])
+        
+        # Update show metadata from TVDB
         show.tvdb_id = tvdb_series['id']
+        
+        # Populate extended metadata fields
+        if tvdb_series.get('overview'):
+            show.overview = tvdb_series['overview']
+        
+        if tvdb_series.get('firstAired'):
+            try:
+                show.first_aired = datetime.strptime(tvdb_series['firstAired'], '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        if tvdb_series.get('status'):
+            # TVDB status can be: Continuing, Ended, Upcoming
+            show.status = tvdb_series['status'].get('name') if isinstance(tvdb_series['status'], dict) else tvdb_series['status']
+        
+        if tvdb_series.get('originalNetwork'):
+            show.network = tvdb_series['originalNetwork']
+        
+        if tvdb_series.get('genres'):
+            # genres is a list of genre objects or strings
+            genres = []
+            for genre in tvdb_series['genres']:
+                if isinstance(genre, dict):
+                    genres.append(genre.get('name', ''))
+                else:
+                    genres.append(str(genre))
+            show.genre = [g for g in genres if g]  # Remove empty strings
+        
+        if tvdb_series.get('image'):
+            # image is typically the full URL to the poster
+            show.poster_url = tvdb_series['image']
+        
+        # Note: Skipping score/rating for now as TVDB's score is not a 0-10 rating
+        # but rather a popularity score that can be very large (thousands)
+        # if tvdb_series.get('score'):
+        #     try:
+        #         show.rating = round(float(tvdb_series['score']), 1)
+        #     except (ValueError, TypeError):
+        #         pass
+        
         show.save()
+        print(f'Updated metadata for {show.title}')
 
         all_tvdb_series_episodes = get_all_tvdb_episode_listings(tvdb, tvdb_series)
 

@@ -48,6 +48,10 @@ activate/**
 .env
 .env.*
 
+# Debug and test scripts
+debug_*.py
+test_*.py
+
 # VS Code
 .vscode/
 

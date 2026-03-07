@@ -546,3 +546,124 @@ def search_results(request):
         print('query is empty')
 
     return render(request, 'search.html', {'results': results})
+
+
+def duplicates_index(request):
+    """Display duplicate media detection and cleanup interface."""
+    print('duplicates_index')
+    
+    # Get scan results from session if they exist
+    duplicate_episodes = request.session.get('duplicate_episodes', [])
+    duplicate_movies = request.session.get('duplicate_movies', [])
+    
+    # Calculate statistics
+    total_episodes = len(duplicate_episodes)
+    total_movies = len(duplicate_movies)
+    
+    total_episode_savings = sum(
+        group.get('total_space_savings', 0)
+        for group in duplicate_episodes
+    )
+    total_movie_savings = sum(
+        group.get('total_space_savings', 0)
+        for group in duplicate_movies
+    )
+    
+    context = {
+        'title': 'Duplicate Media Detection',
+        'duplicate_episodes': duplicate_episodes,
+        'duplicate_movies': duplicate_movies,
+        'stats': {
+            'total_episodes': total_episodes,
+            'total_movies': total_movies,
+            'episode_savings_gb': round(total_episode_savings / (1024**3), 2),
+            'movie_savings_gb': round(total_movie_savings / (1024**3), 2),
+            'total_savings_gb': round((total_episode_savings + total_movie_savings) / (1024**3), 2),
+        }
+    }
+    
+    return render(request, 'duplicates.html', context)
+
+
+def scan_for_duplicates(request):
+    """Scan Plex library for duplicate media."""
+    print('scan_for_duplicates')
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=400)
+    
+    try:
+        from nstv.plexController.find_duplicates import DuplicateFinder
+        
+        finder = DuplicateFinder()
+        
+        # Scan for duplicates (runs in background thread for large libraries)
+        duplicate_episodes = finder.find_duplicate_episodes()
+        duplicate_movies = finder.find_duplicate_movies()
+        
+        # Convert to dictionaries for session storage
+        episode_dicts = [group.to_dict() for group in duplicate_episodes]
+        movie_dicts = [group.to_dict() for group in duplicate_movies]
+        
+        # Store in session
+        request.session['duplicate_episodes'] = episode_dicts
+        request.session['duplicate_movies'] = movie_dicts
+        
+        return JsonResponse({
+            'status': 'success',
+            'found_episodes': len(duplicate_episodes),
+            'found_movies': len(duplicate_movies),
+        })
+    
+    except Exception as e:
+        print(f"Error scanning for duplicates: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def delete_duplicates(request):
+    """Delete selected duplicate media files."""
+    print('delete_duplicates')
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=400)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        
+        file_paths = data.get('file_paths', [])
+        dry_run = data.get('dry_run', False)
+        
+        if not file_paths:
+            return JsonResponse({'error': 'No files specified'}, status=400)
+        
+        from nstv.plexController.duplicate_deletion import DuplicateDeleter
+        
+        deleter = DuplicateDeleter()
+        results = deleter.delete_files(file_paths, dry_run=dry_run)
+        
+        # If not dry run, clear the session cache since library changed
+        if not dry_run:
+            request.session.pop('duplicate_episodes', None)
+            request.session.pop('duplicate_movies', None)
+        
+        return JsonResponse({
+            'status': 'success',
+            'results': {
+                'deleted_count': len(results['deleted']),
+                'failed_count': len(results['failed']),
+                'space_freed_gb': round(results['total_space_freed'] / (1024**3), 2),
+                'dry_run': results['dry_run'],
+                'deleted': results['deleted'],
+                'failed': results['failed'],
+            }
+        })
+    
+    except Exception as e:
+        print(f"Error deleting duplicates: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+
