@@ -15,6 +15,7 @@ from typing import List, Tuple
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from plexapi.myplex import MyPlexAccount
 from tqdm import tqdm
 
 
@@ -61,6 +62,12 @@ class Command(BaseCommand):
         
         # Validate configuration
         self._validate_config()
+        
+        # Check if Plex is accessible
+        if not self._check_plex_connection():
+            self.stdout.write(self.style.ERROR('Plex server is not accessible. Aborting.'))
+            self.stdout.write('Ensure Plex is running and environment variables are set correctly.')
+            return
         
         media_type = options['media_type']
         total_moved = 0
@@ -114,6 +121,37 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('PLEX_MOVIES_DIR not set - Movie processing disabled'))
         elif not os.path.exists(self.movies_dir):
             self.stdout.write(self.style.WARNING(f'Movies directory not found: {self.movies_dir}'))
+
+    def _check_plex_connection(self) -> bool:
+        """
+        Check if Plex server is accessible.
+        
+        Returns:
+            True if Plex is accessible, False otherwise
+        """
+        plex_email = os.getenv('PLEX_EMAIL')
+        plex_api_key = os.getenv('PLEX_API_KEY')
+        plex_server = os.getenv('PLEX_SERVER')
+        
+        if not plex_email or not plex_api_key or not plex_server:
+            self.stdout.write(self.style.ERROR('Missing Plex credentials in environment variables'))
+            self.stdout.write('Required: PLEX_EMAIL, PLEX_API_KEY, PLEX_SERVER')
+            return False
+        
+        try:
+            self.stdout.write('Checking Plex server connection...')
+            account = MyPlexAccount(plex_email, plex_api_key)
+            plex = account.resource(plex_server).connect()
+            
+            # Try to access a library to confirm connection works
+            plex.library.sections()
+            
+            self.stdout.write(self.style.SUCCESS(f'✓ Plex server "{plex_server}" is accessible'))
+            return True
+            
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'✗ Cannot connect to Plex server: {e}'))
+            return False
 
     def _process_media_type(self, media_type: str, plex_dir: str) -> Tuple[int, int]:
         """

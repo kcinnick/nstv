@@ -65,7 +65,7 @@ def log(message, level='INFO'):
 # Only process successful downloads
 if status != 'SUCCESS':
     log(f'Download status is {status}, skipping post-processing', 'WARNING')
-    sys.exit(0)
+    sys.exit(93)  # POSTPROCESS_SUCCESS - not an error, just nothing to do
 
 log(f'Processing completed download: {nzb_name}')
 log(f'Category: {category}')
@@ -107,6 +107,11 @@ try:
     if result.stderr:
         log('STDERR:', 'WARNING')
         print(result.stderr)
+    
+    # Check if Plex was inaccessible
+    if 'Plex server is not accessible' in result.stdout:
+        log('Plex server is offline. Will retry on next run.', 'WARNING')
+        sys.exit(93)  # POSTPROCESS_SUCCESS - not an error, just can't process now
     
     if result.returncode == 0:
         log('Post-processing completed successfully', 'SUCCESS')

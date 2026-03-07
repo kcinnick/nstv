@@ -116,13 +116,16 @@ python manage.py process_downloads --media-type=tv --verbose --dry-run
 
 ### Workflow
 
-1. **Detection**: Script checks `NZBGET_COMPLETE_DIR` for downloaded files
-2. **Classification**: Determines if files are TV shows or movies (based on category or path)
-3. **Movement**: Moves files to appropriate Plex directory:
+1. **Plex Health Check**: Verifies Plex server is accessible before proceeding
+   - If Plex is offline, processing aborts gracefully (files remain for next run)
+   - Prevents file movement when database sync would fail
+2. **Detection**: Script checks `NZBGET_COMPLETE_DIR` for downloaded files
+3. **Classification**: Determines if files are TV shows or movies (based on category or path)
+4. **Movement**: Moves files to appropriate Plex directory:
    - TV Shows → `PLEX_TV_SHOW_DIR`
    - Movies → `PLEX_MOVIES_DIR`
-4. **Sync**: Updates Django database with new episodes/movies from Plex
-5. **Logging**: Reports success/failure for each file
+5. **Sync**: Updates Django database with new episodes/movies from Plex
+6. **Logging**: Reports success/failure for each file
 
 ### File Handling
 
@@ -175,6 +178,12 @@ C:\Users\Nick\nstv\logs\download_processor_YYYY-MM.log
 - Look for post-processing script output
 
 ### Common Issues
+
+**"Plex server is not accessible"**
+- Verify Plex server is running on your NAS
+- Check network connectivity to NAS
+- Files remain in download directory and will be processed on next run
+- This is a **safe failure** - automation will retry automatically
 
 **"No files to process"**
 - Check that downloads are completing to `NZBGET_COMPLETE_DIR`

@@ -97,7 +97,11 @@ try {
     Write-Log ""
     Write-Log "=" * 80
     if ($ExitCode -eq 0) {
-        Write-Log "Processing completed successfully in $($Duration.TotalSeconds) seconds" "SUCCESS"
+        Write-Log "Processing completed in $($Duration.TotalSeconds) seconds" "SUCCESS"
+        
+        # Check if Plex was inaccessible (this would be logged in output above)
+        # If so, it's not really a problem - just means server was offline
+        Write-Log "Note: If Plex was offline, files remain in download directory for next run"
     } else {
         Write-Log "Processing failed with exit code $ExitCode" "ERROR"
     }
