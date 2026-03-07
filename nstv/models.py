@@ -110,3 +110,26 @@ class NZBDownload(models.Model):
     class Meta:
         db_table = "nzb_download"
 
+
+class DuplicateDeletionLog(models.Model):
+    """
+    Audit log for duplicate media file deletions.
+    Tracks what was deleted, when, and why for troubleshooting and potential rollback.
+    """
+    deleted_at = models.DateTimeField(auto_now_add=True)
+    file_path = models.TextField()
+    show = models.ForeignKey(Show, null=True, blank=True, on_delete=models.SET_NULL)
+    movie = models.ForeignKey(Movie, null=True, blank=True, on_delete=models.SET_NULL)
+    episode = models.ForeignKey(Episode, null=True, blank=True, on_delete=models.SET_NULL)
+    file_size = models.BigIntegerField()  # Size in bytes
+    quality_info = models.JSONField()  # Store resolution, codec, bitrate, etc.
+    reason = models.TextField(default='Lower quality duplicate')
+    
+    def __str__(self):
+        media = self.episode or self.movie or 'Unknown'
+        return f"Deleted {media} at {self.deleted_at}"
+    
+    class Meta:
+        db_table = "duplicate_deletion_log"
+        ordering = ['-deleted_at']
+

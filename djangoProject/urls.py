@@ -42,4 +42,8 @@ urlpatterns = [
     path('cast/<int:cast_member_id>', views.cast_member, name='cast_member_index'),
     path('search/', views.search_results, name='search_results'),
     path('shows/<int:show_id>/missing_episodes', views.find_missing_episodes, name='missing_episodes'),
+    # Duplicate detection and cleanup
+    path('duplicates/', views.duplicates_index, name='duplicates_index'),
+    path('duplicates/scan/', views.scan_for_duplicates, name='scan_duplicates'),
+    path('duplicates/delete/', views.delete_duplicates, name='delete_duplicates'),
 ]

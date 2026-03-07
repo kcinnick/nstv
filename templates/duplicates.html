@@ -1,0 +1,801 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+.duplicates-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.duplicates-header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-danger {
+    background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+}
+
+.button-secondary {
+    background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin: 40px 0;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.no-duplicates {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.no-duplicates-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+}
+
+.duplicate-group {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.duplicate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.duplicate-header:hover {
+    background: #f7fafc;
+}
+
+.duplicate-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.duplicate-subtitle {
+    font-size: 0.9rem;
+    color: #718096;
+    margin-top: 4px;
+}
+
+.duplicate-content {
+    display: none;
+    padding-top: 20px;
+}
+
+.duplicate-content.show {
+    display: block;
+}
+
+.comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.media-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+}
+
+.media-card.keep {
+    border-color: #48bb78;
+    background: #f0fff4;
+}
+
+.media-card.delete {
+    border-color: #f56565;
+    background: #fff5f5;
+}
+
+.card-badge {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: white;
+}
+
+.badge-keep {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.badge-delete {
+    background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+}
+
+.quality-info {
+    margin: 16px 0;
+}
+
+.quality-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.quality-label {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.quality-value {
+    color: #2d3748;
+}
+
+.quality-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.badge-4k {
+    background: #d6bcfa;
+    color: #553c9a;
+}
+
+.badge-1080p {
+    background: #bee3f8;
+    color: #2c5282;
+}
+
+.badge-720p {
+    background: #feebc8;
+    color: #7c2d12;
+}
+
+.badge-hevc {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.score-display {
+    text-align: center;
+    padding: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    margin-top: 16px;
+}
+
+.score-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.score-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.file-path {
+    font-size: 0.875rem;
+    color: #718096;
+    word-break: break-all;
+    margin-top: 12px;
+    padding: 8px;
+    background: #f7fafc;
+    border-radius: 6px;
+}
+
+.selection-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.checkbox-large {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.deletion-summary {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    margin-top: 40px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 2px solid #f56565;
+}
+
+.summary-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 20px;
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-stat {
+    text-align: center;
+    padding: 16px;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 40px;
+}
+
+.spinner {
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.toggle-icon {
+    transition: transform 0.3s;
+}
+
+.toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+</style>
+
+<div class="duplicates-header">
+    <h1>🗂️ Duplicate Media Detection</h1>
+</div>
+
+<div class="action-buttons">
+    <button id="scan-btn" class="button" onclick="scanForDuplicates()">
+        🔍 Scan for Duplicates
+    </button>
+    <button id="select-all-btn" class="button button-secondary" onclick="selectAllLowQuality()" {% if not duplicate_episodes and not duplicate_movies %}disabled{% endif %}>
+        ☑️ Select All Low Quality
+    </button>
+    <button id="dry-run-btn" class="button button-secondary" onclick="performDryRun()" {% if not duplicate_episodes and not duplicate_movies %}disabled{% endif %}>
+        🧪 Dry Run
+    </button>
+    <button id="delete-btn" class="button button-danger" onclick="deleteSelected()" {% if not duplicate_episodes and not duplicate_movies %}disabled{% endif %}>
+        🗑️ Delete Selected
+    </button>
+</div>
+
+<div id="loading-spinner" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Scanning Plex library for duplicates...</p>
+</div>
+
+{% if stats.total_episodes > 0 or stats.total_movies > 0 %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_episodes }}</div>
+        <div class="stat-label">📺 Duplicate Episodes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_movies }}</div>
+        <div class="stat-label">🎬 Duplicate Movies</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.episode_savings_gb }} GB</div>
+        <div class="stat-label">💾 Episode Savings</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.movie_savings_gb }} GB</div>
+        <div class="stat-label">💾 Movie Savings</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total_savings_gb }} GB</div>
+        <div class="stat-label">💰 Total Savings</div>
+    </div>
+</div>
+
+<!-- TV Episodes -->
+{% if duplicate_episodes %}
+<h2 style="margin: 40px 0 20px; font-size: 2rem; font-weight: 700;">📺 Duplicate TV Episodes</h2>
+
+{% for group in duplicate_episodes %}
+<div class="duplicate-group">
+    <div class="duplicate-header" onclick="toggleGroup(this)">
+        <div>
+            <div class="duplicate-title">{{ group.show_title }} - S{{ group.season_number|stringformat:"02d" }}E{{ group.episode_number|stringformat:"02d" }}</div>
+            <div class="duplicate-subtitle">{{ group.title }} • {{ group.items|length }} versions • {{ group.total_space_savings_gb }} GB savings</div>
+        </div>
+        <span class="toggle-icon">▼</span>
+    </div>
+    
+    <div class="duplicate-content">
+        <div class="comparison-grid">
+            {% for item in group.items %}
+            <div class="media-card {% if item.is_recommended_keep %}keep{% elif item.is_recommended_delete %}delete{% endif %}">
+                {% if item.is_recommended_keep %}
+                <span class="card-badge badge-keep">✓ KEEP</span>
+                {% elif item.is_recommended_delete %}
+                <span class="card-badge badge-delete">✗ DELETE</span>
+                {% endif %}
+                
+                <div class="quality-info">
+                    <div class="quality-row">
+                        <span class="quality-label">Resolution:</span>
+                        <span class="quality-value">
+                            {{ item.quality.resolution }}
+                            {% if '4K' in item.quality.resolution or '2160p' in item.quality.resolution %}
+                            <span class="quality-badge badge-4k">4K UHD</span>
+                            {% elif '1080p' in item.quality.resolution %}
+                            <span class="quality-badge badge-1080p">Full HD</span>
+                            {% elif '720p' in item.quality.resolution %}
+                            <span class="quality-badge badge-720p">HD</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="quality-row">
+                        <span class="quality-label">Codec:</span>
+                        <span class="quality-value">
+                            {{ item.quality.codec|upper }}
+                            {% if 'hevc' in item.quality.codec or 'h265' in item.quality.codec %}
+                            <span class="quality-badge badge-hevc">HEVC</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="quality-row">
+                        <span class="quality-label">Bitrate:</span>
+                        <span class="quality-value">{{ item.quality.bitrate|floatformat:0 }} kbps</span>
+                    </div>
+                    <div class="quality-row">
+                        <span class="quality-label">Audio:</span>
+                        <span class="quality-value">{{ item.quality.audio_codec }}</span>
+                    </div>
+                    <div class="quality-row">
+                        <span class="quality-label">File Size:</span>
+                        <span class="quality-value">{{ item.file_size_gb }} GB</span>
+                    </div>
+                </div>
+                
+                <div class="score-display">
+                    <div class="score-value">{{ item.quality.total_score|floatformat:1 }}</div>
+                    <div class="score-label">Quality Score / 100</div>
+                </div>
+                
+                <div class="file-path">{{ item.file_path }}</div>
+                
+                <div class="selection-controls">
+                    {% if item.is_recommended_delete %}
+                    <input type="checkbox" class="checkbox-large delete-checkbox" 
+                           data-path="{{ item.file_path }}" checked>
+                    <label>Delete this file</label>
+                    {% else %}
+                    <input type="checkbox" class="checkbox-large delete-checkbox" 
+                           data-path="{{ item.file_path }}">
+                    <label>Override: Delete anyway</label>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Movies -->
+{% if duplicate_movies %}
+<h2 style="margin: 40px 0 20px; font-size: 2rem; font-weight: 700;">🎬 Duplicate Movies</h2>
+
+{% for group in duplicate_movies %}
+<div class="duplicate-group">
+    <div class="duplicate-header" onclick="toggleGroup(this)">
+        <div>
+            <div class="duplicate-title">{{ group.title }} {% if group.year %}({{ group.year }}){% endif %}</div>
+            <div class="duplicate-subtitle">{{ group.items|length }} versions • {{ group.total_space_savings_gb }} GB savings</div>
+        </div>
+        <span class="toggle-icon">▼</span>
+    </div>
+    
+    <div class="duplicate-content">
+        <div class="comparison-grid">
+            {% for item in group.items %}
+            <div class="media-card {% if item.is_recommended_keep %}keep{% elif item.is_recommended_delete %}delete{% endif %}">
+                {% if item.is_recommended_keep %}
+                <span class="card-badge badge-keep">✓ KEEP</span>
+                {% elif item.is_recommended_delete %}
+                <span class="card-badge badge-delete">✗ DELETE</span>
+                {% endif %}
+                
+                <div class="quality-info">
+                    <div class="quality-row">
+                        <span class="quality-label">Resolution:</span>
+                        <span class="quality-value">
+                            {{ item.quality.resolution }}
+                            {% if '4K' in item.quality.resolution or '2160p' in item.quality.resolution %}
+                            <span class="quality-badge badge-4k">4K UHD</span>
+                            {% elif '1080p' in item.quality.resolution %}
+                            <span class="quality-badge badge-1080p">Full HD</span>
+                            {% elif '720p' in item.quality.resolution %}
+                            <span class="quality-badge badge-720p">HD</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="quality-row">
+                        <span class="quality-label">Codec:</span>
+                        <span class="quality-value">
+                            {{ item.quality.codec|upper }}
+                            {% if 'hevc' in item.quality.codec or 'h265' in item.quality.codec %}
+                            <span class="quality-badge badge-hevc">HEVC</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="quality-row">
+                        <span class="quality-label">Bitrate:</span>
+                        <span class="quality-value">{{ item.quality.bitrate|floatformat:0 }} kbps</span>
+                    </div>
+                    <div class="quality-row">
+                        <span class="quality-label">Audio:</span>
+                        <span class="quality-value">{{ item.quality.audio_codec }}</span>
+                    </div>
+                    <div class="quality-row">
+                        <span class="quality-label">File Size:</span>
+                        <span class="quality-value">{{ item.file_size_gb }} GB</span>
+                    </div>
+                </div>
+                
+                <div class="score-display">
+                    <div class="score-value">{{ item.quality.total_score|floatformat:1 }}</div>
+                    <div class="score-label">Quality Score / 100</div>
+                </div>
+                
+                <div class="file-path">{{ item.file_path }}</div>
+                
+                <div class="selection-controls">
+                    {% if item.is_recommended_delete %}
+                    <input type="checkbox" class="checkbox-large delete-checkbox" 
+                           data-path="{{ item.file_path }}" checked>
+                    <label>Delete this file</label>
+                    {% else %}
+                    <input type="checkbox" class="checkbox-large delete-checkbox" 
+                           data-path="{{ item.file_path }}">
+                    <label>Override: Delete anyway</label>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Deletion Summary -->
+<div class="deletion-summary">
+    <div class="summary-title">🗑️ Deletion Summary</div>
+    
+    <div class="summary-stats">
+        <div class="summary-stat">
+            <div style="font-size: 2rem; font-weight: 700; color: #667eea;">
+                <span id="selected-count">0</span>
+            </div>
+            <div style="color: #718096;">Files Selected</div>
+        </div>
+        <div class="summary-stat">
+            <div style="font-size: 2rem; font-weight: 700; color: #667eea;">
+                <span id="selected-size">0</span> GB
+            </div>
+            <div style="color: #718096;">Space to Free</div>
+        </div>
+    </div>
+    
+    <div class="action-buttons">
+        <button class="button button-secondary" onclick="location.reload()">
+            ↻ Cancel
+        </button>
+        <button class="button button-secondary" onclick="performDryRun()">
+            🧪 Dry Run
+        </button>
+        <button class="button button-danger" onclick="deleteSelected()">
+            🗑️ DELETE SELECTED
+        </button>
+    </div>
+</div>
+
+{% else %}
+<div class="no-duplicates">
+    <div class="no-duplicates-icon">✨</div>
+    <h2>No Duplicates Found</h2>
+    <p>Click "Scan for Duplicates" to search your Plex library for duplicate media files.</p>
+</div>
+{% endif %}
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function toggleGroup(header) {
+    const content = header.nextElementSibling;
+    const icon = header.querySelector('.toggle-icon');
+    
+    content.classList.toggle('show');
+    icon.classList.toggle('rotated');
+}
+
+function updateSelectionSummary() {
+    const checkboxes = document.querySelectorAll('.delete-checkbox:checked');
+    let totalSize = 0;
+    
+    checkboxes.forEach(cb => {
+        const card = cb.closest('.media-card');
+        const sizeText = card.querySelector('.quality-row:nth-child(5) .quality-value').textContent;
+        const sizeMatch = sizeText.match(/[\d.]+/);
+        if (sizeMatch) {
+            totalSize += parseFloat(sizeMatch[0]);
+        }
+    });
+    
+    document.getElementById('selected-count').textContent = checkboxes.length;
+    document.getElementById('selected-size').textContent = totalSize.toFixed(2);
+}
+
+function selectAllLowQuality() {
+    const checkboxes = document.querySelectorAll('.delete-checkbox');
+    checkboxes.forEach(cb => {
+        const card = cb.closest('.media-card');
+        if (card.classList.contains('delete')) {
+            cb.checked = true;
+        }
+    });
+    updateSelectionSummary();
+}
+
+function scanForDuplicates() {
+    const scanBtn = document.getElementById('scan-btn');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    
+    scanBtn.disabled = true;
+    scanBtn.textContent = '⏳ Scanning...';
+    loadingSpinner.style.display = 'block';
+    
+    fetch('/duplicates/scan/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Scan complete:', data);
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Scan failed:', error);
+        alert('Scan failed: ' + error);
+        scanBtn.disabled = false;
+        scanBtn.textContent = '🔍 Scan for Duplicates';
+        loadingSpinner.style.display = 'none';
+    });
+}
+
+function performDryRun() {
+    const checkboxes = document.querySelectorAll('.delete-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('No files selected for deletion.');
+        return;
+    }
+    
+    const filePaths = Array.from(checkboxes).map(cb => cb.dataset.path);
+    
+    fetch('/duplicates/delete/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            file_paths: filePaths,
+            dry_run: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const results = data.results;
+            alert(
+                `DRY RUN RESULTS:\n\n` +
+                `Would delete: ${results.deleted_count} files\n` +
+                `Would free: ${results.space_freed_gb} GB\n` +
+                `Failed: ${results.failed_count} files\n\n` +
+                `No files were actually deleted.`
+            );
+        } else {
+            alert('Dry run failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Dry run failed:', error);
+        alert('Dry run failed: ' + error);
+    });
+}
+
+function deleteSelected() {
+    const checkboxes = document.querySelectorAll('.delete-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('No files selected for deletion.');
+        return;
+    }
+    
+    const filePaths = Array.from(checkboxes).map(cb => cb.dataset.path);
+    
+    const confirmed = confirm(
+        `⚠️ WARNING ⚠️\n\n` +
+        `You are about to permanently delete ${filePaths.length} media files.\n\n` +
+        `This action CANNOT be undone.\n\n` +
+        `Are you absolutely sure you want to continue?`
+    );
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    const deleteBtn = document.getElementById('delete-btn');
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = '⏳ Deleting...';
+    
+    fetch('/duplicates/delete/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            file_paths: filePaths,
+            dry_run: false
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const results = data.results;
+            alert(
+                `✓ DELETION COMPLETE\n\n` +
+                `Deleted: ${results.deleted_count} files\n` +
+                `Freed: ${results.space_freed_gb} GB\n` +
+                `Failed: ${results.failed_count} files\n\n` +
+                `Plex library has been refreshed.`
+            );
+            location.reload();
+        } else {
+            alert('Deletion failed: ' + data.error);
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = '🗑️ Delete Selected';
+        }
+    })
+    .catch(error => {
+        console.error('Deletion failed:', error);
+        alert('Deletion failed: ' + error);
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = '🗑️ Delete Selected';
+    });
+}
+
+// Update selection summary when checkboxes change
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.delete-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelectionSummary);
+    });
+    updateSelectionSummary();
+});
+</script>
+
+{% endblock %}
