@@ -97,7 +97,7 @@ class DuplicateDeleter:
                     # Actually delete the media version using Plex API
                     try:
                         # Delete the media object (this removes the specific version)
-                        episode_or_movie.removeMedia(media_to_delete)
+                        media_to_delete.delete()
                         
                         print(f"[SUCCESS] Deleted via Plex API: {file_path} ({file_size / (1024**3):.2f} GB)")
                         
