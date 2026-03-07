@@ -132,14 +132,47 @@ class DuplicateFinder:
         for show in tv_library.all():
             try:
                 for episode in show.episodes():
-                    # Create key: show_title|season|episode
+                    # Check if this single episode has multiple media files (standard Plex duplicates)
+                    if len(episode.media) > 1:
+                        print(f"Found duplicate media files for {show.title} S{episode.seasonNumber:02d}E{episode.episodeNumber:02d}: {len(episode.media)} versions")
+                        
+                        duplicate_items = []
+                        for media in episode.media:
+                            for part in media.parts:
+                                # Analyze quality
+                                quality_score = self.analyzer.analyze_media(part)
+                                
+                                duplicate_item = DuplicateItem(
+                                    plex_id=episode.ratingKey,
+                                    file_path=part.file,
+                                    quality_score=quality_score,
+                                    file_size=part.size or 0,
+                                    plex_media=part,  # Keep reference for deletion
+                                )
+                                duplicate_items.append(duplicate_item)
+                        
+                        # Determine recommendations
+                        self._mark_recommendations(duplicate_items)
+                        
+                        # Create duplicate group
+                        group = DuplicateGroup(
+                            media_type='episode',
+                            title=episode.title,
+                            show_title=show.title,
+                            season_number=episode.seasonNumber,
+                            episode_number=episode.episodeNumber,
+                            items=duplicate_items,
+                        )
+                        duplicate_groups.append(group)
+                    
+                    # Also track for cross-episode duplicate detection (less common)
                     key = f"{show.title}|{episode.seasonNumber}|{episode.episodeNumber}"
                     episode_groups[key].append((show, episode))
             except Exception as e:
                 print(f"Error scanning show '{show.title}': {e}")
                 continue
         
-        # Process groups with duplicates
+        # Process groups with duplicates across different episode objects (rare case)
         for key, episodes in episode_groups.items():
             if len(episodes) < 2:
                 continue  # Not a duplicate
@@ -165,19 +198,25 @@ class DuplicateFinder:
                         )
                         duplicate_items.append(duplicate_item)
             
-            # Determine recommendations
-            self._mark_recommendations(duplicate_items)
-            
-            # Create duplicate group
-            group = DuplicateGroup(
-                media_type='episode',
-                title=episode_title,
-                show_title=show_title,
-                season_number=int(season_num),
-                episode_number=int(episode_num),
-                items=duplicate_items,
-            )
-            duplicate_groups.append(group)
+            # Only add if we haven't already processed this as a single-episode duplicate
+            # (Check if any items are already in duplicate_groups)
+            if duplicate_items and not any(
+                item.file_path in [di.file_path for group in duplicate_groups for di in group.items]
+                for item in duplicate_items
+            ):
+                # Determine recommendations
+                self._mark_recommendations(duplicate_items)
+                
+                # Create duplicate group
+                group = DuplicateGroup(
+                    media_type='episode',
+                    title=episode_title,
+                    show_title=show_title,
+                    season_number=int(season_num),
+                    episode_number=int(episode_num),
+                    items=duplicate_items,
+                )
+                duplicate_groups.append(group)
         
         print(f"Found {len(duplicate_groups)} duplicate episode groups")
         return duplicate_groups
@@ -207,7 +246,38 @@ class DuplicateFinder:
         
         for movie in movie_library.all():
             try:
-                # Normalize title (remove year if present)
+                # Check if this single movie has multiple media files (standard Plex duplicates)
+                if len(movie.media) > 1:
+                    print(f"Found duplicate media files for {movie.title} ({movie.year}): {len(movie.media)} versions")
+                    
+                    duplicate_items = []
+                    for media in movie.media:
+                        for part in media.parts:
+                            # Analyze quality
+                            quality_score = self.analyzer.analyze_media(part)
+                            
+                            duplicate_item = DuplicateItem(
+                                plex_id=movie.ratingKey,
+                                file_path=part.file,
+                                quality_score=quality_score,
+                                file_size=part.size or 0,
+                                plex_media=part,  # Keep reference for deletion
+                            )
+                            duplicate_items.append(duplicate_item)
+                    
+                    # Determine recommendations
+                    self._mark_recommendations(duplicate_items)
+                    
+                    # Create duplicate group
+                    group = DuplicateGroup(
+                        media_type='movie',
+                        title=movie.title,
+                        year=movie.year,
+                        items=duplicate_items,
+                    )
+                    duplicate_groups.append(group)
+                
+                # Also track for cross-movie duplicate detection (less common)
                 title_normalized = self._normalize_movie_title(movie.title)
                 key = f"{title_normalized}|{movie.year or 'unknown'}"
                 movie_groups[key].append(movie)
@@ -215,7 +285,7 @@ class DuplicateFinder:
                 print(f"Error scanning movie '{movie.title}': {e}")
                 continue
         
-        # Process groups with duplicates
+        # Process groups with duplicates across different movie objects (rare case)
         for key, movies in movie_groups.items():
             if len(movies) < 2:
                 continue  # Not a duplicate
@@ -242,17 +312,22 @@ class DuplicateFinder:
                         )
                         duplicate_items.append(duplicate_item)
             
-            # Determine recommendations
-            self._mark_recommendations(duplicate_items)
-            
-            # Create duplicate group
-            group = DuplicateGroup(
-                media_type='movie',
-                title=movie_title,
-                year=movie_year,
-                items=duplicate_items,
-            )
-            duplicate_groups.append(group)
+            # Only add if we haven't already processed this as a single-movie duplicate
+            if duplicate_items and not any(
+                item.file_path in [di.file_path for group in duplicate_groups for di in group.items]
+                for item in duplicate_items
+            ):
+                # Determine recommendations
+                self._mark_recommendations(duplicate_items)
+                
+                # Create duplicate group
+                group = DuplicateGroup(
+                    media_type='movie',
+                    title=movie_title,
+                    year=movie_year,
+                    items=duplicate_items,
+                )
+                duplicate_groups.append(group)
         
         print(f"Found {len(duplicate_groups)} duplicate movie groups")
         return duplicate_groups
