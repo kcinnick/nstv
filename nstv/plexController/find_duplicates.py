@@ -170,7 +170,8 @@ class DuplicateFinder:
                         duplicate_groups.append(group)
                     
                     # Also track for cross-episode duplicate detection (less common)
-                    key = f"{show.title}|{episode.seasonNumber}|{episode.episodeNumber}"
+                    # Use show.ratingKey to prevent different shows with same title from grouping
+                    key = f"{show.ratingKey}|{episode.seasonNumber}|{episode.episodeNumber}"
                     episode_groups[key].append((show, episode))
             except Exception as e:
                 print(f"Error scanning show '{show.title}': {e}")
@@ -181,7 +182,11 @@ class DuplicateFinder:
             if len(episodes) < 2:
                 continue  # Not a duplicate
             
-            show_title, season_num, episode_num = key.split('|')
+            # Key format: "{show.ratingKey}|{season_num}|{episode_num}"
+            show_rating_key, season_num, episode_num = key.split('|')
+            
+            # Get show title from first show in group
+            show_title = episodes[0][0].title
             
             # Skip if season or episode number is invalid
             try:
