@@ -53,7 +53,12 @@ category = os.environ.get('NZBPP_CATEGORY', '').lower()
 
 # Get script options (set in NZBGet)
 project_path = os.environ.get('NZBPO_NSTV_PROJECT_PATH', 'C:\\Users\\Nick\\nstv')
-python_path = os.environ.get('NZBPO_PYTHON_PATH', 'python')
+python_path = os.environ.get('NZBPO_PYTHON_PATH', '')
+
+# If no Python path specified, use the venv Python directly
+if not python_path:
+    python_path = os.path.join(project_path, '.venv', 'Scripts', 'python.exe')
+    
 media_type = os.environ.get('NZBPO_MEDIA_TYPE', 'all')
 verbose = os.environ.get('NZBPO_VERBOSE', 'no').lower() == 'yes'
 
@@ -61,6 +66,15 @@ verbose = os.environ.get('NZBPO_VERBOSE', 'no').lower() == 'yes'
 def log(message, level='INFO'):
     print(f'[{level}] {message}')
     sys.stdout.flush()
+
+# Verify Python executable exists
+if not os.path.exists(python_path):
+    log(f'ERROR: Python executable not found at: {python_path}', 'ERROR')
+    log(f'Please check NZBPO_PYTHON_PATH configuration in NZBGet', 'ERROR')
+    sys.exit(94)
+
+log(f'Using Python: {python_path}')
+log(f'Project path: {project_path}')
 
 # Only process successful downloads
 if status != 'SUCCESS':
