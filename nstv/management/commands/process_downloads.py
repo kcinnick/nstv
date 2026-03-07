@@ -16,7 +16,6 @@ from typing import List, Tuple
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from plexapi.myplex import MyPlexAccount
-from tqdm import tqdm
 
 
 class Command(BaseCommand):
@@ -213,47 +212,56 @@ class Command(BaseCommand):
         moved_count = 0
         failed_items = []
         
-        iterator = tqdm(items, desc="Processing", disable=not self.verbose_mode)
-        
-        for item_name in iterator:
+        for idx, item_name in enumerate(items, 1):
             try:
                 source_path = os.path.join(self.nzbget_dir, item_name)
                 dest_path = os.path.join(dest_dir, item_name)
                 
+                # Show progress
+                self.stdout.write(f'\n[{idx}/{len(items)}] Processing: {item_name}')
+                
                 # Check if destination already exists
                 if os.path.exists(dest_path):
-                    msg = f'SKIP: {item_name} (already exists at destination)'
-                    if self.verbose_mode:
-                        self.stdout.write(self.style.WARNING(msg))
+                    msg = f'  SKIP: Already exists at destination'
+                    self.stdout.write(self.style.WARNING(msg))
                     failed_items.append({
                         'name': item_name,
                         'reason': 'Already exists at destination'
                     })
                     continue
                 
+                # Get file/directory size for progress indication
+                if os.path.isfile(source_path):
+                    size_gb = os.path.getsize(source_path) / (1024**3)
+                    self.stdout.write(f'  Size: {size_gb:.2f} GB')
+                elif os.path.isdir(source_path):
+                    # Calculate directory size
+                    total_size = sum(
+                        os.path.getsize(os.path.join(dirpath, filename))
+                        for dirpath, _, filenames in os.walk(source_path)
+                        for filename in filenames
+                    )
+                    size_gb = total_size / (1024**3)
+                    self.stdout.write(f'  Size: {size_gb:.2f} GB (directory)')
+                
                 # Move file/directory
                 if self.dry_run:
-                    msg = f'WOULD MOVE: {item_name}'
-                    if self.verbose_mode:
-                        self.stdout.write(self.style.WARNING(msg))
+                    self.stdout.write(self.style.WARNING('  WOULD MOVE'))
                     moved_count += 1
                 else:
+                    self.stdout.write('  Moving... (this may take a while for large files)')
                     shutil.move(source_path, dest_path)
-                    msg = f'✓ Moved: {item_name}'
-                    if self.verbose_mode:
-                        self.stdout.write(self.style.SUCCESS(msg))
+                    self.stdout.write(self.style.SUCCESS('  ✓ Moved successfully'))
                     moved_count += 1
                 
             except PermissionError as e:
-                msg = f'✗ Permission denied: {item_name}'
-                self.stdout.write(self.style.ERROR(msg))
+                self.stdout.write(self.style.ERROR(f'  ✗ Permission denied: {e}'))
                 failed_items.append({
                     'name': item_name,
                     'reason': f'Permission denied: {e}'
                 })
             except Exception as e:
-                msg = f'✗ Error moving {item_name}: {e}'
-                self.stdout.write(self.style.ERROR(msg))
+                self.stdout.write(self.style.ERROR(f'  ✗ Error: {e}'))
                 failed_items.append({
                     'name': item_name,
                     'reason': str(e)
