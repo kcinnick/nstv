@@ -45,7 +45,7 @@ class DuplicateDeleter:
         dry_run: bool = False
     ) -> Dict[str, Any]:
         """
-        Delete media files and update Plex.
+        Delete media files using Plex API.
         
         Args:
             file_paths: List of file paths to delete
@@ -63,23 +63,26 @@ class DuplicateDeleter:
         
         for file_path in file_paths:
             try:
-                # Validate file exists
-                if not os.path.exists(file_path):
+                # Find the media object (not just the part) in Plex by file path
+                media_info = self._find_media_by_path(file_path)
+                
+                if not media_info:
                     results['failed'].append({
                         'path': file_path,
-                        'error': 'File not found'
+                        'error': 'Media not found in Plex'
                     })
+                    print(f"[ERROR] Media not found in Plex: {file_path}")
                     continue
                 
+                episode_or_movie = media_info['parent']
+                media_to_delete = media_info['media']
+                media_part = media_info['part']
+                
                 # Get file size before deletion
-                file_size = os.path.getsize(file_path)
+                file_size = media_part.size or 0
                 
-                # Get quality info from Plex
-                quality_info = self._get_quality_info_from_path(file_path)
-                
-                # Get associated Episode or Movie
-                episode = self._find_episode_by_path(file_path)
-                movie = self._find_movie_by_path(file_path)
+                # Get quality info
+                quality_info = self._get_quality_info_from_part(media_part)
                 
                 if dry_run:
                     # Simulate deletion
@@ -91,38 +94,158 @@ class DuplicateDeleter:
                     results['total_space_freed'] += file_size
                     print(f"[DRY RUN] Would delete: {file_path} ({file_size / (1024**3):.2f} GB)")
                 else:
-                    # Actually delete the file
-                    os.remove(file_path)
-                    
-                    # Log the deletion
-                    self._log_deletion(
-                        file_path=file_path,
-                        file_size=file_size,
-                        quality_info=quality_info,
-                        episode=episode,
-                        movie=movie,
-                    )
-                    
-                    results['deleted'].append({
-                        'path': file_path,
-                        'size': file_size,
-                        'size_gb': round(file_size / (1024**3), 2),
-                    })
-                    results['total_space_freed'] += file_size
-                    print(f"Deleted: {file_path} ({file_size / (1024**3):.2f} GB)")
+                    # Actually delete the media version using Plex API
+                    try:
+                        # Delete the media object (this removes the specific version)
+                        episode_or_movie.removeMedia(media_to_delete)
+                        
+                        print(f"[SUCCESS] Deleted via Plex API: {file_path} ({file_size / (1024**3):.2f} GB)")
+                        
+                        # Log the deletion
+                        self._log_deletion(
+                            file_path=file_path,
+                            file_size=file_size,
+                            quality_info=quality_info,
+                            episode=None,  # Could enhance this later
+                            movie=None,     # Could enhance this later
+                        )
+                        
+                        results['deleted'].append({
+                            'path': file_path,
+                            'size': file_size,
+                            'size_gb': round(file_size / (1024**3), 2),
+                        })
+                        results['total_space_freed'] += file_size
+                        
+                    except Exception as delete_error:
+                        raise Exception(f"Plex API deletion failed: {delete_error}")
                 
             except Exception as e:
                 results['failed'].append({
                     'path': file_path,
                     'error': str(e)
                 })
-                print(f"Failed to delete {file_path}: {e}")
+                print(f"[ERROR] Failed to delete {file_path}: {e}")
         
         # Refresh Plex library if any files were deleted
         if results['deleted'] and not dry_run:
             self._refresh_plex_library()
         
         return results
+    
+    def _find_media_by_path(self, file_path: str):
+        """
+        Find a media object and its parent in Plex by file path.
+        
+        Args:
+            file_path: Full path to the media file
+            
+        Returns:
+            Dictionary with 'parent' (episode/movie), 'media', and 'part' or None if not found
+        """
+        try:
+            # Search in all library sections
+            for section in self.plex.library.sections():
+                if section.type not in ['movie', 'show']:
+                    continue
+                
+                # For TV shows
+                if section.type == 'show':
+                    for show in section.all():
+                        for episode in show.episodes():
+                            for media in episode.media:
+                                for part in media.parts:
+                                    if part.file == file_path:
+                                        return {
+                                            'parent': episode,
+                                            'media': media,
+                                            'part': part
+                                        }
+                
+                # For movies
+                elif section.type == 'movie':
+                    for movie in section.all():
+                        for media in movie.media:
+                            for part in media.parts:
+                                if part.file == file_path:
+                                    return {
+                                        'parent': movie,
+                                        'media': media,
+                                        'part': part
+                                    }
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error finding media: {e}")
+            return None
+    
+    def _find_media_part_by_path(self, file_path: str):
+        """
+        Find a media part in Plex by its file path.
+        
+        Args:
+            file_path: Full path to the media file
+            
+        Returns:
+            Media part object or None if not found
+        """
+        try:
+            # Search in all library sections
+            for section in self.plex.library.sections():
+                if section.type not in ['movie', 'show']:
+                    continue
+                
+                # For TV shows
+                if section.type == 'show':
+                    for show in section.all():
+                        for episode in show.episodes():
+                            for media in episode.media:
+                                for part in media.parts:
+                                    if part.file == file_path:
+                                        return part
+                
+                # For movies
+                elif section.type == 'movie':
+                    for movie in section.all():
+                        for media in movie.media:
+                            for part in media.parts:
+                                if part.file == file_path:
+                                    return part
+            
+            return None
+            
+        except Exception as e:
+            print(f"Error finding media part: {e}")
+            return None
+    
+    def _get_quality_info_from_part(self, media_part) -> Dict[str, Any]:
+        """
+        Get quality information from a Plex media part.
+        
+        Args:
+            media_part: Plex media part object
+            
+        Returns:
+            Dictionary with quality information
+        """
+        try:
+            quality_info = self.analyzer.analyze_media(media_part)
+            
+            return {
+                'resolution': quality_info.resolution,
+                'codec': quality_info.codec,
+                'bitrate': quality_info.bitrate,
+                'audio_codec': quality_info.audio_codec,
+                'total_score': quality_info.total_score,
+                'file_path': media_part.file,
+                'file_size': media_part.size,
+                'extracted_at': datetime.now().isoformat(),
+            }
+            
+        except Exception as e:
+            print(f"Error extracting quality info: {e}")
+            return {'file_path': media_part.file if media_part else 'unknown', 'error': str(e)}
     
     def _get_quality_info_from_path(self, file_path: str) -> Dict[str, Any]:
         """
