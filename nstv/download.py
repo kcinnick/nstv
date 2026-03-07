@@ -223,48 +223,105 @@ class NZBGeek:
         return show.gid
 
     def get_gid_for_movie(self, movie):
+        """
+        Get the NZBGeek GID (movieid) for a movie by searching and parsing results.
+        
+        The HTML structure from NZBGeek geekseek is:
+        - releases_image TD: Contains the movieid link
+        - Subsequent TDs: Contain the release title with movie name + quality info
+        """
         print("get_gid_for_movie: " + 'Getting GID for {}'.format(movie.name))
         movie = Movie.objects.all().filter(name=movie.name).first()
 
-        url = "https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=2000&browseincludewords={}".format(
-            movie.name
-        ).replace(" ", "%20")
+        # Build search URL - normalize movie name for URL encoding
+        search_term =movie.name.replace(" ", "%20")
+        url = f"https://nzbgeek.info/geekseek.php?moviesgeekseek=1&c=2000&browseincludewords={search_term}"
         print("get_gid_for_movie: " + url)
         r = self.session.get(url)
 
         soup = BeautifulSoup(r.content, "html.parser")
         geekseek_results = soup.find('div', class_='geekseek_results')
-        if 'returned 0' in geekseek_results.text:
+        if geekseek_results and 'returned 0' in geekseek_results.text:
             print("get_gid_for_movie: " + 'No results found for {}'.format(movie.name))
-            return
+            return None
 
         releases_tables = soup.find_all("table", class_="releases")
-        for releases_table in releases_tables:
-            print('-------')
-            print("Movie title: ", movie.name)
-            releases_item = releases_table.find('td', class_='releases_item_release')
-            if releases_item is None:
-                print("get_gid_for_movie: " + 'No results found for {}'.format(movie.name))
-
-            releases_item_title_text = releases_item.text.strip()
-            movie.name = releases_item_title_text.replace(
-                # NZBGeek removes the period after titles
-                'Mr. ', 'Mr').replace('Mrs. ', 'Mrs').replace('Ms. ', 'Ms')
-
-            if movie.name in releases_item_title_text:
-                # TODO: add year check
-                print("get_gid_for_movie: " + 'Found a match for {}'.format(movie.name))
-                print(releases_item)
-                movie.gid = releases_item.find('a', class_='geekseek_results').get('href').split('?movieid=')[1]
-                movie.save()
-                print("get_gid_for_movie: " + 'Successfully updated GID for {}'.format(movie.name))
-                sleep(5)
-                break
-            else:
-                print(f'{movie.name} not in {releases_item_title_text}')
+        if not releases_tables:
+            print("get_gid_for_movie: " + 'No release tables found for {}'.format(movie.name))
+            return None
+        
+        print(f"get_gid_for_movie: Found {len(releases_tables)} results")
+        
+        # Normalize movie name for matching (handle different formats)
+        movie_name_normalized = movie.name.lower().replace(" ", ".").replace(":", "")
+        movie_name_simple = movie.name.lower().replace(":", "").strip()
+        
+        for idx, releases_table in enumerate(releases_tables):
+            # Find the releases_image TD which contains the movieid link
+            releases_image_td = releases_table.find('td', class_='releases_image')
+            if not releases_image_td:
                 continue
-
-        return movie.gid
+            
+            # Find the movieid link
+            movieid_link = releases_image_td.find('a', href=True)
+            if not movieid_link or 'movieid=' not in movieid_link.get('href', ''):
+                continue
+            
+            # Get all TDs to find the release title
+            all_tds = releases_table.find_all('td')
+            release_title = None
+            for td in all_tds[2:5]:  # Release title is usually in TD #2
+                text = td.text.strip()
+                if text and len(text) > 10:  # Avoid empty or very short TDs
+                    release_title = text
+                    break
+            
+            if not release_title:
+                print(f"  Result #{idx + 1}: No release title found, skipping")
+                continue
+            
+            # Normalize release title for matching
+            release_title_normalized = release_title.lower().replace(".", " ")
+            
+            # Check if movie name appears in release title
+            # Try multiple matching strategies
+            match_found = False
+            match_reason = ""
+            
+            # Strategy 1: Direct substring match (case-insensitive)
+            if movie_name_simple in release_title_normalized:
+                match_found = True
+                match_reason = "direct substring match"
+            
+            # Strategy 2: Dot-separated match (e.g., "2001.A.Space.Odyssey")
+            elif movie_name_normalized in release_title.lower():
+                match_found = True
+                match_reason = "dot-separated match"
+            
+            # Strategy 3: Word-by-word match for titles with special characters
+            elif all(word in release_title_normalized for word in movie.name.lower().split() if len(word) > 2):
+                match_found = True
+                match_reason = "word-by-word match"
+            
+            if match_found:
+                # Extract GID from href
+                href = movieid_link.get('href')
+                gid = href.split('?movieid=')[1].split('&')[0]  # Handle potential query params
+                
+                print(f"get_gid_for_movie: Found match (#{idx + 1}) via {match_reason}")
+                print(f"  Movie name: '{movie.name}'")
+                print(f"  Release title: '{release_title[:80]}...'")
+                print(f"  GID: {gid}")
+                
+                movie.gid = gid
+                movie.save()
+                print("get_gid_for_movie: Successfully updated GID for {}".format(movie.name))
+                return gid
+            else:
+                print(f"  Result #{idx + 1}: No match - '{release_title[:60]}...'")
+        
+        print(f"get_gid_for_movie: No matching results found for '{movie.name}' among {len(releases_tables)} results")
+        return None
 
     def get_nzb_search_results(
             self, show, season_number=None, episode_number=None,
