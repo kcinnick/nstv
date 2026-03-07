@@ -252,9 +252,18 @@ class NZBGeek:
         
         print(f"get_gid_for_movie: Found {len(releases_tables)} results")
         
+        # Extract year from movie name if present (e.g., "The Artist (2011)" -> "The Artist" and 2011)
+        movie_year = None
+        movie_name_without_year = movie.name
+        year_match = re.search(r'\s*\((\d{4})\)\s*$', movie.name)
+        if year_match:
+            movie_year = year_match.group(1)
+            movie_name_without_year = movie.name[:year_match.start()].strip()
+            print(f"get_gid_for_movie: Extracted year {movie_year}, movie name: '{movie_name_without_year}'")
+        
         # Normalize movie name for matching (handle different formats)
-        movie_name_normalized = movie.name.lower().replace(" ", ".").replace(":", "")
-        movie_name_simple = movie.name.lower().replace(":", "").strip()
+        movie_name_normalized = movie_name_without_year.lower().replace(" ", ".").replace(":", "")
+        movie_name_simple = movie_name_without_year.lower().replace(":", "").strip()
         
         for idx, releases_table in enumerate(releases_tables):
             # Find the releases_image TD which contains the movieid link
@@ -309,7 +318,7 @@ class NZBGeek:
                 gid = href.split('?movieid=')[1].split('&')[0]  # Handle potential query params
                 
                 print(f"get_gid_for_movie: Found match (#{idx + 1}) via {match_reason}")
-                print(f"  Movie name: '{movie.name}'")
+                print(f"  Movie name: '{movie.name}' (searching as: '{movie_name_without_year}')")
                 print(f"  Release title: '{release_title[:80]}...'")
                 print(f"  GID: {gid}")
                 
