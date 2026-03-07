@@ -132,6 +132,10 @@ class DuplicateFinder:
         for show in tv_library.all():
             try:
                 for episode in show.episodes():
+                    # Skip episodes without valid season/episode numbers
+                    if episode.seasonNumber is None or episode.episodeNumber is None:
+                        continue
+                    
                     # Check if this single episode has multiple media files (standard Plex duplicates)
                     if len(episode.media) > 1:
                         print(f"Found duplicate media files for {show.title} S{episode.seasonNumber:02d}E{episode.episodeNumber:02d}: {len(episode.media)} versions")
@@ -178,6 +182,14 @@ class DuplicateFinder:
                 continue  # Not a duplicate
             
             show_title, season_num, episode_num = key.split('|')
+            
+            # Skip if season or episode number is invalid
+            try:
+                season_num = int(season_num)
+                episode_num = int(episode_num)
+            except ValueError:
+                continue  # Skip malformed entries
+            
             episode_title = episodes[0][1].title
             
             duplicate_items = []
@@ -212,8 +224,8 @@ class DuplicateFinder:
                     media_type='episode',
                     title=episode_title,
                     show_title=show_title,
-                    season_number=int(season_num),
-                    episode_number=int(episode_num),
+                    season_number=season_num,
+                    episode_number=episode_num,
                     items=duplicate_items,
                 )
                 duplicate_groups.append(group)
