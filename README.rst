@@ -17,10 +17,21 @@ Features
 
 **Data Quality & Integrity**
 
-* Automatic duplicate episode detection and cleanup
+* Automatic duplicate media detection and cleanup
+* Quality-based ranking for duplicate versions (resolution, codec, bitrate)
+* Plex API-based deletion for remote NAS file management
 * Season number normalization (handles "S01", "Season 1", etc.)
 * Title aliasing for shows with multiple names
 * Three-tier episode matching (TVDB ID → season/episode → normalized title)
+
+**Automation & Workflow**
+
+* Post-download processing with Plex connectivity checks
+* Automatic file movement from download directory to Plex libraries
+* Django database sync after new media added
+* NZBGet post-processing integration (optional)
+* Windows Task Scheduler support
+* Manual processing commands with dry-run capability
 
 **User Interface**
 

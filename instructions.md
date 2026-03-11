@@ -87,6 +87,39 @@ git commit -m "Descriptive commit message"
 
 ## Download & File Management
 
+### Post-Download Automation (NEW)
+**Status**: ⚠️ NZBGet integration currently disabled - use manual processing  
+**Documentation**: See `docs/POST_DOWNLOAD_AUTOMATION.md`
+
+Automated processing moves completed downloads to Plex and syncs the database.
+
+**Manual Processing Command**:
+```bash
+.venv\Scripts\python.exe manage.py process_downloads
+```
+
+**Options**:
+- `--dry-run` - Preview what would be processed
+- `--media-type=tv|movies|all` - Process specific media type
+- `--no-sync` - Move files without database sync
+- `--verbose` - Detailed output
+
+**Safety Features**:
+- Plex connectivity check before processing
+- Files remain in download directory if Plex offline
+- Cross-drive file movement (C: to Y:) with progress tracking
+- Source files removed only after successful copy
+
+**Known Issues**:
+- NZBGet post-processing script disabled due to Python path resolution issue
+- See `docs/BUGS.md` for current workarounds
+
+**Related Files**:
+- `nstv/management/commands/process_downloads.py` - Core logic
+- `scripts/nzbget_postprocess.py` - NZBGet integration (disabled)
+- `docs/POST_DOWNLOAD_AUTOMATION.md` - Full documentation
+- `docs/NZBGET_SETUP.md` - Setup guide (when automation fixed)
+
 ### Background Threading
 All long-running operations run in background threads to prevent blocking the UI:
 - **Downloads**: `download_episode()`, `download_movie()` - Start NZB downloads
@@ -128,6 +161,38 @@ def view_function(request):
 
 ## Django Management Commands
 
+### process_downloads (NEW)
+Automatically process completed downloads from NZBGet directory.
+
+**Usage**:
+```bash
+# Process all downloads
+python manage.py process_downloads
+
+# Dry run to preview
+python manage.py process_downloads --dry-run --verbose
+
+# Process only TV shows
+python manage.py process_downloads --media-type=tv
+
+# Move files without syncing database
+python manage.py process_downloads --no-sync
+```
+
+**What it does**:
+1. Checks Plex server is accessible
+2. Scans `NZBGET_COMPLETE_DIR` for completed downloads
+3. Moves files to `PLEX_TV_SHOW_DIR` or `PLEX_MOVIES_DIR`
+4. Syncs Django database with new media from Plex
+5. Removes source files after successful move
+
+**Error Handling**:
+- Aborts gracefully if Plex offline (files remain for retry)
+- Skips files that already exist at destination
+- Logs detailed progress for large file transfers
+
+**See**: `docs/POST_DOWNLOAD_AUTOMATION.md` for full documentation
+
 ### audit_episode_duplicates
 Detect and optionally fix duplicate episodes in the database.
 
@@ -148,6 +213,39 @@ Merge logic preserves:
 - Episodes with TVDB ID
 - Most descriptive titles
 - Air dates and episode numbers
+
+### find_duplicates & duplicate_deletion (NEW)
+**Web UI**: `/duplicates/` - Scan for and delete duplicate media files
+
+Detects duplicate versions of the same episode/movie in Plex library:
+- **Single episode with multiple media files** (Plex's native duplicate structure)
+- **Cross-episode duplicates** (same show/season/episode from different scans)
+- **Quality-based ranking** via resolution, codec, bitrate analysis
+
+**Quality Scoring**:
+- Resolution: 4K=100, 1080p=80, 720p=60, SD=40
+- Codec: HEVC=20, H.264=15, others=10
+- Bitrate: Higher is better (normalized score)
+- Audio codec: Various formats scored
+
+**Deletion**:
+- Uses Plex API `media.delete()` for remote NAS file management
+- Windows client can delete files on Linux NAS without direct filesystem access
+- Logs all deletions to `DuplicateDeletionLog` model for audit trail
+- Refreshes Plex library after deletion
+
+**Important Fixes**:
+- Groups by `show.ratingKey` not `show.title` to avoid matching different shows with same name (e.g., "The Twilight Zone (1959)" vs "(2019)")
+- Uses `media.delete()` not `removeMedia()` (which doesn't exist in PlexAPI)
+
+**Related Files**:
+- `nstv/plexController/find_duplicates.py` - Detection logic
+- `nstv/plexController/duplicate_deletion.py` - Deletion via Plex API
+- `nstv/plexController/quality_analyzer.py` - Quality scoring
+- `nstv/views.py` - Web interface handlers
+- `nstv/models.py` - `DuplicateDeletionLog` model
+
+**See**: Scan takes 2-3 minutes for ~100 shows. Quality scores help identify which version to keep.
 
 ## TVDB Import
 
