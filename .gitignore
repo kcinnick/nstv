@@ -46,11 +46,18 @@ activate/**
 
 # Environment variables
 .env
-.env.*
+# Keep .env.example tracked
+!.env.example
 
-# Debug and test scripts
-debug_*.py
-test_*.py
+# Logs directory
+logs/
+*.log
+
+# Django static/media
+/staticfiles/
+/mediafiles/
+/static/
+/media/
 
 # VS Code
 .vscode/
