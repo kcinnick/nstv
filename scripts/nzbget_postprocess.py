@@ -111,7 +111,7 @@ try:
         cwd=project_path,
         capture_output=True,
         text=True,
-        timeout=600  # 10 minute timeout
+        timeout=1800  # 30 minute timeout for very large file moves (50-100 GB 4K files)
     )
     
     if result.stdout:
@@ -135,7 +135,7 @@ try:
         sys.exit(94)  # POSTPROCESS_ERROR
 
 except subprocess.TimeoutExpired:
-    log('Post-processing timed out after 10 minutes', 'ERROR')
+    log('Post-processing timed out after 30 minutes', 'ERROR')
     sys.exit(94)
 except Exception as e:
     log(f'Post-processing error: {e}', 'ERROR')

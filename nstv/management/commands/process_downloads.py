@@ -95,10 +95,10 @@ class Command(BaseCommand):
         if self.dry_run:
             self.stdout.write(f'Would move: {total_moved} items')
         else:
-            self.stdout.write(self.style.SUCCESS(f'✓ Moved: {total_moved} items'))
+            self.stdout.write(self.style.SUCCESS(f'[OK] Moved: {total_moved} items'))
         
         if total_failed > 0:
-            self.stdout.write(self.style.ERROR(f'✗ Failed: {total_failed} items'))
+            self.stdout.write(self.style.ERROR(f'[FAIL] Failed: {total_failed} items'))
         
         if total_moved == 0 and total_failed == 0:
             self.stdout.write(self.style.WARNING('No items to process'))
@@ -145,11 +145,11 @@ class Command(BaseCommand):
             # Try to access a library to confirm connection works
             plex.library.sections()
             
-            self.stdout.write(self.style.SUCCESS(f'✓ Plex server "{plex_server}" is accessible'))
+            self.stdout.write(self.style.SUCCESS(f'[OK] Plex server "{plex_server}" is accessible'))
             return True
             
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'✗ Cannot connect to Plex server: {e}'))
+            self.stdout.write(self.style.ERROR(f'[FAIL] Cannot connect to Plex server: {e}'))
             return False
 
     def _process_media_type(self, media_type: str, plex_dir: str) -> Tuple[int, int]:
@@ -251,17 +251,17 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write('  Moving... (this may take a while for large files)')
                     shutil.move(source_path, dest_path)
-                    self.stdout.write(self.style.SUCCESS('  ✓ Moved successfully'))
+                    self.stdout.write(self.style.SUCCESS('  [OK] Moved successfully'))
                     moved_count += 1
                 
             except PermissionError as e:
-                self.stdout.write(self.style.ERROR(f'  ✗ Permission denied: {e}'))
+                self.stdout.write(self.style.ERROR(f'  [FAIL] Permission denied: {e}'))
                 failed_items.append({
                     'name': item_name,
                     'reason': f'Permission denied: {e}'
                 })
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f'  ✗ Error: {e}'))
+                self.stdout.write(self.style.ERROR(f'  [FAIL] Error: {e}'))
                 failed_items.append({
                     'name': item_name,
                     'reason': str(e)
@@ -294,8 +294,8 @@ class Command(BaseCommand):
                 self.stdout.write('  - Syncing movies...')
                 sync_movies()
             
-            self.stdout.write(self.style.SUCCESS('✓ Plex sync completed'))
+            self.stdout.write(self.style.SUCCESS('[OK] Plex sync completed'))
             
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'✗ Plex sync failed: {e}'))
+            self.stdout.write(self.style.ERROR(f'[FAIL] Plex sync failed: {e}'))
             # Don't raise - files were already moved successfully
