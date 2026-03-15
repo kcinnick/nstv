@@ -1,102 +1,44 @@
-# 📚 Documentation Index
-
-Welcome! This folder contains all active project documentation. **Archived reference docs** are in `archive/` (local only, not in version control).
-
----
+# Documentation Index
 
 ## 🚀 Quick Start
+1. **New users**: `../QUICK_START.md`
+2. **Setup**: `DEPLOYMENT.md`
+3. **Development**: `../instructions.md`
 
-**New to the project?** Start here:
-1. Read [`../QUICK_START.md`](../QUICK_START.md) - 5 min overview
-2. Check [`../instructions.md`](../instructions.md) - Setup instructions
-3. Review [`DEPLOYMENT.md`](./DEPLOYMENT.md) - How to run the project
+## 📖 Active Docs
+| Document | Purpose |
+|----------|---------|
+| `README.md` (or `README_MINIFIED.md`) | Project overview |
+| `DEPLOYMENT.md` | How to run/deploy |
+| `FRONTEND_GUIDELINES.md` | Design system |
+| `MANUAL_TASKS.md` (or `MANUAL_TASKS_MINIFIED.md`) | Maintenance tasks |
+| `POWERSHELL_COMMAND_REFERENCE.md` | Windows PowerShell |
+| `NZBGET_SETUP.md` | NZBGet config |
 
----
+## 📦 Archived Docs (Local Only)
+Located in `archive/` - not in version control:
+- **postgresql-upgrade/**: Upgrade guides, procedures, logs
+- **investigations/**: Environment & code audits, issue investigations
+- **bugfixes/**: Bug documentation, historical fixes
+- **automation/**: Automation research & runbooks
+- **historical/**: Completed plans, security logs, checklists
 
-## 📖 Active Documentation
+## 🔍 Find What You Need
+| Question | Answer |
+|----------|--------|
+| How do I start? | `../QUICK_START.md` |
+| How do I deploy? | `DEPLOYMENT.md` |
+| I need PowerShell help | `POWERSHELL_COMMAND_REFERENCE.md` |
+| What are my tasks? | `MANUAL_TASKS.md` |
+| Design guidelines? | `FRONTEND_GUIDELINES.md` |
+| Old procedures? | `archive/` |
 
-### Essential Reading
-- **[README.md](./README.md)** - Project overview and key information
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - How to deploy the application
-- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Development guidelines and standards
+## 📝 Key Notes
+- **PowerShell Only**: Always use PowerShell, never Unix/Bash commands
+- **Minified Versions**: `README_MINIFIED.md`, `MANUAL_TASKS_MINIFIED.md` (same content, condensed)
+- **Archive**: All reference docs stay locally, not in version control
+- **Secrets**: Never commit `.env`, use `DJANGO_DB_PASSWORD` from environment
 
-### Reference Guides
-- **[MANUAL_TASKS.md](./MANUAL_TASKS.md)** - Recurring maintenance tasks and procedures
-- **[POWERSHELL_COMMAND_REFERENCE.md](./POWERSHELL_COMMAND_REFERENCE.md)** - PowerShell commands (this is a Windows machine!)
-- **[NZBGET_SETUP.md](./NZBGET_SETUP.md)** - NZBGet configuration and setup
-
----
-
-## 📦 Archived Documentation
-
-These are **local reference documents** kept for historical purposes. They are **not in version control** to keep the repository clean.
-
-### PostgreSQL Upgrade
-Located in `archive/postgresql-upgrade/`
-- Upgrade procedures and guides (one-time use ✓)
-- Quick reference cards
-- Completed upgrade logs
-
-**Use when:** Planning future database upgrades
-
-### Investigations & Research
-Located in `archive/investigations/`
-- Environment investigation snapshots
-- Code audit results
-- Issue investigation documents
-
-**Use when:** Researching similar problems
-
-### Bug Fixes & Historical
-Located in `archive/bugfixes/`
-- Bug reports and fix documentation
-- Old issue tracking
-
-**Use when:** Understanding historical bugs
-
-### Automation Research
-Located in `archive/automation/`
-- Automation investigation notes
-- Runbooks for specific procedures
-- Automation research documents
-
-**Use when:** Planning automation improvements
-
-### Historical Records
-Located in `archive/historical/`
-- Completed cleanup plans
-- Security update logs
-- Upgrade checklists
-- Documentation strategy notes
-
-**Use when:** Need historical context
-
----
-
-## 🔍 Finding What You Need
-
-### For New Developers
-1. Start with `../QUICK_START.md`
-2. Read `DEPLOYMENT.md`
-3. Check `FRONTEND_GUIDELINES.md` before writing code
-
-### For Maintenance Tasks
-- See `MANUAL_TASKS.md` for recurring procedures
-- Use `POWERSHELL_COMMAND_REFERENCE.md` for command syntax (Windows!)
-
-### For Troubleshooting
-- Check `MANUAL_TASKS.md` troubleshooting section first
-- Review archived investigations in `archive/investigations/`
-
-### For NZBGet Issues
-- Start with `NZBGET_SETUP.md`
-- Check automation research in `archive/automation/`
-
-### For PostgreSQL Issues
-- Check `archive/postgresql-upgrade/` for reference
-- See upgrade procedures for maintenance
-
----
 
 ## 📝 Documentation Principles
 
