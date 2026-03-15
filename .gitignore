@@ -49,6 +49,8 @@ activate/**
 # Keep .env.example tracked
 !.env.example
 
+# Archived documentation (local reference only, not version controlled)
+docs/archive/
 # Logs directory
 logs/
 *.log

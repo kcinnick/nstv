@@ -14,6 +14,41 @@ This repository is a Django app (`nstv`) used to track TV shows, episodes, and m
 - Use environment variables for runtime configuration.
 - Add/adjust tests for behavior changes.
 
+## ⭐ IMPORTANT: Windows/PowerShell Development
+
+**This project runs on Windows with PowerShell, NOT Linux/Unix/Bash.**
+
+**Most shell commands you're familiar with WILL NOT WORK. You must use PowerShell equivalents.**
+
+### Critical Rules for Shell Commands
+1. **Always use PowerShell commands**, not Bash/Unix commands
+2. **Common mistake**: Using `grep` instead of `Select-String`
+3. **Common mistake**: Using `ls` instead of `Get-ChildItem`
+4. **Common mistake**: Using `test -f file` instead of `Test-Path file`
+5. **Common mistake**: Using `cat` standalone instead of `Get-Content`
+
+### PowerShell Equivalents
+| Unix | PowerShell |
+|------|----------|
+| `grep "text" file` | `Select-String "text" file` |
+| `ls -la` | `Get-ChildItem -Force` |
+| `find . -name "*.py"` | `Get-ChildItem -Recurse -Include "*.py"` |
+| `test -f file` | `Test-Path file` |
+| `[ -f file ]` | `Test-Path file` |
+| `cat file` | `Get-Content file` |
+| `head -10 file` | `Get-Content file -Head 10` |
+| `tail -10 file` | `Get-Content file -Tail 10` |
+
+**For comprehensive reference, see: `docs/POWERSHELL_COMMAND_REFERENCE.md`**
+
+This file contains:
+- Complete command translation table
+- PowerShell-specific tips and syntax
+- Examples for this project
+- Troubleshooting guide
+
+---
+
 ## Git Workflow
 
 ### Branching Strategy
