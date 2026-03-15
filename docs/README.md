@@ -1,5 +1,28 @@
 # Documentation Index
 
+## ⭐ IMPORTANT: Windows PowerShell Development
+
+**If you're new to this project or encounter shell command issues, READ THIS FIRST:**
+
+### [POWERSHELL_COMMAND_REFERENCE.md](POWERSHELL_COMMAND_REFERENCE.md) - Complete PowerShell Guide
+
+This project runs on **Windows with PowerShell**. Many common developer commands (Unix/Linux) **will NOT work**.
+
+**Key Rules:**
+- ❌ Don't use: `ls`, `grep`, `find`, `sed`, `cat`, `[ -f file ]`, `test -f file`
+- ✅ Do use: `Get-ChildItem`, `Select-String`, `Test-Path`, PowerShell syntax
+
+**Most Common Issues:**
+- `grep` → Use `Select-String`
+- `ls -la` → Use `Get-ChildItem -Force`
+- `find . -name` → Use `Get-ChildItem -Recurse -Include`
+- `test -f file` → Use `Test-Path file`
+- `cat file` → Use `Get-Content file`
+
+**See [POWERSHELL_COMMAND_REFERENCE.md](POWERSHELL_COMMAND_REFERENCE.md) for comprehensive tables and examples.**
+
+---
+
 ## Getting Started
 - **[README.rst](../README.rst)** - Main project overview, features, and quick start
 - **[instructions.md](../instructions.md)** - Claude AI coding guidelines and technical reference

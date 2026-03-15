@@ -46,11 +46,23 @@ activate/**
 
 # Environment variables
 .env
-.env.*
+# Keep .env.example tracked
+!.env.example
 
-# Debug and test scripts
-debug_*.py
-test_*.py
+# Archived documentation (local reference only, not version controlled)
+docs/archive/
+
+# uBlock Origin files (not part of project source)
+nstv/kissasian/ublock/
+# Logs directory
+logs/
+*.log
+
+# Django static/media
+/staticfiles/
+/mediafiles/
+/static/
+/media/
 
 # VS Code
 .vscode/

@@ -1,169 +1,119 @@
-# Claude Sonnet 4.5 Instructions
+# Development Instructions
 
-## Purpose
-This repository is a Django app (`nstv`) used to track TV shows, episodes, and movies and sync that data from a local Plex server.
+## Overview
+Django app tracking TV shows/episodes/movies, syncing with Plex server.
 
-## Documentation
-- **Backend/Python**: This file (instructions.md)
-- **Frontend/UI**: See `frontend-design-guidelines.md` for HTML/CSS design system
+## ⚠️ Windows/PowerShell ONLY
+This project runs on Windows with PowerShell. Unix/Bash commands **WILL NOT WORK**.
+
+**Command equivalents** (full reference: `docs/POWERSHELL_COMMAND_REFERENCE.md`):
+| Unix | PowerShell |
+|------|-----------|
+| `grep "text" file` | `Select-String "text" file` |
+| `ls -la` | `Get-ChildItem -Force` |
+| `find . -name "*.py"` | `Get-ChildItem -Recurse -Include "*.py"` |
+| `test -f file` | `Test-Path file` |
+| `cat file` | `Get-Content file` |
 
 ## Core Rules
-- Keep changes minimal and scoped to the user request.
-- Prefer updating existing files over adding new abstractions.
-- Do not hardcode secrets, credentials, or local machine paths.
-- Use environment variables for runtime configuration.
-- Add/adjust tests for behavior changes.
+- Keep changes minimal, scoped to request
+- Prefer updating existing files over new abstractions
+- No hardcoded secrets/credentials/paths
+- Use environment variables for config
+- Add/adjust tests for behavior changes
 
 ## Git Workflow
+**Branching**: Use `feature/<name>` or `bugfix/<name>` for non-trivial changes
+**Commits**: Present tense, descriptive ("Add feature" not "Added feature")
+**Messages**: Include what/why, reference issues
 
-### Branching Strategy
-**Always use feature/bugfix branches when working on non-trivial changes.**
+## Setup
+1. Activate venv
+2. `.env` has required keys (see `.env.example`)
+3. Run migrations: `python manage.py migrate`
+4. Verify: `python manage.py check`
 
-- **Features**: `feature/<descriptive-name>` (e.g., `feature/health-dashboard`)
-- **Bug Fixes**: `bugfix/<descriptive-name>` (e.g., `bugfix/movie-title-year-extraction`)
-- **Hotfixes**: `hotfix/<descriptive-name>` (for urgent production fixes)
-
-### Branch Creation Rules
-1. **New Features**: Always create a feature branch from `master`
-2. **Bug Fixes**: If not already on a feature branch, create a `bugfix/` branch from `master`
-3. **Small Typos/Docs**: Can be committed directly to current branch if already on a feature branch
-
-### Workflow
-```bash
-# Check current branch
-git branch --show-current
-
-# Create new branch if on master
-git checkout -b feature/my-feature  # or bugfix/my-fix
-
-# Make changes, commit frequently
-git add -A
-git commit -m "Descriptive commit message"
-
-# When complete, merge or create PR
-```
-
-### Commit Messages
-- Use present tense: "Add feature" not "Added feature"
-- Be descriptive: Include what changed and why
-- Reference issues if applicable
-
-## Local Setup
-1. Activate virtual environment.
-2. Ensure `.env` has required keys (see `.env.example`).
-3. Run migrations before starting server.
-
-## Verification Commands
-- `venv\Scripts\python.exe manage.py check`
-- `venv\Scripts\python.exe manage.py migrate`
-- `venv\Scripts\python.exe -m pytest nstv/tests -q`
-
-## Plex Sync Components
+## Plex Sync
+**Components**:
 - `nstv/plexController/add_shows_to_nstv.py`
 - `nstv/plexController/add_episodes_to_show.py`
 - `nstv/plexController/add_movies_to_nstv.py`
 - `nstv/plexController/plexDance.py`
 
-## Plex Sync Expectations
-- Read Plex config from environment variables.
-- Avoid connecting to Plex at module import time.
-- Keep functions testable via dependency injection (optional `plex` argument).
-- Handle missing optional data from Plex (genres/directors/posters).
-
-## Environment Variables
-- `DJANGO_DB_PASSWORD`
-- `PLEX_EMAIL`
-- `PLEX_API_KEY`
-- `PLEX_SERVER`
-- `TVDB_API_KEY`
-- `NZBGEEK_USERNAME`
-- `NZBGEEK_PASSWORD`
-- `NZBGET_NZB_DIR`
-- `NZBGET_COMPLETE_DIR`
-- `PLEX_TV_SHOW_DIR`
-- `PLEX_MOVIES_DIR`
-- `SHOW_FOLDER_PATH`
-- `TEMP_FOLDER_PATH`
+**Rules**:
+- Read Plex config from environment variables
+- Don't connect at module import time
+- Keep functions testable via dependency injection
+- Handle missing optional data (genres/directors/posters)
 
 ## Download & File Management
+**Status**: NZBGet integration disabled - use manual processing
 
-### Post-Download Automation (NEW)
-**Status**: ⚠️ NZBGet integration currently disabled - use manual processing  
-**Documentation**: See `docs/POST_DOWNLOAD_AUTOMATION.md`
-
-Automated processing moves completed downloads to Plex and syncs the database.
-
-**Manual Processing Command**:
-```bash
+**Manual processing**:
+```powershell
 .venv\Scripts\python.exe manage.py process_downloads
+# Options: --dry-run, --media-type=tv|movies|all, --no-sync, --verbose
 ```
 
-**Options**:
-- `--dry-run` - Preview what would be processed
-- `--media-type=tv|movies|all` - Process specific media type
-- `--no-sync` - Move files without database sync
-- `--verbose` - Detailed output
-
-**Safety Features**:
+**Safety features**:
 - Plex connectivity check before processing
-- Files remain in download directory if Plex offline
-- Cross-drive file movement (C: to Y:) with progress tracking
+- Cross-drive file movement (C: → Y:) with progress tracking
 - Source files removed only after successful copy
 
-**Known Issues**:
-- NZBGet post-processing script disabled due to Python path resolution issue
-- See `docs/BUGS.md` for current workarounds
-
-**Related Files**:
-- `nstv/management/commands/process_downloads.py` - Core logic
-- `scripts/nzbget_postprocess.py` - NZBGet integration (disabled)
-- `docs/POST_DOWNLOAD_AUTOMATION.md` - Full documentation
-- `docs/NZBGET_SETUP.md` - Setup guide (when automation fixed)
-
-### Background Threading
-All long-running operations run in background threads to prevent blocking the UI:
-- **Downloads**: `download_episode()`, `download_movie()` - Start NZB downloads
-- **File moves**: `move_downloaded_tv_show_files_to_plex()`, `move_downloaded_movie_files_to_plex()`
-
-Pattern:
+**Background Threading Pattern**:
 ```python
-def view_function(request):
-    # Start operation in background thread
-    thread = threading.Thread(
-        target=operation_function,
-        args=(arg1, request),
-        daemon=True
-    )
-    thread.start()
-    messages.info(request, "Operation started. Check console for progress.")
-    return redirect(request.META.get('HTTP_REFERER'))
+thread = threading.Thread(target=operation_function, args=(arg1, request), daemon=True)
+thread.start()
+messages.info(request, "Operation started.")
+return redirect(request.META.get('HTTP_REFERER'))
 ```
 
-### Download Flow
-1. User clicks download button
-2. NZBGeek login and search
-3. Download NZB file to ~/Downloads
-4. Move NZB to NZBGet watch directory
-5. Monitor NZBGet history for completion status
-6. Django messages provide user feedback
+**Flow**:
+1. User clicks download → NZBGeek search → Download NZB to ~/Downloads
+2. Move NZB to NZBGet watch directory → Monitor history for completion
+3. Move files to Plex → Sync episodes automatically → Return status via messages
 
-### File Movement Flow
-1. User clicks "Move to Plex" button
-2. Validate source (NZBGET_COMPLETE_DIR) and destination exist
-3. Move files with detailed error handling
-4. For TV shows: Automatically sync episodes with Plex after move
-5. Return status via Django messages (success/warning/error)
+**Quality Filtering**: Movies (all qualities), TV (HD with fallback), Anime (exclude English-only audio)
 
-### Quality Filtering
-- Movie downloads: No quality filter by default (search all qualities)
-- TV downloads: HD filtering with fallback if no HD results found
-- Anime shows: Filter out English-only audio tracks
+## Environment Variables
+- `DJANGO_DB_PASSWORD`, `PLEX_EMAIL`, `PLEX_API_KEY`, `PLEX_SERVER`
+- `TVDB_API_KEY`, `NZBGEEK_USERNAME`, `NZBGEEK_PASSWORD`
+- `NZBGET_NZB_DIR`, `NZBGET_COMPLETE_DIR`, `PLEX_TV_SHOW_DIR`, `PLEX_MOVIES_DIR`
+- `SHOW_FOLDER_PATH`, `TEMP_FOLDER_PATH`
 
-## Django Management Commands
+## Testing & Verification
+```powershell
+python manage.py check           # Django health
+python manage.py migrate         # Run migrations
+python -m pytest nstv/tests -q   # Run tests
+python manage.py runserver       # Start dev server
+```
 
-### process_downloads (NEW)
-Automatically process completed downloads from NZBGet directory.
+## Architecture
+```
+nstv/
+├── models.py                  # Django models
+├── views.py                   # Web handlers
+├── download.py                # NZBGeek integration
+├── management/commands/       # CLI commands
+├── plexController/            # Plex server integration
+├── get_info_from_tvdb/       # TVDB metadata
+└── utils/
+templates/                     # Django HTML
+scripts/                       # Automation scripts
+docs/                         # Documentation
+```
 
+**Data Models**:
+- `Show`, `Episode`, `Movie`, `CastMember` (many-to-many)
+- `NZBDownload`, `DuplicateDeletionLog`
+
+## Documentation
+- **New users**: Start with `QUICK_START.md`
+- **Setup**: `docs/DEPLOYMENT.md`
+- **Tasks**: `docs/MANUAL_TASKS.md`
+- **PowerShell**: `docs/POWERSHELL_COMMAND_REFERENCE.md`
+- **Archive**: `docs/archive/` (local reference only)
 **Usage**:
 ```bash
 # Process all downloads

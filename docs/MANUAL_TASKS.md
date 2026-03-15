@@ -1,3 +1,20 @@
+## ⚠️ CRITICAL: Windows PowerShell Environment
+
+**This machine runs Windows with PowerShell 5.1**
+
+**DO NOT use Unix/Linux commands** - they will fail! Always use PowerShell equivalents.
+
+### Common Issues:
+- ❌ `cat file` → ✅ `Get-Content file`
+- ❌ `ls -la` → ✅ `Get-ChildItem -Force`
+- ❌ `cp src dest` → ✅ `Copy-Item src dest`
+- ❌ `rm -rf dir` → ✅ `Remove-Item -Recurse -Force dir`
+- ❌ Unix redirection `<` → ✅ PowerShell pipe `| Tee-Object` or use `-f` flag
+
+**See `docs/POWERSHELL_COMMAND_REFERENCE.md` for full command reference**
+
+---
+
 # Manual Tasks & Reminders
 
 ## Daily/Regular Tasks
