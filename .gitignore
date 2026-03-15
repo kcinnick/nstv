@@ -51,6 +51,9 @@ activate/**
 
 # Archived documentation (local reference only, not version controlled)
 docs/archive/
+
+# uBlock Origin files (not part of project source)
+nstv/kissasian/ublock/
 # Logs directory
 logs/
 *.log
