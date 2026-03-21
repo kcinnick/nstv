@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 import django
-from plexapi.myplex import MyPlexAccount
+from plexapi.server import PlexServer
 from tqdm import tqdm
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -52,11 +52,25 @@ def get_plex_connection():
     plex_email = os.getenv('PLEX_EMAIL')
     plex_api_key = os.getenv('PLEX_API_KEY')
     plex_server = os.getenv('PLEX_SERVER')
-    if not plex_email or not plex_api_key or not plex_server:
-        raise ValueError('Missing one of PLEX_EMAIL, PLEX_API_KEY, or PLEX_SERVER environment variables.')
+    
+    print(f"Plex connection details:")
+    print(f"  Server: {plex_server}")
+    print(f"  Email: {plex_email}")
+    print(f"  API Key: {'***' if plex_api_key else None}")
+    
+    if not plex_api_key or not plex_server:
+        raise ValueError('Missing PLEX_API_KEY or PLEX_SERVER environment variables.')
 
-    account = MyPlexAccount(plex_email, plex_api_key)
-    return account.resource(plex_server).connect()
+    # Connect directly to Plex server using API key
+    # Format: PLEX_SERVER should be like "http://192.168.1.100:32400" or "http://localhost:32400"
+    try:
+        plex = PlexServer(plex_server, plex_api_key)
+        print(f"[OK] Connected to Plex server: {plex.friendlyName}")
+        return plex
+    except Exception as e:
+        print(f"[ERROR] Failed to connect to Plex server: {e}")
+        print(f"  Check that PLEX_SERVER is correct (e.g., http://localhost:32400)")
+        raise
 
 
 def _resolve_season_number(plex_show, plex_episode):

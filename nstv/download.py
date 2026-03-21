@@ -525,6 +525,32 @@ class NZBGeek:
                         # Still downloading/processing
                         if monitoring_tries % 6 == 0:  # Print status every 30 seconds
                             print(f"Status for {result.title}: {nzb_download.status}")
+                elif NZBDownload.objects.all().filter(title__icontains=result.title.split('.')[0]).exists():
+                    # Try partial match if exact match doesn't work
+                    nzb_download = NZBDownload.objects.all().filter(title__icontains=result.title.split('.')[0]).first()
+                    print(f"[{monitoring_tries * 5}s] Found matching download: {nzb_download.title}")
+                    print(f"[{monitoring_tries * 5}s] {result.title} status: {nzb_download.status}")
+                    
+                    if 'FAILURE' in nzb_download.status:
+                        print(f"FAILED: {result.title} has failed to download.")
+                        break
+                    elif 'SUCCESS' in nzb_download.status:
+                        print(f"SUCCESS: {result.title} has successfully downloaded and processed.")
+                        if request:
+                            messages.success(request, f"{result.title} completed successfully!")
+                        return
+                    elif 'DELETED/' in nzb_download.status:
+                        print(f"DELETED: {result.title} has been deleted from NZBGet.")
+                        break
+                    elif 'WARNING' in nzb_download.status:
+                        print(f"WARNING: {result.title} completed with warnings.")
+                        if request:
+                            messages.warning(request, f"{result.title} completed with warnings.")
+                        return
+                    else:
+                        # Still downloading/processing
+                        if monitoring_tries % 6 == 0:  # Print status every 30 seconds
+                            print(f"Status for {result.title}: {nzb_download.status}")
                 else:
                     if monitoring_tries % 6 == 0:  # Print every 30 seconds
                         print(f"[{monitoring_tries * 5}s] {result.title} not yet in NZBGet history. Still queued or processing...")

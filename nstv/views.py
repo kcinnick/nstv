@@ -25,6 +25,25 @@ PLEX_TV_SHOW_DIR = os.getenv("PLEX_TV_SHOW_DIR")
 PLEX_MOVIES_DIR = os.getenv("PLEX_MOVIES_DIR")
 
 
+def format_episode_info(season_number, episode_number):
+    """
+    Format episode info for display, handling missing season numbers.
+    
+    Examples:
+        (1, 5) -> "S1E5"
+        (None, 1) -> "E1"
+        (None, None) -> ""
+    """
+    if season_number is None and episode_number is None:
+        return ""
+    elif season_number is None:
+        return f"E{episode_number}"
+    elif episode_number is None:
+        return f"S{season_number}"
+    else:
+        return f"S{season_number}E{episode_number}"
+
+
 def index(request):
     nzb_geek = NZBGeek()
     nzb_geek.login()
@@ -53,7 +72,8 @@ def index(request):
                 daemon=True
             )
             download_thread.start()
-            messages.info(request, f"Download started for {show.title} S{season_number}E{episode_number}. Check console for progress.")
+            episode_info = format_episode_info(season_number, episode_number)
+            messages.info(request, f"Download started for {show.title} {episode_info}. Check console for progress.")
         else:
             print(form.errors)
             index_context["form_errors"] = form.errors
@@ -161,7 +181,8 @@ def download_episode(request, show_id, episode_id):
         )
         download_thread.start()
         
-        message = f"Download started for {parent_show.title} S{episode.season_number}E{episode.episode_number} - {episode.title}. Check console for progress."
+        episode_info = format_episode_info(episode.season_number, episode.episode_number)
+        message = f"Download started for {parent_show.title} {episode_info} - {episode.title}. Check console for progress."
         messages.info(request, message)
         
         # Return JSON for AJAX requests
