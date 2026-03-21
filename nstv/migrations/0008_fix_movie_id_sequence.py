@@ -19,7 +19,7 @@ def fix_movie_sequence(apps, schema_editor):
     # Reset the IDENTITY column
     with schema_editor.connection.cursor() as cursor:
         cursor.execute(f"ALTER TABLE movie ALTER COLUMN id RESTART WITH {next_id};")
-        print(f"\n✓ Reset movie table IDENTITY column to start at {next_id}\n")
+        print(f"\n[OK] Reset movie table IDENTITY column to start at {next_id}\n")
 
 
 def reverse_fix(apps, schema_editor):
