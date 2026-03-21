@@ -6,7 +6,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
-from plexapi.myplex import MyPlexAccount
+from plexapi.server import PlexServer
 
 from .quality_analyzer import QualityAnalyzer, QualityScore
 
@@ -93,17 +93,19 @@ class DuplicateFinder:
         """
         Initialize DuplicateFinder.
         
-        Connects to Plex using PLEX_EMAIL, PLEX_API_KEY, and PLEX_SERVER environment variables.
+        Connects to Plex using PLEX_API_KEY and PLEX_SERVER environment variables.
         """
-        plex_email = os.getenv('PLEX_EMAIL')
         plex_api_key = os.getenv('PLEX_API_KEY')
         plex_server = os.getenv('PLEX_SERVER')
         
-        if not plex_email or not plex_api_key or not plex_server:
-            raise ValueError('Missing one of PLEX_EMAIL, PLEX_API_KEY, or PLEX_SERVER environment variables.')
+        if not plex_api_key or not plex_server:
+            raise ValueError('Missing PLEX_API_KEY or PLEX_SERVER environment variables.')
         
-        account = MyPlexAccount(plex_email, plex_api_key)
-        self.plex = account.resource(plex_server).connect()
+        try:
+            self.plex = PlexServer(plex_server, plex_api_key)
+        except Exception as e:
+            raise ValueError(f'Failed to connect to Plex server: {e}')
+        
         self.analyzer = QualityAnalyzer()
     
     def find_duplicate_episodes(self, library_name: str = 'TV Shows') -> List[DuplicateGroup]:
