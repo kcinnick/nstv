@@ -488,6 +488,17 @@ class NZBGeek:
             monitoring_tries = 0
             max_monitoring_tries = 120  # 10 minutes (120 * 5 seconds)
             
+            # Extract season and episode info for better matching
+            # Pattern: ShowName S##E## or similar
+            season_episode_match = re.search(r'[Ss](\d{2})[Ee](\d{2})', result.title)
+            show_name_for_matching = result.title
+            if season_episode_match:
+                # Extract show name (everything before S##E##)
+                show_name_for_matching = result.title[:season_episode_match.start()].rstrip('.')
+            
+            found_download_record = False
+            matched_download = None
+            
             while monitoring_tries < max_monitoring_tries:
                 try:
                     nzbget_api.get_and_update_history()
@@ -501,8 +512,11 @@ class NZBGeek:
                 sleep(5)
                 monitoring_tries += 1
                 
+                # Try exact match first
                 if NZBDownload.objects.all().filter(title=result.title).exists():
                     nzb_download = NZBDownload.objects.all().filter(title=result.title).first()
+                    found_download_record = True
+                    matched_download = nzb_download
                     print(f"[{monitoring_tries * 5}s] {result.title} status: {nzb_download.status}")
                     
                     if 'FAILURE' in nzb_download.status:
@@ -525,35 +539,55 @@ class NZBGeek:
                         # Still downloading/processing
                         if monitoring_tries % 6 == 0:  # Print status every 30 seconds
                             print(f"Status for {result.title}: {nzb_download.status}")
-                elif NZBDownload.objects.all().filter(title__icontains=result.title.split('.')[0]).exists():
-                    # Try partial match if exact match doesn't work
-                    nzb_download = NZBDownload.objects.all().filter(title__icontains=result.title.split('.')[0]).first()
-                    print(f"[{monitoring_tries * 5}s] Found matching download: {nzb_download.title}")
-                    print(f"[{monitoring_tries * 5}s] {result.title} status: {nzb_download.status}")
+                elif not found_download_record:
+                    # Try partial match - look for show name + season/episode pattern
+                    # This is more specific than just the first word
+                    all_downloads = NZBDownload.objects.all()
+                    for download in all_downloads:
+                        # Check if this download matches our show + season/episode
+                        if show_name_for_matching.lower() in download.title.lower():
+                            # Additional check: make sure season/episode pattern matches if present
+                            if season_episode_match:
+                                if season_episode_match.group(0).lower() in download.title.lower():
+                                    matched_download = download
+                                    found_download_record = True
+                                    print(f"[{monitoring_tries * 5}s] Found matching download: {download.title}")
+                                    break
+                            else:
+                                # No season/episode in our title, use the match
+                                matched_download = download
+                                found_download_record = True
+                                print(f"[{monitoring_tries * 5}s] Found matching download: {download.title}")
+                                break
                     
-                    if 'FAILURE' in nzb_download.status:
-                        print(f"FAILED: {result.title} has failed to download.")
-                        break
-                    elif 'SUCCESS' in nzb_download.status:
-                        print(f"SUCCESS: {result.title} has successfully downloaded and processed.")
-                        if request:
-                            messages.success(request, f"{result.title} completed successfully!")
-                        return
-                    elif 'DELETED/' in nzb_download.status:
-                        print(f"DELETED: {result.title} has been deleted from NZBGet.")
-                        break
-                    elif 'WARNING' in nzb_download.status:
-                        print(f"WARNING: {result.title} completed with warnings.")
-                        if request:
-                            messages.warning(request, f"{result.title} completed with warnings.")
-                        return
+                    if found_download_record and matched_download:
+                        print(f"[{monitoring_tries * 5}s] {result.title} status: {matched_download.status}")
+                        
+                        if 'FAILURE' in matched_download.status:
+                            print(f"FAILED: {result.title} has failed to download.")
+                            break
+                        elif 'SUCCESS' in matched_download.status:
+                            print(f"SUCCESS: {result.title} has successfully downloaded and processed.")
+                            if request:
+                                messages.success(request, f"{result.title} completed successfully!")
+                            return
+                        elif 'DELETED/' in matched_download.status:
+                            print(f"DELETED: {result.title} has been deleted from NZBGet.")
+                            break
+                        elif 'WARNING' in matched_download.status:
+                            print(f"WARNING: {result.title} completed with warnings.")
+                            if request:
+                                messages.warning(request, f"{result.title} completed with warnings.")
+                            return
+                        else:
+                            # Still downloading/processing
+                            if monitoring_tries % 6 == 0:  # Print status every 30 seconds
+                                print(f"Status for {result.title}: {matched_download.status}")
                     else:
-                        # Still downloading/processing
-                        if monitoring_tries % 6 == 0:  # Print status every 30 seconds
-                            print(f"Status for {result.title}: {nzb_download.status}")
+                        if monitoring_tries % 6 == 0:  # Print every 30 seconds
+                            print(f"[{monitoring_tries * 5}s] {result.title} not yet in NZBGet history. Still queued or processing...")
                 else:
-                    if monitoring_tries % 6 == 0:  # Print every 30 seconds
-                        print(f"[{monitoring_tries * 5}s] {result.title} not yet in NZBGet history. Still queued or processing...")
+                    pass
                         
             if monitoring_tries >= max_monitoring_tries:
                 print(f"TIMEOUT: Stopped monitoring {result.title} after {max_monitoring_tries * 5} seconds.")
