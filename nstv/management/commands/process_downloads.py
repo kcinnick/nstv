@@ -8,6 +8,7 @@ syncs the database. Can be triggered by:
 - Manual execution: python manage.py process_downloads
 """
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -15,11 +16,24 @@ from typing import List, Tuple
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from plexapi.myplex import MyPlexAccount
+from plexapi.server import PlexServer
 
 
 class Command(BaseCommand):
     help = 'Process completed downloads: move to Plex and sync database'
+    
+    # Regex patterns to detect media types
+    # TV Show patterns: S##E## notation
+    TV_SHOW_PATTERN = re.compile(
+        r'[Ss]\d{1,2}[Ee]\d{1,2}',  # S01E01, s01e01, S2023E15, etc.
+        re.IGNORECASE
+    )
+    
+    # Movie patterns: Year in (YYYY), [YYYY], or followed by quality
+    MOVIE_PATTERN = re.compile(
+        r'(\([\d]{4}\))|(\[[\d]{4}\])|(\d{4}\s*(?:1080p|720p|2160p|480p|4k|uhd|hdtv|webrip|bluray))',
+        re.IGNORECASE
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -128,19 +142,17 @@ class Command(BaseCommand):
         Returns:
             True if Plex is accessible, False otherwise
         """
-        plex_email = os.getenv('PLEX_EMAIL')
         plex_api_key = os.getenv('PLEX_API_KEY')
         plex_server = os.getenv('PLEX_SERVER')
         
-        if not plex_email or not plex_api_key or not plex_server:
+        if not plex_api_key or not plex_server:
             self.stdout.write(self.style.ERROR('Missing Plex credentials in environment variables'))
-            self.stdout.write('Required: PLEX_EMAIL, PLEX_API_KEY, PLEX_SERVER')
+            self.stdout.write('Required: PLEX_API_KEY, PLEX_SERVER')
             return False
         
         try:
             self.stdout.write('Checking Plex server connection...')
-            account = MyPlexAccount(plex_email, plex_api_key)
-            plex = account.resource(plex_server).connect()
+            plex = PlexServer(plex_server, plex_api_key)
             
             # Try to access a library to confirm connection works
             plex.library.sections()
@@ -151,6 +163,54 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'[FAIL] Cannot connect to Plex server: {e}'))
             return False
+    
+    def _detect_media_type(self, item_name: str) -> str:
+        """
+        Detect whether an item is a TV show or movie based on filename.
+        
+        Returns:
+            'tv', 'movies', or 'unknown'
+        """
+        # Check for TV show patterns (S##E## notation)
+        if self.TV_SHOW_PATTERN.search(item_name):
+            return 'tv'
+        
+        # Check for movie patterns (year in parentheses or brackets)
+        if self.MOVIE_PATTERN.search(item_name):
+            return 'movies'
+        
+        # If no clear pattern, try some heuristics
+        movie_keywords = ['1080p', '720p', '2160p', 'x264', 'x265', 'h264', 'h265', 
+                         'webrip', 'bluray', 'bdrip', 'dvdrip']
+        if any(keyword in item_name.lower() for keyword in movie_keywords):
+            if not self.TV_SHOW_PATTERN.search(item_name):
+                return 'movies'
+        
+        return 'unknown'
+    
+    def _extract_show_name(self, item_name: str) -> str:
+        """
+        Extract show name from filename by removing season/episode notation.
+        
+        Example: "Breaking Bad S05E16" -> "Breaking Bad"
+        """
+        show_name = re.sub(r'[Ss]\d{1,2}[Ee]\d{1,2}.*', '', item_name).strip()
+        show_name = re.sub(r'[\.\-\_]*(1080p|720p|480p|2160p|HDTV|WEBRIP|etc).*', '', 
+                          show_name, flags=re.IGNORECASE).strip()
+        return show_name
+    
+    def _extract_movie_name(self, item_name: str) -> str:
+        """
+        Extract movie name from filename by removing quality indicators.
+        
+        Example: "Inception (2010) 1080p" -> "Inception (2010)"
+        """
+        match = re.search(r'^(.+?(?:\(\d{4}\)|\[\d{4}\])?)', item_name)
+        if match:
+            movie_name = match.group(1).strip()
+            movie_name = re.sub(r'[\.\-\_]+$', '', movie_name)
+            return movie_name
+        return item_name
 
     def _process_media_type(self, media_type: str, plex_dir: str) -> Tuple[int, int]:
         """
@@ -172,8 +232,8 @@ class Command(BaseCommand):
         
         self.stdout.write(f'Found {len(items)} items to process')
         
-        # Move files
-        moved_count, failed_items = self._move_items(items, plex_dir)
+        # Move files (pass media_type for proper organization)
+        moved_count, failed_items = self._move_items(items, plex_dir, media_type)
         
         # Sync with Plex database (unless --no-sync or dry-run)
         if not self.no_sync and not self.dry_run and moved_count > 0:
@@ -183,10 +243,10 @@ class Command(BaseCommand):
 
     def _get_items_to_process(self, media_type: str) -> List[str]:
         """
-        Get list of items to process from NZBGet directory.
+        Get list of items to process from NZBGet directory, filtered by media type.
         
-        This could be enhanced to filter by naming patterns or metadata.
-        For now, processes everything in the directory.
+        TV Shows: Files/folders matching S##E## pattern
+        Movies: Files/folders matching (YYYY) or [YYYY] pattern
         """
         try:
             all_items = os.listdir(self.nzbget_dir)
@@ -197,14 +257,29 @@ class Command(BaseCommand):
                 if not item.startswith('.') and not item.startswith('_')
             ]
             
-            return items
+            # Filter by media type
+            filtered_items = []
+            for item in items:
+                detected_type = self._detect_media_type(item)
+                if detected_type == media_type:
+                    filtered_items.append(item)
+                elif detected_type == 'unknown' and self.verbose_mode:
+                    # For unknown items, be conservative and skip them
+                    self.stdout.write(
+                        self.style.WARNING(f'Skipping unknown item: {item}')
+                    )
+            
+            return filtered_items
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'Error reading download directory: {e}'))
             return []
 
-    def _move_items(self, items: List[str], dest_dir: str) -> Tuple[int, List[dict]]:
+    def _move_items(self, items: List[str], dest_dir: str, media_type: str = None) -> Tuple[int, List[dict]]:
         """
-        Move items from NZBGet to Plex directory.
+        Move items from NZBGet to Plex directory, organized by show/movie name.
+        
+        For TV Shows: dest_dir/[Show Name]/[item_name]
+        For Movies: dest_dir/[Movie Name]/[item_name]
         
         Returns:
             Tuple of (moved_count, failed_items)
@@ -215,10 +290,38 @@ class Command(BaseCommand):
         for idx, item_name in enumerate(items, 1):
             try:
                 source_path = os.path.join(self.nzbget_dir, item_name)
-                dest_path = os.path.join(dest_dir, item_name)
+                
+                # Determine organization folder based on media type
+                detected_type = self._detect_media_type(item_name)
+                
+                if detected_type == 'tv':
+                    # Extract show name and organize into show folder
+                    show_name = self._extract_show_name(item_name)
+                    org_folder = os.path.join(dest_dir, show_name)
+                elif detected_type == 'movies':
+                    # Extract movie name and organize into movie folder
+                    movie_name = self._extract_movie_name(item_name)
+                    org_folder = os.path.join(dest_dir, movie_name)
+                else:
+                    # Unknown - skip
+                    self.stdout.write(
+                        self.style.WARNING(f'[{idx}/{len(items)}] SKIP (unknown): {item_name}')
+                    )
+                    failed_items.append({
+                        'name': item_name,
+                        'reason': 'Could not determine if TV show or movie'
+                    })
+                    continue
+                
+                dest_path = os.path.join(org_folder, item_name)
                 
                 # Show progress
                 self.stdout.write(f'\n[{idx}/{len(items)}] Processing: {item_name}')
+                self.stdout.write(f'  Organization: {os.path.basename(org_folder)}/')
+                
+                # Create organization folder if needed
+                if not os.path.exists(org_folder):
+                    os.makedirs(org_folder, exist_ok=True)
                 
                 # Check if destination already exists
                 if os.path.exists(dest_path):
