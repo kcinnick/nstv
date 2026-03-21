@@ -86,5 +86,15 @@ Thumbs.db
 # NZB files (download artifacts)
 *.nzb
 
-# Test files
+# Test files and logs
 test_schema.py
+server_test.log
+server_test_error.log
+
+# Documentation status files (generated, not source)
+DOCUMENTATION_CLEANUP_COMPLETE.md
+DOCUMENTATION_MINIFICATION_COMPLETE.md
+IMPLEMENTATION_CHECKLIST.md
+HARD_DRIVE_ORGANIZATION_TEST_RESULTS.md
+QUICK_REFERENCE.txt
+URGENT_ACTION.txt

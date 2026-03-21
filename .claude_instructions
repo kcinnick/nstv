@@ -1,0 +1,326 @@
+# NSTV Project Claude Skills & Instructions
+
+This file documents Claude's understanding of the NSTV project architecture, patterns, and best practices for efficient assistance.
+
+## Project Identity
+
+**NSTV** = A Django-based Plex media library manager
+- **Purpose**: Sync, enrich, and manage TV shows/movies from Plex server
+- **Tech Stack**: Django 5.2, PostgreSQL, PlexAPI, TVDB API
+- **Platform**: Windows (PyCharm), runs on localhost
+- **Solo Developer**: Nick (this is a personal project)
+
+## Core Workflows (Priority Order)
+
+### 1. Download Processing (Most Important)
+**Command**: `python manage.py process_downloads [--dry-run] [--media-type {tv|movies|all}] [--no-sync] [--verbose]`
+
+**Flow**:
+```
+NZBGet Complete Dir (C:\...\NZBGet\complete)
+  ↓ (Detect: S##E## = TV, year/(YYYY) = Movie)
+  ├─ TV: Move to Z:\Library\TV Shows\[ShowName]\[item]
+  └─ Movies: Move to Z:\Library\Movies\[MovieName]\[item]
+  ↓ (Optional sync)
+  └─ Trigger: add_shows_to_nstv + add_episodes_to_show + add_movies_to_nstv
+```
+
+**Key Variables**:
+- `NZBGET_COMPLETE_DIR` = `C:\ProgramData\NZBGet\complete`
+- `PLEX_TV_SHOW_DIR` = `Z:\Library\TV Shows`
+- `PLEX_MOVIES_DIR` = `Z:\Library\Movies`
+- Network drive Z: must be mapped to NAS Plex2
+
+**Patterns**:
+- Filename regex for TV: `[Ss]\d{1,2}[Ee]\d{1,2}` (S01E01 pattern)
+- Filename regex for Movies: `(\([\d]{4}\))|(\[[\d]{4}\])|(\d{4}\s*(?:1080p|720p|...))` (year or quality)
+- Extract show name: Remove S##E## pattern + quality tags
+- Extract movie name: Everything up to year/quality indicators
+
+### 2. Plex Sync (Core Integration)
+**Files**:
+- `add_shows_to_nstv.py` → Import shows from Plex
+- `add_episodes_to_show.py` → Import episodes from Plex
+- `add_movies_to_nstv.py` → Import movies from Plex
+
+**Pattern**:
+```python
+plex = PlexServer(PLEX_SERVER, PLEX_API_KEY)
+plex.library.section('TV Shows')  # or 'Movies'
+for item in section.search():
+    # Create/update Django models
+    # Set on_disk=True
+```
+
+**Key Handling**:
+- `SHOW_ALIASES` dict: Maps Plex titles to Django titles
+- `SEASON_TITLE_REPLACEMENTS` dict: Maps non-standard season numbers (e.g., "S2010" → "S01")
+- Episode matching: TVDB ID → season/episode → normalized title
+
+### 3. Duplicate Detection & Deletion
+**Files**:
+- `find_duplicates.py` → Detect duplicates via Plex API
+- `duplicate_deletion.py` → Delete via Plex API
+- `audit_episode_duplicates.py` → Django management command
+
+**Pattern**: Same title + same season/episode (TV) or title + year (Movies) = duplicate
+**Quality Ranking**: Resolution (4K>1080p>720p>480p) → Codec (x265>x264) → Bitrate
+**Action**: Keep highest quality, delete others
+
+### 4. TVDB Metadata Enrichment
+**Command**: `python manage.py enrich_from_tvdb`
+**Pattern**: Enrich Show/Episode with overview, ratings, cast, genres
+
+## Environment Configuration
+
+### `.env` Template
+```dotenv
+# Django Database
+DJANGO_DB_PASSWORD=admin
+
+# Plex Connection (Required)
+PLEX_EMAIL=your-email@example.com
+PLEX_API_KEY=5GmbFhN1Mipz2bzRoBJy  # From Plex → Settings → Account
+PLEX_SERVER=http://192.168.1.101:32400  # IP of your Plex server
+
+# File Paths (Windows)
+SHOW_FOLDER_PATH="Y:\Library\TV Shows"  # Reference path (Plex)
+PLEX_TV_SHOW_DIR="Z:\Library\TV Shows"  # Download destination (Plex2)
+PLEX_MOVIES_DIR="Z:\Library\Movies"     # Download destination (Plex2)
+
+# NZBGet (Required for automation)
+NZBGET_COMPLETE_DIR=C:\ProgramData\NZBGet\complete
+NZBGET_NZB_DIR=C:\ProgramData\NZBGet\nzb
+
+# Optional
+TEMP_FOLDER_PATH=
+```
+
+### Network Drive Mapping (Windows)
+```
+Y: → \\192.168.1.101\Plex          (SHOW_FOLDER_PATH)
+Z: → \\192.168.1.101\Plex2         (PLEX_TV_SHOW_DIR, PLEX_MOVIES_DIR)
+```
+
+## Database Models
+
+### Show
+```python
+title (str)              # Required
+tvdb_id (str, nullable) # TVDB database ID
+anime (bool)            # Anime flag
+overview, status, network, genre, rating, poster_url  # TVDB metadata
+cast (M2M → CastMember) # Actor relationships
+```
+
+### Episode
+```python
+show (FK → Show)              # Parent show
+title (str)                   # Episode title
+season_number, episode_number (int)  # S##E## notation
+air_date, tvdb_id            # Metadata
+on_disk (bool)               # KEY: Is it on the NAS?
+cast (M2M → CastMember)       # Guest stars
+```
+
+### Movie
+```python
+name (str)                 # Title (note: not 'title')
+release_date               # Movie date
+genre (array), director    # Metadata
+on_disk (bool)            # KEY: Is it on the NAS?
+overview, rating, poster_path, cast (M2M)  # TMDB metadata
+```
+
+### CastMember
+```python
+name (str)
+role (str)
+image_url (str, nullable)
+```
+
+## Code Patterns to Follow
+
+### 1. Plex Connection
+```python
+from plexapi.server import PlexServer
+
+def get_plex_connection():
+    plex_api_key = os.getenv('PLEX_API_KEY')
+    plex_server = os.getenv('PLEX_SERVER')
+    return PlexServer(plex_server, plex_api_key)
+```
+
+### 2. File Path Handling
+```python
+# Always use absolute paths
+source_path = os.path.join(self.nzbget_dir, item_name)
+dest_path = os.path.join(org_folder, item_name)
+
+# Use pathlib for Path objects
+from pathlib import Path
+env_path = Path(__file__).resolve().parent.parent / '.env'
+```
+
+### 3. Django ORM Patterns
+```python
+# Get or create
+obj, created = Show.objects.get_or_create(title=show_name)
+
+# Filter + update
+episode = Episode.objects.filter(
+    show=show_obj,
+    season_number=season,
+    episode_number=episode
+).first()
+if episode:
+    episode.on_disk = True
+    episode.save()
+
+# Bulk operations
+Episode.objects.filter(show=show_obj).update(on_disk=True)
+```
+
+### 4. Error Handling
+```python
+try:
+    # Operation
+except PermissionError as e:
+    self.stdout.write(self.style.ERROR(f'Permission denied: {e}'))
+except Exception as e:
+    self.stdout.write(self.style.ERROR(f'Error: {e}'))
+```
+
+### 5. Progress Output (Management Commands)
+```python
+from tqdm import tqdm
+
+for item in tqdm(items, desc="Processing"):
+    # Do work
+
+# Or with custom messages
+self.stdout.write(f'\n[{idx}/{total}] Processing: {item_name}')
+self.stdout.write(self.style.SUCCESS('  [OK] Success message'))
+self.stdout.write(self.style.WARNING('  [WARN] Warning message'))
+self.stdout.write(self.style.ERROR('  [FAIL] Error message'))
+```
+
+## Common Issues & Solutions
+
+### Network Path Issues
+**Problem**: `Z:\Library\TV Shows not found`
+**Root Cause**: Network drive not mapped or disconnected
+**Solution**:
+- Map Z: to NAS Plex2 share
+- Verify path exists: `Test-Path Z:\Library\TV Shows`
+- Check `.env` for correct paths
+
+### Plex Connection Failed
+**Problem**: `Cannot connect to Plex server: ...`
+**Root Cause**: Wrong API key, server URL, or Plex server down
+**Solution**:
+- Verify PLEX_SERVER format: `http://IP:32400`
+- Get fresh PLEX_API_KEY from Plex settings
+- Ping server: `ping 192.168.1.101`
+
+### Episodes Not Syncing
+**Problem**: Episodes in Plex but not in Django
+**Root Cause**: Title mismatch or missing in SHOW_ALIASES
+**Solution**:
+- Add to SHOW_ALIASES if Plex title ≠ Django title
+- Run: `python -c "from nstv.plexController.add_episodes_to_show import main; main()"`
+- Check for non-standard season numbering
+
+### Duplicates Not Detected
+**Problem**: Same episode exists but not flagged as duplicate
+**Root Cause**: Different season/episode numbers or on_disk not synced
+**Solution**:
+- Verify both are marked same S##E## in Plex
+- Run sync first: `python manage.py process_downloads`
+- Run audit: `python manage.py audit_episode_duplicates --verbose`
+
+## Testing Patterns
+
+### Django Shell Testing
+```powershell
+python manage.py shell
+```
+
+```python
+from nstv.models import Show, Episode
+
+# Quick checks
+Show.objects.count()
+Episode.objects.filter(on_disk=False).count()
+```
+
+### Dry-Run Testing (Safety First!)
+```powershell
+# Always test with --dry-run first
+python manage.py process_downloads --dry-run
+
+# Then run for real
+python manage.py process_downloads
+```
+
+## Performance Considerations
+
+### Bulk Operations
+- Use `.update()` for mass updates instead of loops
+- Use `select_related()` and `prefetch_related()` for FK/M2M queries
+
+### Large Media Libraries
+- Plex sync can be slow for libraries >5000 items
+- Use `--no-sync` flag to skip DB sync if only moving files
+- Consider pagination for web UI queries
+
+## File Organization Conventions
+
+### Management Commands
+- Located: `nstv/management/commands/*.py`
+- Handle: Single responsibility (one task)
+- Output: Use Django command styles for consistency
+- Args: Include `--dry-run` where safe to test
+
+### Plex Controller Scripts
+- Located: `nstv/plexController/*.py`
+- Handle: Plex API interactions + DB sync
+- Pattern: Accept optional `plex` parameter for testing
+- Return: Created/updated counts for logging
+
+### Models
+- Located: `nstv/models.py`
+- Convention: Use descriptive field names, add docstrings
+- Key Fields: Always define `on_disk`, `tvdb_id`, relationships
+
+## Quick Task Examples
+
+### Task: Add a new Plex sync field
+1. Add field to model in `nstv/models.py`
+2. Create migration: `python manage.py makemigrations`
+3. Apply: `python manage.py migrate`
+4. Update relevant `add_*.py` script to populate field
+
+### Task: Fix show title mapping
+1. Edit `SHOW_ALIASES` in `add_episodes_to_show.py`
+2. Re-run: `python -c "from nstv.plexController.add_episodes_to_show import main; main()"`
+3. Verify in Django admin or shell
+
+### Task: Update duplicate detection logic
+1. Edit `find_duplicates.py` detection algorithm
+2. Test: `python manage.py audit_episode_duplicates --verbose`
+3. Verify quality ranking in `quality_analyzer.py`
+
+## Resources
+
+- **Project Docs**: `/docs/DEVELOPER_GUIDE.md` (comprehensive guide)
+- **Django Docs**: https://docs.djangoproject.com/
+- **PlexAPI Docs**: https://python-plexapi.readthedocs.io/
+- **PostgreSQL**: https://www.postgresql.org/docs/
+- **TVDB API**: https://v4.thetvdb.com/swagger
+
+---
+
+**Last Updated**: March 21, 2026
+**Maintained By**: Nick (solo developer)
+

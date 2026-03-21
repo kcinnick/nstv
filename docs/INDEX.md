@@ -1,27 +1,81 @@
 # Documentation Index
 
-## 🚀 Quick Start
-1. **New users**: `../QUICK_START.md`
-2. **Setup**: `DEPLOYMENT.md`
-3. **Development**: `../instructions.md`
+## 🚀 Quick Start (Choose Your Path)
 
-## 📖 Active Docs
-| Document | Purpose |
-|----------|---------|
-| `README.md` (or `README_MINIFIED.md`) | Project overview |
-| `DEPLOYMENT.md` | How to run/deploy |
-| `FRONTEND_GUIDELINES.md` | Design system |
-| `MANUAL_TASKS.md` (or `MANUAL_TASKS_MINIFIED.md`) | Maintenance tasks |
-| `POWERSHELL_COMMAND_REFERENCE.md` | Windows PowerShell |
-| `NZBGET_SETUP.md` | NZBGet config |
+### I'm New to NSTV
+1. **First read**: `DEVELOPER_GUIDE.md` (20 min overview)
+2. **Quick commands**: `QUICK_TASK_CHECKLIST.md` (copy-paste reference)
+3. **Architecture**: `ARCHITECTURE.md` (deep dive)
 
-## 📦 Archived Docs (Local Only)
-Located in `archive/` - not in version control:
-- **postgresql-upgrade/**: Upgrade guides, procedures, logs
-- **investigations/**: Environment & code audits, issue investigations
-- **bugfixes/**: Bug documentation, historical fixes
-- **automation/**: Automation research & runbooks
-- **historical/**: Completed plans, security logs, checklists
+### I Need to Deploy
+1. **Setup guide**: `DEPLOYMENT.md`
+2. **Plex config**: `PLEX_CONNECTION_FIXED.md`
+3. **Downloads**: `NZBGET_SETUP.md`
+
+### I'm Developing Features
+1. **Architecture**: `ARCHITECTURE.md` (complete module reference)
+2. **Developer guide**: `DEVELOPER_GUIDE.md` (patterns & workflows)
+3. **Frontend**: `FRONTEND_GUIDELINES.md` (UI conventions)
+
+## 📖 Complete Documentation Map
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| **DEVELOPER_GUIDE.md** ⭐ | Complete developer handbook | All developers |
+| **QUICK_TASK_CHECKLIST.md** ⭐ | One-liners & quick reference | Everyone |
+| **ARCHITECTURE.md** ⭐ | Deep technical reference | Developers |
+| `README.md` | Project overview | Everyone |
+| `DEPLOYMENT.md` | Production setup | DevOps |
+| `FRONTEND_GUIDELINES.md` | UI conventions | Frontend devs |
+| `MANUAL_TASKS.md` | Maintenance procedures | Admin |
+| `POWERSHELL_COMMAND_REFERENCE.md` | Windows commands | Windows users |
+| `NZBGET_SETUP.md` | Download integration | Setup |
+| `PLEX_CONNECTION_FIXED.md` | Plex configuration | Setup |
+| `RECOVER_CONNECTION.md` | Troubleshooting | Everyone |
+| `HARD_DRIVE_QUICK_REFERENCE.md` | Storage layout | Admin |
+
+**⭐ = Start here for new developers**
+
+## 🤖 Claude AI Skills & Instructions
+
+**File**: `../.claude_instructions` - AI-optimized project knowledge
+
+This file contains:
+- Project architecture summary
+- Core workflows (download processing, Plex sync, duplicates)
+- Environment configuration
+- Database models
+- Code patterns
+- Common issues & solutions
+- Performance considerations
+
+**How it helps Claude**:
+- Faster understanding of project structure
+- Consistent code patterns
+- Accurate troubleshooting
+- Better feature implementation
+
+## 📚 Development Resources
+
+### For Understanding the Codebase
+1. **Start**: `ARCHITECTURE.md` → High-Level Architecture section
+2. **Deep dive**: Read through complete Module Reference
+3. **Code patterns**: See Common Code Patterns section
+4. **Debugging**: Reference Debugging Tips section
+
+### For Common Tasks
+Use `QUICK_TASK_CHECKLIST.md` to find:
+- ⚡ One-liners (copy & paste)
+- 📺 Download processing workflow
+- 🔄 Syncing Plex to database
+- 🧹 Finding duplicates
+- 👨‍💻 Creating management commands
+
+### For Production/Deployment
+1. `DEVELOPER_GUIDE.md` → Environment Setup
+2. `DEPLOYMENT.md` → Full deployment guide
+3. `PLEX_CONNECTION_FIXED.md` → Plex integration
+4. `NZBGET_SETUP.md` → Download automation
 
 ## 🔍 Find What You Need
 | Question | Answer |
